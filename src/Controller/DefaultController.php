@@ -31,7 +31,7 @@ class DefaultController extends ControllerBase {
     $output .= '<pre>' . print_r($bib_record, 1) . '</pre>';
 
     return array(
-      '#type' => 'markup',
+      '#title' => $bib_record->title,
       '#markup' => $output,
     );
   }
