@@ -1,0 +1,8 @@
+arborcat.settings:
+  type: mapping
+  label: Arborcat Settings
+  mapping:
+    couch_server:
+      type: string
+    couch_database:
+      type: string

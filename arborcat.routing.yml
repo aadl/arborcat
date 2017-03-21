@@ -1,3 +1,10 @@
+arborcat.admin_form:
+  path: /admin/config/arborcat
+  defaults:
+    _title: 'Arborcat module settings'
+    _form: \Drupal\arborcat\Form\ArborcatAdminForm
+  requirements:
+    _permission: 'access administration pages'
 arborcat.bibrecord:
   path: /catalog/record/{bnum}
   defaults:
