@@ -1,0 +1,7 @@
+arborcat.bibrecord:
+  path: /catalog/record/{bnum}
+  defaults:
+    _title: 'Catalog Record'
+    _controller: '\Drupal\arborcat\Controller\DefaultController::bibrecord_page'
+  requirements:
+    _permission: 'access arborcat'

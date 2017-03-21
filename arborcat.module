@@ -1,0 +1,28 @@
+<?php
+/**
+ * Display help and module information
+ * @return help text for section
+ */
+function arborcat_help($path, $arg) {
+  $output = '';
+
+  switch ($path) {
+    case "admin/help#arborcat":
+      $output = '<p>' .  t("Catalog functions for Evergreen") . '</p>';
+      break;
+  }
+
+  return $output;
+}
+
+/**
+ * Permissions for arborcat
+ */
+function arborcat_permission() {
+  return array(
+    'access arborcat' => array(
+      'title' => t('access arborcat'),
+      'description' => t('Access catalog pages'),
+    ),
+  );
+}

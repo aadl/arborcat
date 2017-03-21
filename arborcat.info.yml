@@ -1,0 +1,5 @@
+name: 'Arborcat'
+description: 'Catalog interface for Evergreen'
+core: 8.x
+package: 'AADL Modules'
+type: module
