@@ -19,8 +19,12 @@ class HoldsBlock extends BlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $user = \Drupal::routeMatch()->getParameter('user');
+    $api_key = $user->get('field_api_key')->value;
+
     // Get Checkouts from API
-    $json = file_get_contents('http://nginx2/patron/holds');
+    $json = file_get_contents("http://$api_url/patron/$api_key/holds");
     $holds = json_decode($json);
 
     $rows = array();

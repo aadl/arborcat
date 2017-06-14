@@ -1,0 +1,5 @@
+arborcat.admin_form:
+  title: 'Arborcat module settings'
+  description: 'Configuration for the Arborcat module'
+  route_name: arborcat.admin_form
+  parent: 'system.admin_config_system'
