@@ -33,6 +33,9 @@ class HoldsBlock extends BlockBase {
     }
 
     return array(
+      '#cache' => array(
+        'max-age' => 0, // Don't cache, always get fresh data
+      ),
       '#markup' => '<h1>USER HOLDS</h1>',
       'holds_table' => array(
         '#type' => 'table',

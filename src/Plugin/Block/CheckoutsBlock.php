@@ -35,6 +35,9 @@ class CheckoutsBlock extends BlockBase {
     }
 
     return array(
+      '#cache' => array(
+        'max-age' => 0, // Don't cache, always get fresh data
+      ),
       '#markup' => '<h1>USER CHECKOUTS</h1>',
       'checkout_table' => array(
         '#type' => 'table',

@@ -33,6 +33,9 @@ class PatronBlock extends BlockBase {
     }
 
     return array(
+      '#cache' => array(
+        'max-age' => 0, // Don't cache, always get fresh data
+      ),
       '#markup' => '<h1>PATRON INFORMATION</h1>',
       'patron_table' => array(
         '#type' => 'table',
