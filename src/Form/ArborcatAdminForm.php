@@ -47,22 +47,6 @@ class ArborcatAdminForm extends ConfigFormBase {
 
   public function buildForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
     $form = [];
-    $form['couch_server'] = [
-      '#type' => 'textfield',
-      '#title' => t('Couch Server'),
-      '#default_value' => \Drupal::config('arborcat.settings')->get('couch_server'),
-      '#size' => 64,
-      '#maxlength' => 128,
-      '#description' => t('CouchDB Server'),
-    ];
-    $form['couch_database'] = [
-      '#type' => 'textfield',
-      '#title' => t('Couch Database'),
-      '#default_value' => \Drupal::config('arborcat.settings')->get('couch_database'),
-      '#size' => 32,
-      '#maxlength' => 64,
-      '#description' => t('CouchDB Database'),
-    ];
     $form['api_url'] = [
       '#type' => 'textfield',
       '#title' => t('API URL'),

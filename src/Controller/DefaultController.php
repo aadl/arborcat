@@ -6,9 +6,6 @@
 namespace Drupal\arborcat\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use PHPOnCouch\Couch,
-    PHPOnCouch\CouchAdmin,
-    PHPOnCouch\CouchClient;
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
 
@@ -18,14 +15,11 @@ use PHPOnCouch\Couch,
 class DefaultController extends ControllerBase {
 
   public function bibrecord_page($bnum) {
-    // Load settings.
-    $couch_server = \Drupal::config('arborcat.settings')->get('couch_server');
-    $couch_database = \Drupal::config('arborcat.settings')->get('couch_database');
-    // Connect to CouchDB
-    $client = new CouchClient($couch_server, $couch_database);
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
-    // get Bib Record
-    $bib_record = $client->getDoc($bnum);
+    // Get Bib Record from API
+    $json = file_get_contents("http://$api_url/bib/$bnum");
+    $bib_record = json_decode($json);
 
     $output = "BIB RECORD: $bnum";
     $output .= '<pre>' . print_r($bib_record, 1) . '</pre>';
