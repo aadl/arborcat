@@ -23,8 +23,9 @@ class HoldsBlock extends BlockBase {
     $user = \Drupal::routeMatch()->getParameter('user');
     $api_key = $user->get('field_api_key')->value;
 
-    // Get Checkouts from API
-    $json = file_get_contents("http://$api_url/patron/$api_key/holds");
+    // Get holds from API
+    $guzzle = \Drupal::httpClient();
+    $json = $guzzle->request("http://$api_url/patron/$api_key/holds")->getBody()->getContents();
     $holds = json_decode($json);
 
     $rows = array();

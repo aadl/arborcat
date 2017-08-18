@@ -18,7 +18,8 @@ class DefaultController extends ControllerBase {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
     // Get Bib Record from API
-    $json = file_get_contents("http://$api_url/bib/$bnum");
+    $guzzle = \Drupal::httpClient();
+    $json = $guzzle->get("http://$api_url/bib/$bnum")->getBody()->getContents();
     $bib_record = json_decode($json);
 
     $output = "BIB RECORD: $bnum";

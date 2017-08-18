@@ -24,7 +24,8 @@ class CheckoutsBlock extends BlockBase {
     $api_key = $user->get('field_api_key')->value;
 
     // Get Checkouts from API
-    $json = file_get_contents("http://$api_url/patron/$api_key/checkouts");
+    $guzzle = \Drupal::httpClient();
+    $json = $guzzle->get("http://$api_url/patron/$api_key/checkouts")->getBody()->getContents();
     $checkouts = json_decode($json);
 
     $rows = array();

@@ -23,8 +23,9 @@ class PatronBlock extends BlockBase {
     $user = \Drupal::routeMatch()->getParameter('user');
     $api_key = $user->get('field_api_key')->value;
 
-    // Get Checkouts from API
-    $json = file_get_contents("http://$api_url/patron/$api_key/get");
+    // Get patron info from API
+    $guzzle = \Drupal::httpClient();
+    $json = $guzzle->get("http://$api_url/patron/$api_key/get")->getBody()->getContents();
     $patron = json_decode($json);
 
     $rows = array();
