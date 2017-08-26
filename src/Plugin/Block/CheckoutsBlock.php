@@ -28,24 +28,32 @@ class CheckoutsBlock extends BlockBase {
     $json = $guzzle->get("http://$api_url/patron/$api_key/checkouts")->getBody()->getContents();
     $checkouts = json_decode($json);
 
-    $rows = array();
-    foreach ($checkouts as $category) {
-      foreach ($category as $checkout) {
-        $rows[] = (array) $checkout; //$checkout_list .= "<li>$checkout->format: $checkout->title by $checkout->author</li>";
+    $output = '<h2>Checkouts</h2>';
+    if ($checkouts->out) {
+      $output .= '<table><thead><tr>';
+      $output .= '<th></th>';
+      $output .= '<th>Title</th>';
+      $output .= '<th>Author</th>';
+      $output .= '<th>Due</th>';
+      $output .= '</tr></thead><tbody>';
+      foreach ($checkouts->out as $k => $checkout) {
+        $output .= "<td><input type=\"checkbox\" value=\"$k\"></td>";
+        $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">$checkout->title</a></td>";
+        $output .= "<td>$checkout->author</td>";
+        $output .= "<td>$checkout->due</td>";
+        $output .= '</tr>'; 
       }
+      $output .= '</tbody></table>';
+    } else {
+      $output .= '<p><em>You have no items checked out</em></p>';
     }
-
+    
     return array(
       '#cache' => array(
         'max-age' => 0, // Don't cache, always get fresh data
       ),
-      '#markup' => '<h1>USER CHECKOUTS</h1>',
-      'checkout_table' => array(
-        '#type' => 'table',
-        '#header' => array_keys($rows[0]),
-        '#rows' => $rows,
-      ),
-//      '#attached' => array('library' => array('arborcat/patron-functions')),
+      '#markup' => $output,
+      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2']
     );
   }
 

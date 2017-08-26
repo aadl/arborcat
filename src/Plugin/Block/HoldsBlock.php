@@ -25,24 +25,39 @@ class HoldsBlock extends BlockBase {
 
     // Get holds from API
     $guzzle = \Drupal::httpClient();
-    $json = $guzzle->request("http://$api_url/patron/$api_key/holds")->getBody()->getContents();
+    $json = $guzzle->get("http://$api_url/patron/$api_key/holds")->getBody()->getContents();
     $holds = json_decode($json);
 
-    $rows = array();
-    foreach ($holds as $hold) {
-      $rows[] = (array) $hold;
+    $output = '<h2>Requests</h2>';
+    if (count($holds)) {
+      $output .= '<table><thead><tr>';
+      $output .= '<th></th>';
+      $output .= '<th>Title</th>';
+      $output .= '<th>Author</th>';
+      $output .= '<th>Status</th>';
+      $output .= '<th>Pickup</th>';
+      $output .= '<th>Modify</th>';
+      $output .= '</tr></thead><tbody>';
+      foreach ($holds as $k => $hold) {
+        $output .="<td><input type=\"checkbox\" value=\"$k\"></td>";
+        $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title</a></td>";
+        $output .= "<td>$hold->author</td>";
+        $output .= "<td>$hold->status</td>";
+        $output .= "<td>$hold->pickup</td>";
+        $output .= "<td>placeholder $k</td>";
+        $output .= '</tr>'; 
+      }
+      $output .= '</tbody></table>';
+    } else {
+      $output .= '<p><em>You have no requested items</em></p>';
     }
-
+    
     return array(
       '#cache' => array(
         'max-age' => 0, // Don't cache, always get fresh data
       ),
-      '#markup' => '<h1>USER HOLDS</h1>',
-      'holds_table' => array(
-        '#type' => 'table',
-        '#header' => array_keys($rows[0]),
-        '#rows' => $rows,
-      ),
+      '#markup' => $output,
+      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2']
     );
   }
 
