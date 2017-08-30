@@ -14,19 +14,24 @@ use Drupal\Core\Controller\ControllerBase;
  */
 class DefaultController extends ControllerBase {
 
+  public function index() {
+    return [
+      '#theme' => 'catalog'
+    ];
+  }
+
   public function bibrecord_page($bnum) {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
     // Get Bib Record from API
-    $json = file_get_contents("http://$api_url/bib/$bnum");
+    $guzzle = \Drupal::httpClient();
+    $json = $guzzle->get("http://$api_url/record/$bnum")->getBody()->getContents();
     $bib_record = json_decode($json);
 
-    $output = "BIB RECORD: $bnum";
-    $output .= '<pre>' . print_r($bib_record, 1) . '</pre>';
-
-    return array(
+    return [
       '#title' => $bib_record->title,
-      '#markup' => $output,
-    );
+      '#theme' => 'catalog_record',
+      '#record' => $bib_record
+    ];
   }
 }
