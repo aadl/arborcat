@@ -5,9 +5,16 @@ arborcat.admin_form:
     _form: \Drupal\arborcat\Form\ArborcatAdminForm
   requirements:
     _permission: 'access administration pages'
+arborcat.home:
+  path: /catalog
+  defaults:
+    _title: 'AADL Catalog'
+    _controller: '\Drupal\arborcat\Controller\DefaultController::index'
+  requirements:
+    _permission: 'access arborcat'
 arborcat.bibrecord:
   path: /catalog/record/{bnum}
-  defaults:
+  defaults: 
     _title: 'Catalog Record'
     _controller: '\Drupal\arborcat\Controller\DefaultController::bibrecord_page'
   requirements:
