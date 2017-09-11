@@ -19,10 +19,25 @@ function arborcat_help($path, $arg) {
  * Permissions for arborcat
  */
 function arborcat_permission() {
-  return array(
-    'access arborcat' => array(
+  return [
+    'access arborcat' => [
       'title' => t('access arborcat'),
       'description' => t('Access catalog pages'),
-    ),
-  );
+    ],
+  ];
+}
+
+function arborcat_theme($existing, $type, $theme, $path) {
+  return [
+    'catalog' => [
+      'variables' => [
+        'catalog_slider' => [],
+        'community_slider' => [],
+        'podcast_slider' => []
+      ]
+    ],
+    'catalog_record' => [
+      'variables' => ['record' => NULL]
+    ],
+  ];
 }
