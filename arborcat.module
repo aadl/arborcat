@@ -37,7 +37,10 @@ function arborcat_theme($existing, $type, $theme, $path) {
       ]
     ],
     'catalog_record' => [
-      'variables' => ['record' => NULL]
+      'variables' => [
+        'record' => NULL,
+        'api_key' => NULL
+      ]
     ],
   ];
 }

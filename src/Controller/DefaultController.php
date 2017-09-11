@@ -28,10 +28,15 @@ class DefaultController extends ControllerBase {
     $json = $guzzle->get("http://$api_url/record/$bnum")->getBody()->getContents();
     $bib_record = json_decode($json);
 
+    // grab user api key for account actions
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user_api_key = $user->field_api_key->value;
+
     return [
       '#title' => $bib_record->title,
       '#theme' => 'catalog_record',
-      '#record' => $bib_record
+      '#record' => $bib_record,
+      '#api_key' => $user_api_key
     ];
   }
 }
