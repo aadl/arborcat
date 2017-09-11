@@ -34,7 +34,7 @@ class PatronBlock extends BlockBase {
     $output .= "<tr><th scope=\"row\">Default Pickup Location</th><td>filler</td></tr>";
     $output .= "<tr><th scope=\"row\">Items Checked Out</th><td>filler</td></tr>";
     $output .= "<tr><th scope=\"row\">Account Balance</th><td>filler</td></tr>";
-    $output .= "<tr><th scope=\"row\">Card Expiration Date</th><td>$patron->expires</td></tr>";
+    $output .= "<tr><th scope=\"row\">Card Expiration Date</th><td>" . date('m-d-Y', strtotime($patron->expires)) . "</td></tr>";
     $output .= "<tr><th scope=\"row\">Account Email</th><td>$patron->email</td></tr>";
     $output .= "<tr><th scope=\"row\">Notifications Sent To</th><td>$patron->email</td></tr>";
     $output .= '</tbody></table>';
