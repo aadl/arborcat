@@ -23,24 +23,27 @@ class PatronBlock extends BlockBase {
     $user = \Drupal::routeMatch()->getParameter('user');
     $api_key = $user->get('field_api_key')->value;
 
-    // Get Checkouts from API
-    $json = file_get_contents("http://$api_url/patron/$api_key/get");
+    // Get patron info from API
+    $guzzle = \Drupal::httpClient();
+    $json = $guzzle->get("http://$api_url/patron/$api_key/get")->getBody()->getContents();
     $patron = json_decode($json);
 
-    $rows = array();
-    foreach ($patron as $field => $info) {
-      $rows[] = array($field, $info);
-    }
+    $output = '<h2>Account Summary</h2>';
+    $output .= '<table id="account-summary"><tbody>';
+    $output .= "<tr><th scope=\"row\">Library Card Number</th><td>$patron->card</td></tr>";
+    $output .= "<tr><th scope=\"row\">Default Pickup Location</th><td>filler</td></tr>";
+    $output .= "<tr><th scope=\"row\">Items Checked Out</th><td>filler</td></tr>";
+    $output .= "<tr><th scope=\"row\">Account Balance</th><td>filler</td></tr>";
+    $output .= "<tr><th scope=\"row\">Card Expiration Date</th><td>$patron->expires</td></tr>";
+    $output .= "<tr><th scope=\"row\">Account Email</th><td>$patron->email</td></tr>";
+    $output .= "<tr><th scope=\"row\">Notifications Sent To</th><td>$patron->email</td></tr>";
+    $output .= '</tbody></table>';
 
     return array(
       '#cache' => array(
         'max-age' => 0, // Don't cache, always get fresh data
       ),
-      '#markup' => '<h1>PATRON INFORMATION</h1>',
-      'patron_table' => array(
-        '#type' => 'table',
-        '#rows' => $rows,
-      ),
+      '#markup' => $output,
     );
   }
 
