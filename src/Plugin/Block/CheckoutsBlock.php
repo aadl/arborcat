@@ -53,7 +53,7 @@ class CheckoutsBlock extends BlockBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ),
       '#markup' => $output,
-      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2']
+      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a']
     );
   }
 
