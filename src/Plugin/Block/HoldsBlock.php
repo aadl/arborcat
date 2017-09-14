@@ -32,7 +32,7 @@ class HoldsBlock extends BlockBase {
     $output = '<h2>Requests</h2>';
     if (count($holds)) {
       $output .= '<table id="holds-table"><thead><tr>';
-      $output .= '<th></th>';
+      $output .= '<th id="holds-checkbox"></th>';
       $output .= '<th>Title</th>';
       $output .= '<th>Author</th>';
       $output .= '<th>Status</th>';
@@ -43,10 +43,10 @@ class HoldsBlock extends BlockBase {
         // change display / value depending on if request is frozen
         if ($hold->hold->frozen == 'f') {
           $opt_val = 'frozen=t';
-          $opt_display = 'Suspend';
+          $opt_display = 'Freeze';
         } else {
           $opt_val = 'frozen=f';
-          $opt_display = 'Unsuspend';
+          $opt_display = 'Unfreeze';
         }
         // used to cancel a hold by updating canceled_time field
         $cur_time = date('Y-m-d');
@@ -58,7 +58,7 @@ class HoldsBlock extends BlockBase {
             $options .= "<option value=\"pickup_lib=$n\">Pickup: $loc</option>";
           }
         }
-        $options .= "<option value=\"cancel_time=$cur_time\">Cancel</option>";
+        $options .= "<option value=\"cancel_time=$cur_time\">Cancel Request</option>";
 
         $output .="<td><input type=\"checkbox\" value=\"$k\"></td>";
         $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title</a></td>";
