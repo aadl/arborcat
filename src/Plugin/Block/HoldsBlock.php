@@ -30,7 +30,7 @@ class HoldsBlock extends BlockBase {
 
     $output = '<h2>Requests</h2>';
     if (count($holds)) {
-      $output .= '<table><thead><tr>';
+      $output .= '<table id="holds-table"><thead><tr>';
       $output .= '<th></th>';
       $output .= '<th>Title</th>';
       $output .= '<th>Author</th>';
@@ -39,12 +39,38 @@ class HoldsBlock extends BlockBase {
       $output .= '<th>Modify</th>';
       $output .= '</tr></thead><tbody>';
       foreach ($holds as $k => $hold) {
+        // change display / value depending on if request is frozen
+        if ($hold->hold->frozen == 'f') {
+          $opt_val = 'frozen=t';
+          $opt_display = 'Suspend';
+        } else {
+          $opt_val = 'frozen=f';
+          $opt_display = 'Unsuspend';
+        }
+        // used to cancel a hold by updating canceled_time field
+        $cur_time = date('Y-m-d');
+        $options = '<option value="">Modify</option>';
+        // show suspend and pickup options if hold isn't already in-transit or ready
+        if ($hold->status != 'In-Transit' && $hold->status != 'Ready for Pickup') {
+          $options .= "<option value=\"$opt_val\">$opt_display</option>";
+          $options .= '<option value="pickup_lib=102">Pickup: Downtown</option>';
+          $options .= '<option value="pickup_lib=103">Pickup: Malletts</option>';
+          $options .= '<option value="pickup_lib=104">Pickup: Pittsfield</option>';
+          $options .= '<option value="pickup_lib=105">Pickup: Traverwood</option>';
+          $options .= '<option value="pickup_lib=106">Pickup: Westgate</option>';
+        }
+        $options .= "<option value=\"cancel_time=$cur_time\">Cancel</option>";
+
         $output .="<td><input type=\"checkbox\" value=\"$k\"></td>";
         $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title</a></td>";
         $output .= "<td>$hold->author</td>";
-        $output .= "<td>$hold->status</td>";
-        $output .= "<td>$hold->pickup</td>";
-        $output .= "<td>placeholder $k</td>";
+        $output .= "<td class=\"request-status\">$hold->status</td>";
+        $output .= "<td class=\"request-pickup\">$hold->pickup</td>";
+        $output .= "<td>
+            <select class=\"request-modify\" data-request-id=\"$k\" data-api-key=\"$api_key\">
+              $options
+            </select>
+          </td>";
         $output .= '</tr>'; 
       }
       $output .= '</tbody></table>';
@@ -57,7 +83,7 @@ class HoldsBlock extends BlockBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ),
       '#markup' => $output,
-      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a']
+      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a', 'select', 'option']
     );
   }
 

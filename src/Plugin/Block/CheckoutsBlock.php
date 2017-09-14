@@ -30,7 +30,7 @@ class CheckoutsBlock extends BlockBase {
 
     $output = '<h2>Checkouts</h2>';
     if ($checkouts->out) {
-      $output .= '<table><thead><tr>';
+      $output .= '<table id="checkouts-table"><thead><tr>';
       $output .= '<th></th>';
       $output .= '<th>Title</th>';
       $output .= '<th>Author</th>';
