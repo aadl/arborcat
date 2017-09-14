@@ -27,6 +27,7 @@ class HoldsBlock extends BlockBase {
     $guzzle = \Drupal::httpClient();
     $json = $guzzle->get("http://$api_url/patron/$api_key/holds")->getBody()->getContents();
     $holds = json_decode($json);
+    $locations = json_decode($guzzle->get("http://$api_url/locations")->getBody()->getContents());
 
     $output = '<h2>Requests</h2>';
     if (count($holds)) {
@@ -53,11 +54,9 @@ class HoldsBlock extends BlockBase {
         // show suspend and pickup options if hold isn't already in-transit or ready
         if ($hold->status != 'In-Transit' && $hold->status != 'Ready for Pickup') {
           $options .= "<option value=\"$opt_val\">$opt_display</option>";
-          $options .= '<option value="pickup_lib=102">Pickup: Downtown</option>';
-          $options .= '<option value="pickup_lib=103">Pickup: Malletts</option>';
-          $options .= '<option value="pickup_lib=104">Pickup: Pittsfield</option>';
-          $options .= '<option value="pickup_lib=105">Pickup: Traverwood</option>';
-          $options .= '<option value="pickup_lib=106">Pickup: Westgate</option>';
+          foreach ($locations as $k => $loc) {
+            $options .= "<option value=\"pickup_lib=$k\">Pickup: $loc</option>";
+          }
         }
         $options .= "<option value=\"cancel_time=$cur_time\">Cancel</option>";
 
