@@ -54,8 +54,8 @@ class HoldsBlock extends BlockBase {
         // show suspend and pickup options if hold isn't already in-transit or ready
         if ($hold->status != 'In-Transit' && $hold->status != 'Ready for Pickup') {
           $options .= "<option value=\"$opt_val\">$opt_display</option>";
-          foreach ($locations as $k => $loc) {
-            $options .= "<option value=\"pickup_lib=$k\">Pickup: $loc</option>";
+          foreach ($locations as $n => $loc) {
+            $options .= "<option value=\"pickup_lib=$n\">Pickup: $loc</option>";
           }
         }
         $options .= "<option value=\"cancel_time=$cur_time\">Cancel</option>";
