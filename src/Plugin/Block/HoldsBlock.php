@@ -60,6 +60,9 @@ class HoldsBlock extends BlockBase {
         }
         $options .= "<option value=\"cancel_time=$cur_time\">Cancel Request</option>";
 
+        if ($hold->status == 'Suspended') {
+          $hold->status = 'Frozen';
+        }
         $output .="<td><input type=\"checkbox\" value=\"$k\"></td>";
         $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title</a></td>";
         $output .= "<td>$hold->author</td>";
