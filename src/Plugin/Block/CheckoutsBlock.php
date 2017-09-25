@@ -30,20 +30,22 @@ class CheckoutsBlock extends BlockBase {
 
     $output = '<h2>Checkouts</h2>';
     if ($checkouts->out) {
-      $output .= '<table id="checkouts-table"><thead><tr>';
-      $output .= '<th></th>';
+      $output .= "<table id=\"checkouts-table\" data-api-key=\"$api_key\"><thead><tr>";
       $output .= '<th>Title</th>';
       $output .= '<th>Author</th>';
       $output .= '<th>Due</th>';
+      $output .= '<th>Renew</th>';
       $output .= '</tr></thead><tbody>';
-      foreach ($checkouts->out as $k => $checkout) {
-        $output .= "<td><input type=\"checkbox\" value=\"$k\"></td>";
+      foreach ($checkouts->out as $checkout) {
+        $output .= '<tr class="checkout-row">';
         $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">$checkout->title</a></td>";
         $output .= "<td>$checkout->author</td>";
-        $output .= "<td>$checkout->due</td>";
+        $output .= "<td class=\"checkout-due\">$checkout->due</td>";
+        $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
         $output .= '</tr>'; 
       }
       $output .= '</tbody></table>';
+      $output .= '<button class="button" id="item-renew-all">Renew All</button>';
     } else {
       $output .= '<p><em>You have no items checked out</em></p>';
     }
@@ -53,7 +55,7 @@ class CheckoutsBlock extends BlockBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ),
       '#markup' => $output,
-      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a']
+      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a', 'button']
     );
   }
 
