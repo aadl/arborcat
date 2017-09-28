@@ -45,7 +45,7 @@ class CheckoutsBlock extends BlockBase {
         $output .= '</tr>'; 
       }
       $output .= '</tbody></table>';
-      $output .= '<button class="button" id="item-renew-all">Renew All</button>';
+      $output .= '<button class="button l-overflow-clear" id="item-renew-all">Renew All</button>';
     } else {
       $output .= '<p><em>You have no items checked out</em></p>';
     }
