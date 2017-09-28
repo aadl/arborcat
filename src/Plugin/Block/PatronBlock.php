@@ -25,20 +25,28 @@ class PatronBlock extends BlockBase {
 
     // Get patron info from API
     $guzzle = \Drupal::httpClient();
-    $json = $guzzle->get("http://$api_url/patron/$api_key/get")->getBody()->getContents();
-    $patron = json_decode($json);
+    $patron = json_decode($guzzle->get("http://$api_url/patron/$api_key/get")->getBody()->getContents());
+    $fines = json_decode($guzzle->get("http://$api_url/patron/$api_key/fines")->getBody()->getContents());
 
     $output = '<h2>Account Summary</h2>';
-    $output .= '<table id="account-summary"><tbody>';
+    $output .= '<table id="account-summary" class="l-overflow-clear"><tbody>';
     $output .= "<tr><th scope=\"row\">Library Card Number</th><td>$patron->card</td></tr>";
-    $output .= "<tr><th scope=\"row\">Default Pickup Location</th><td>filler</td></tr>";
     $output .= "<tr><th scope=\"row\">Items Checked Out</th><td>filler</td></tr>";
-    $output .= "<tr><th scope=\"row\">Account Balance</th><td>filler</td></tr>";
+    $output .= "<tr><th scope=\"row\">Account Balance</th><td>$" . number_format($fines->total, 2) . "</td></tr>";
     $output .= "<tr><th scope=\"row\">Card Expiration Date</th><td>" . date('m-d-Y', strtotime($patron->expires)) . "</td></tr>";
     $output .= "<tr><th scope=\"row\">Account Email</th><td>$patron->email</td></tr>";
-    $output .= "<tr><th scope=\"row\">Notifications Sent To</th><td>$patron->email</td></tr>";
     $output .= '</tbody></table>';
 
+    $output .= '<h2>Account Summary for Tester, Beta <a href="">(view)</a></h2>';
+    $output .= '<table id="account-summary" class="l-overflow-clear"><tbody>';
+    $output .= "<tr><th scope=\"row\">Library Card Number</th><td>$patron->card</td></tr>";
+    $output .= "<tr><th scope=\"row\">Items Checked Out</th><td>filler</td></tr>";
+    $output .= "<tr><th scope=\"row\">Account Balance</th><td>$" . number_format($fines->total, 2) . "</td></tr>";
+    $output .= "<tr><th scope=\"row\">Card Expiration Date</th><td>" . date('m-d-Y', strtotime($patron->expires)) . "</td></tr>";
+    $output .= "<tr><th scope=\"row\">Account Email</th><td>$patron->email</td></tr>";
+    $output .= '</tbody></table>';
+
+    $output .= '<a href="" class="button l-overflow-clear" role="button">Add additional account</a>';
     return array(
       '#cache' => array(
         'max-age' => 0, // Don't cache, always get fresh data
