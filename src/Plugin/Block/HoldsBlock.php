@@ -31,14 +31,21 @@ class HoldsBlock extends BlockBase {
 
     $output = '<h2>Requests</h2>';
     if (count($holds)) {
-      $output .= '<table id="holds-table"><thead><tr>';
-      $output .= '<th id="holds-checkbox"></th>';
+      $output .= "<table id=\"holds-table\" class=\"l-overflow-clear\" data-api-key=\"$api_key\"><thead><tr>";
+      $output .= '<th id="holds-checkbox">Select All</th>';
       $output .= '<th>Title</th>';
       $output .= '<th>Author</th>';
       $output .= '<th>Status</th>';
       $output .= '<th>Pickup</th>';
       $output .= '<th>Modify</th>';
       $output .= '</tr></thead><tbody>';
+
+      // used to cancel a hold by updating canceled_time field
+      $cur_time = date('Y-m-d');
+      // build location change options for individual and modify selected
+      foreach ($locations as $n => $loc) {
+        $locOptions .= "<option value=\"pickup_lib=$n\">Pickup: $loc</option>";
+      }
       foreach ($holds as $k => $hold) {
         // change display / value depending on if request is frozen
         if ($hold->hold->frozen == 'f') {
@@ -48,34 +55,38 @@ class HoldsBlock extends BlockBase {
           $opt_val = 'frozen=f';
           $opt_display = 'Unfreeze';
         }
-        // used to cancel a hold by updating canceled_time field
-        $cur_time = date('Y-m-d');
+        
         $options = '<option value="">Modify</option>';
         // show suspend and pickup options if hold isn't already in-transit or ready
         if ($hold->status != 'In-Transit' && $hold->status != 'Ready for Pickup') {
           $options .= "<option value=\"$opt_val\">$opt_display</option>";
-          foreach ($locations as $n => $loc) {
-            $options .= "<option value=\"pickup_lib=$n\">Pickup: $loc</option>";
-          }
+          $options .= $locOptions;
         }
         $options .= "<option value=\"cancel_time=$cur_time\">Cancel Request</option>";
 
         if ($hold->status == 'Suspended') {
           $hold->status = 'Frozen';
         }
-        $output .="<td><input type=\"checkbox\" value=\"$k\"></td>";
+        $output .="<td><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
         $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title</a></td>";
         $output .= "<td>$hold->author</td>";
         $output .= "<td class=\"request-status\">$hold->status</td>";
         $output .= "<td class=\"request-pickup\">$hold->pickup</td>";
         $output .= "<td>
-            <select class=\"request-modify\" data-request-id=\"$k\" data-api-key=\"$api_key\">
+            <select class=\"request-modify\" data-request-id=\"$k\">
               $options
             </select>
           </td>";
         $output .= '</tr>'; 
       }
       $output .= '</tbody></table>';
+      $output .= "<select id=\"request-modify-all\">
+                    <option value=\"\">Modify Selected Holds</option>
+                    <option value=\"frozen=t\">Freeze</option>
+                    <option value=\"frozen=f\">Unfreeze</option>
+                    $locOptions
+                    <option value=\"cancel_time=$cur_time\">Cancel Requests</option>
+                 </select>";
     } else {
       $output .= '<p><em>You have no requested items</em></p>';
     }
