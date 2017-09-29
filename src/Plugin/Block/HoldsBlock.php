@@ -32,7 +32,7 @@ class HoldsBlock extends BlockBase {
     $output = '<h2>Requests</h2>';
     if (count($holds)) {
       $output .= "<table id=\"holds-table\" class=\"l-overflow-clear\" data-api-key=\"$api_key\"><thead><tr>";
-      $output .= '<th id="holds-checkbox">Select All</th>';
+      $output .= '<th id="holds-checkbox">&#10004;</th>';
       $output .= '<th>Title</th>';
       $output .= '<th>Author</th>';
       $output .= '<th>Status</th>';
