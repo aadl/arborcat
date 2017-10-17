@@ -29,7 +29,7 @@ class PatronBlock extends BlockBase {
     $fines = json_decode($guzzle->get("http://$api_url/patron/$api_key/fines")->getBody()->getContents());
 
     $output = '<h2>Account Summary</h2>';
-    $output .= '<table id="account-summary" class="l-overflow-clear"><tbody>';
+    $output .= '<table class="account-summary" class="l-overflow-clear"><tbody>';
     $output .= "<tr><th scope=\"row\">Library Card Number</th><td>$patron->card</td></tr>";
     $output .= "<tr><th scope=\"row\">Items Checked Out</th><td>filler</td></tr>";
     $output .= "<tr><th scope=\"row\">Account Balance</th><td>$" . number_format($fines->total, 2) . "</td></tr>";
@@ -38,7 +38,7 @@ class PatronBlock extends BlockBase {
     $output .= '</tbody></table>';
 
     $output .= '<h2>Account Summary for Tester, Beta <a href="">(view)</a></h2>';
-    $output .= '<table id="account-summary" class="l-overflow-clear"><tbody>';
+    $output .= '<table class="account-summary" class="l-overflow-clear"><tbody>';
     $output .= "<tr><th scope=\"row\">Library Card Number</th><td>$patron->card</td></tr>";
     $output .= "<tr><th scope=\"row\">Items Checked Out</th><td>filler</td></tr>";
     $output .= "<tr><th scope=\"row\">Account Balance</th><td>$" . number_format($fines->total, 2) . "</td></tr>";
