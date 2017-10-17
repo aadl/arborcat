@@ -34,7 +34,7 @@ class HoldsBlock extends BlockBase {
       $output .= "<table id=\"holds-table\" class=\"l-overflow-clear\" data-api-key=\"$api_key\"><thead><tr>";
       $output .= '<th id="holds-checkbox">&#10004;</th>';
       $output .= '<th>Title</th>';
-      $output .= '<th>Author</th>';
+      $output .= '<th class="no-mobile-display">Author</th>';
       $output .= '<th>Status</th>';
       $output .= '<th>Pickup</th>';
       $output .= '<th>Modify</th>';
@@ -43,6 +43,7 @@ class HoldsBlock extends BlockBase {
       // used to cancel a hold by updating canceled_time field
       $cur_time = date('Y-m-d');
       // build location change options for individual and modify selected
+      $locOptions = '';
       foreach ($locations as $n => $loc) {
         $locOptions .= "<option value=\"pickup_lib=$n\">Pickup: $loc</option>";
       }
@@ -69,7 +70,7 @@ class HoldsBlock extends BlockBase {
         }
         $output .="<td><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
         $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title</a></td>";
-        $output .= "<td>$hold->author</td>";
+        $output .= "<td class=\"no-mobile-display\">$hold->author</td>";
         $output .= "<td class=\"request-status\">$hold->status</td>";
         $output .= "<td class=\"request-pickup\">$hold->pickup</td>";
         $output .= "<td>
