@@ -1,0 +1,5 @@
+name: 'Arborcat User Lists'
+description: 'Submodule for user lists'
+core: 8.x
+package: 'AADL Modules'
+type: module

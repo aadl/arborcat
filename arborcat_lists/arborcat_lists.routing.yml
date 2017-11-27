@@ -1,0 +1,27 @@
+arborcat_lists.view:
+  path: /user/lists/view/{uid}
+  defaults:
+    _title: 'View your lists'
+    _controller: '\Drupal\arborcat_lists\Controller\DefaultController::user_lists'
+  requirements:
+    _permission: 'access arborcat'
+arborcat_lists.view_list:
+  path: /user/lists/view-list/{lid}
+  defaults:
+    _title: 'View List'
+    _controller: '\Drupal\arborcat_lists\Controller\DefaultController::view_user_list'
+  requirements:
+    _permission: 'access arborcat'
+arborcat_add_list_item:
+  path: /user/lists/add/{lid}/{bib}
+  defaults:
+    _controller: '\Drupal\arborcat_lists\Controller\DefaultController::add_list_item'
+  requirements:
+    _permission: 'access arborcat'
+arborcat_lists.create_form:
+  path: /user/lists/create
+  defaults:
+    _title: 'Create a list'
+    _form: \Drupal\arborcat_lists\Form\UserListCreateForm
+  requirements:
+    _permission: 'access arborcat'

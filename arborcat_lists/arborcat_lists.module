@@ -1,0 +1,27 @@
+<?php
+
+function arborcat_lists_theme($existing, $type, $theme, $path) {
+  return [
+    'user_lists' => [
+      'variables' => [
+        'lists' => NULL,
+      ]
+    ],
+    'user_list_view' => [
+      'variables' => [
+        'list_items' => NULL,
+      ]
+    ]
+  ];
+}
+
+function arborcat_lists_get_lists($uid) {
+  $connection = \Drupal::database();
+
+  // grab lists from DB
+  $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid", 
+    [':uid' => $uid]);
+  $lists = $query->fetchAll();
+
+  return $lists;
+}
