@@ -35,6 +35,10 @@ class DefaultController extends ControllerBase {
     $mat_name = json_decode($mat_types);
     $bib_record->mat_name = $mat_name->{$bib_record->mat_code};
 
+    $avail = $guzzle->get('http://192.168.100.25:9200/bibs/bib/' . $bnum, ['auth' => ['elastic', 'changeme']])->getBody()->getContents();
+    $avail = json_decode($avail);
+    $bib_record->avail = $avail;
+
     if ($bib_record->tracks) {
       $bib_record->tracks = (array) $bib_record->tracks;
       ksort($bib_record->tracks);
