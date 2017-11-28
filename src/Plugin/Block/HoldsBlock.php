@@ -67,6 +67,10 @@ class HoldsBlock extends BlockBase {
 
         if ($hold->status == 'Suspended') {
           $hold->status = 'Frozen';
+        } elseif ($hold->status == 'Waiting for Capture') {
+          $hold->status = "You're next!";
+        } elseif ($hold->status == 'Waiting for Copy') {
+          $hold->status = 'Waiting for Item';
         }
         $output .="<td><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
         $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title</a></td>";
