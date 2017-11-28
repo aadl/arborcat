@@ -44,7 +44,7 @@ class DefaultController extends ControllerBase {
     }
     
 
-    if ($bib_record->tracks) {
+    if (isset($bib_record->tracks)) {
       $bib_record->tracks = (array) $bib_record->tracks;
       ksort($bib_record->tracks);
     }
@@ -53,35 +53,16 @@ class DefaultController extends ControllerBase {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $user_api_key = $user->field_api_key->value;
 
+    $lists = arborcat_lists_get_lists($user->get('uid')->value);
+
     return [
       '#title' => $bib_record->title,
       '#theme' => 'catalog_record',
       '#record' => $bib_record,
-      '#api_key' => $user_api_key
+      '#api_key' => $user_api_key,
+      '#lists' => $lists
     ];
   }
 
-  public function user_lists() {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-  }
-
-  public function view_user_list() {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-  }
-
-  public function create_list() {
-
-  }
-
-  public function add_list_item() {
-
-  }
-
-  public function delete_list() {
-
-  }
-
-  public function delete_list_item() {
-
-  }
 }
+

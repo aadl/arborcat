@@ -15,23 +15,20 @@ function arborcat_help($path, $arg) {
   return $output;
 }
 
-/**
- * Permissions for arborcat
- */
-
 function arborcat_theme($existing, $type, $theme, $path) {
   return [
     'catalog' => [
       'variables' => [
-        'catalog_slider' => [],
-        'community_slider' => [],
-        'podcast_slider' => []
+        'catalog_slider' => NULL,
+        'community_slider' => NULL,
+        'podcast_slider' => NULL
       ]
     ],
     'catalog_record' => [
       'variables' => [
         'record' => NULL,
-        'api_key' => NULL
+        'api_key' => NULL,
+        'lists' => NULL
       ]
     ],
   ];
