@@ -14,8 +14,15 @@ arborcat.home:
     _permission: 'access arborcat'
 arborcat.bibrecord:
   path: /catalog/record/{bnum}
-  defaults: 
+  defaults:
     _title: 'Catalog Record'
     _controller: '\Drupal\arborcat\Controller\DefaultController::bibrecord_page'
+  requirements:
+    _permission: 'access arborcat'
+arborcat.barcode_form:
+  path: /user/{uid}/edit/barcode
+  defaults:
+    _title: 'Barcode Form'
+    _form: '\Drupal\arborcat\Form\ArborcatBarcodeForm'
   requirements:
     _permission: 'access arborcat'
