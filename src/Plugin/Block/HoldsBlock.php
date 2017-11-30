@@ -32,11 +32,11 @@ class HoldsBlock extends BlockBase {
     $output = '<h2>Requests</h2>';
     if (count($holds)) {
       $output .= "<table id=\"holds-table\" class=\"l-overflow-clear\" data-api-key=\"$api_key\"><thead><tr>";
-      $output .= '<th id="holds-checkbox">&#10004;</th>';
+      $output .= '<th id="holds-checkbox" class="no-mobile-display">&#10004;</th>';
       $output .= '<th>Title</th>';
       $output .= '<th class="no-mobile-display">Author</th>';
       $output .= '<th>Status</th>';
-      $output .= '<th>Pickup</th>';
+      $output .= '<th class="no-mobile-display">Pickup</th>';
       $output .= '<th>Modify</th>';
       $output .= '</tr></thead><tbody>';
 
@@ -72,20 +72,20 @@ class HoldsBlock extends BlockBase {
         } elseif ($hold->status == 'Waiting for Copy') {
           $hold->status = 'Waiting for Item';
         }
-        $output .="<td><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
-        $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title</a></td>";
+        $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
+        $output .= "<td><a href=\"/catalog/record/$hold->bnum\">" . (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title) . "</a></td>";
         $output .= "<td class=\"no-mobile-display\">$hold->author</td>";
         $output .= "<td class=\"request-status\">$hold->status</td>";
-        $output .= "<td class=\"request-pickup\">$hold->pickup</td>";
-        $output .= "<td>
-            <select class=\"request-modify\" data-request-id=\"$k\">
+        $output .= "<td class=\"request-pickup no-mobile-display\">$hold->pickup</td>";
+        $output .= "<td class=\"modify-column\">
+            <div><select class=\"request-modify\" data-request-id=\"$k\">
               $options
-            </select>
+            </select></div>
           </td>";
         $output .= '</tr>'; 
       }
       $output .= '</tbody></table>';
-      $output .= "<select id=\"request-modify-all\">
+      $output .= "<select id=\"request-modify-all\" class=\"no-mobile-display\">
                     <option value=\"\">Modify Selected Holds</option>
                     <option value=\"frozen=t\">Freeze</option>
                     <option value=\"frozen=f\">Unfreeze</option>
@@ -101,7 +101,7 @@ class HoldsBlock extends BlockBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ),
       '#markup' => $output,
-      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a', 'select', 'option']
+      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a', 'select', 'option', 'div']
     );
   }
 
