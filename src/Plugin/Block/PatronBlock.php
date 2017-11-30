@@ -38,15 +38,6 @@ class PatronBlock extends BlockBase {
     $output .= "<tr><th scope=\"row\">Account Email</th><td>$patron->email</td></tr>";
     $output .= '</tbody></table>';
 
-    $output .= '<h2>Account Summary for Tester, Beta <a href="">(view)</a></h2>';
-    $output .= '<table class="account-summary" class="l-overflow-clear"><tbody>';
-    $output .= "<tr><th scope=\"row\">Library Card Number</th><td>$patron->card</td></tr>";
-    $output .= "<tr><th scope=\"row\">Items Checked Out</th><td>filler</td></tr>";
-    $output .= "<tr><th scope=\"row\">Account Balance</th><td>$" . number_format($fines->total, 2) . "</td></tr>";
-    $output .= "<tr><th scope=\"row\">Card Expiration Date</th><td>" . date('m-d-Y', strtotime($patron->expires)) . "</td></tr>";
-    $output .= "<tr><th scope=\"row\">Account Email</th><td>$patron->email</td></tr>";
-    $output .= '</tbody></table>';
-
     $output .= '<a href="" class="button l-overflow-clear" role="button">Add additional account</a>';
     return array(
       '#cache' => array(
