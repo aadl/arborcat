@@ -67,8 +67,29 @@ class DefaultController extends ControllerBase {
 
   }
 
-  public function create_list() {
+  public function delete_list($lid) {
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $connection = \Drupal::database();
 
+    // grab list uid
+    $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid", 
+      [':lid' => $lid]);
+    $result = $query->fetch();
+
+    if ($user->get('uid')->value == $result->uid || $user->hasRole('administrator')) {
+      $connection->delete('arborcat_user_list_items')
+        ->condition('list_id', $result->id)
+        ->execute();
+      $connection->delete('arborcat_user_lists')
+        ->condition('id', $result->id)
+        ->execute();
+
+      $response['status'] = 'List successfully deleted';
+    } else {
+      $response['status'] = "You don't have permission to delete this list";
+    }
+
+    return new JsonResponse($response);
   }
 
   public function add_list_item($lid, $bib) {
@@ -111,10 +132,6 @@ class DefaultController extends ControllerBase {
     return new JsonResponse($response);
   }
 
-  public function delete_list() {
-
-  }
-
   public function delete_list_item($lid, $bib) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
@@ -138,9 +155,11 @@ class DefaultController extends ControllerBase {
         ->execute();
 
       $response['status'] = 'Item removed from list';
-
-      return new JsonResponse($response);
+    } else {
+      $response['status'] = "You don't have permission to delete this list item";
     }
+
+    return new JsonResponse($response);
   }
 
 }
