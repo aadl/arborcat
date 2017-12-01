@@ -30,6 +30,10 @@ class UserListCreateForm extends FormBase {
         'public' => $form_state->getValue('public')
       ])
       ->execute();
+
+    drupal_set_message('List created!');
+
+    $form_state->setRedirect('arborcat_lists.view');
   }
 
   public function buildForm(array $form, FormStateInterface $form_state) {
