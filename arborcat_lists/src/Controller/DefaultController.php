@@ -84,9 +84,9 @@ class DefaultController extends ControllerBase {
         ->condition('id', $result->id)
         ->execute();
 
-      $response['status'] = 'List successfully deleted';
+      $response['success'] = 'List successfully deleted';
     } else {
-      $response['status'] = "You don't have permission to delete this list";
+      $response['error'] = "You don't have permission to delete this list";
     }
 
     return new JsonResponse($response);
@@ -154,9 +154,9 @@ class DefaultController extends ControllerBase {
         ->expression('list_order', 'list_order - 1')
         ->execute();
 
-      $response['status'] = 'Item removed from list';
+      $response['success'] = 'Item removed from list';
     } else {
-      $response['status'] = "You don't have permission to delete this list item";
+      $response['error'] = "You don't have permission to delete this list item";
     }
 
     return new JsonResponse($response);
