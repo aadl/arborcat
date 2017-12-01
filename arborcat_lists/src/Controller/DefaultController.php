@@ -117,7 +117,7 @@ class DefaultController extends ControllerBase {
         ->condition('id', $result->id)
         ->execute();
 
-      $response['success'] = 'List successfully deleted';
+      $response['success'] = 'List deleted';
     } else {
       $response['error'] = "You don't have permission to delete this list";
     }
@@ -157,7 +157,7 @@ class DefaultController extends ControllerBase {
         ])
         ->execute();
 
-      $response['success'] = 'Item successfully added to list';
+      $response['success'] = 'Item added to list';
     } else {
       $response['error'] = 'You are not authorized to add to this list';
     }
