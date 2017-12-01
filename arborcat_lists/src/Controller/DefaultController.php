@@ -40,6 +40,7 @@ class DefaultController extends ControllerBase {
       $list_items = [];
       $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasRole('administrator') ? true : false);
       $list_items['title'] = $list->title;
+      $list_items['id'] = $lid;
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $guzzle = \Drupal::httpClient();
       foreach ($items as $item) {
@@ -49,8 +50,8 @@ class DefaultController extends ControllerBase {
         $mat_types = $guzzle->get("http://$api_url/mat-names")->getBody()->getContents();
         $mat_name = json_decode($mat_types);
         $bib_record->mat_name = $mat_name->{$bib_record->mat_code};
-        $list_items[$item->item_id] = $bib_record;
-        $list_items[$item->item_id]->list_order = $item->list_order; 
+        $list_items['items'][$item->item_id] = $bib_record;
+        $list_items['items'][$item->item_id]->list_order = $item->list_order; 
       }
 
       return [
