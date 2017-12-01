@@ -42,12 +42,12 @@ class UserListCreateForm extends FormBase {
       '#type' => 'textfield',
       '#title' => t('List Title'),
       '#maxlength' => 256,
-      // '#required' => true
+      '#required' => true
     ];
     $form['description'] = [
       '#type' => 'textarea',
       '#title' => t('List Description'),
-      // '#required' => true
+      '#required' => true
     ];
     $form['public'] = [
       '#type' => 'checkbox',

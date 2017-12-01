@@ -19,9 +19,23 @@ class DefaultController extends ControllerBase {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $lists = arborcat_lists_get_lists($user->get('uid')->value);
 
+    // build the pager
+    $page = pager_find_page();
+    $per_page = 20;
+    $offset = $per_page * $page;
+    $pager = pager_default_initialize(count($lists), $per_page);
+
+    $lists = arborcat_lists_get_lists($user->get('uid')->value, $offset, $per_page);
+
     return [
-      '#theme' => 'user_lists',
-      '#lists' => $lists
+      [
+        '#theme' => 'user_lists',
+        '#lists' => $lists
+      ],
+      [
+        '#type' => 'pager',
+        '#quantity' => 3
+      ]
     ];
   }
 
@@ -37,12 +51,24 @@ class DefaultController extends ControllerBase {
       $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC", 
         [':lid' => $lid]);
       $items = $query->fetchAll();
+
+      // build the pager
+      $page = pager_find_page();
+      $per_page = 20;
+      $offset = $per_page * $page;
+      $pager = pager_default_initialize(count($items), $per_page);
+
+      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC LIMIT $offset,$per_page", 
+        [':lid' => $lid]);
+      $items = $query->fetchAll();
+
       $list_items = [];
       $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasRole('administrator') ? true : false);
       $list_items['title'] = $list->title;
       $list_items['id'] = $lid;
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $guzzle = \Drupal::httpClient();
+
       foreach ($items as $item) {
         // grab bib record
         $json = $guzzle->get("http://$api_url/record/$item->bib")->getBody()->getContents();
@@ -55,9 +81,15 @@ class DefaultController extends ControllerBase {
       }
 
       return [
-        '#title' => t($list->title),
-        '#theme' => 'user_list_view',
-        '#list_items' => $list_items
+        [
+          '#title' => t($list->title),
+          '#theme' => 'user_list_view',
+          '#list_items' => $list_items
+        ],
+        [
+          '#type' => 'pager',
+          '#quantity' => 3
+        ]
       ];
     } else {
       return [

@@ -15,13 +15,24 @@ function arborcat_lists_theme($existing, $type, $theme, $path) {
   ];
 }
 
-function arborcat_lists_get_lists($uid) {
+function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL) {
   $connection = \Drupal::database();
 
+  $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset,$per_page" : '');
+
   // grab lists from DB
-  $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid", 
+  $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid $limit", 
     [':uid' => $uid]);
   $lists = $query->fetchAll();
+
+  for ($i = 0; $i < count($lists); $i++) {
+    $query = $connection->query("SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY item_id ASC LIMIT 1",
+      [':lid' => $lists[$i]->id]);
+    $res = $query->fetch();
+    if (isset($res->bib)) {
+      $lists[$i]->bib = $res->bib;
+    }
+  }
 
   return $lists;
 }
