@@ -31,7 +31,9 @@ class CheckoutsBlock extends BlockBase {
     $output = '<h2>Checkouts</h2>';
     if ($checkouts->out || $checkouts->lost) {
       $output .= "<table id=\"checkouts-table\" data-api-key=\"$api_key\"><thead><tr>";
+      $output .= '<th class="no-mobile-display check-all" data-checked="false">&#10004;</th>';
       $output .= '<th>Title</th>';
+      $output .= '<th>Format</th>';
       $output .= '<th class="no-mobile-display">Author</th>';
       $output .= '<th>Due</th>';
       $output .= '<th>Renew</th>';
@@ -40,7 +42,9 @@ class CheckoutsBlock extends BlockBase {
       foreach ($checkouts as $outType) {
         foreach ($outType as $checkout) {
           $output .= '<tr class="checkout-row">';
+          $output .="<td class=\"no-mobile-display\"><input class=\"renew-checkbox\" type=\"checkbox\"></td>";
           $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">$checkout->title</a></td>";
+          $output .= "<td>$checkout->material</td>";
           $output .= "<td class=\"no-mobile-display\">$checkout->author</td>";
           $output .= "<td class=\"checkout-due\">$checkout->due</td>";
           $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
@@ -48,6 +52,7 @@ class CheckoutsBlock extends BlockBase {
         }
       }
       $output .= '</tbody></table>';
+      $output .= '<button class="button l-overflow-clear" id="renew-selected">Renew Selected</button>';
       $output .= '<button class="button l-overflow-clear" id="item-renew-all">Renew All</button>';
     } else {
       $output .= '<p><em>You have no items checked out</em></p>';
