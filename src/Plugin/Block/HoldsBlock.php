@@ -25,9 +25,9 @@ class HoldsBlock extends BlockBase {
 
     // Get holds from API
     $guzzle = \Drupal::httpClient();
-    $json = $guzzle->get("http://$api_url/patron/$api_key/holds")->getBody()->getContents();
+    $json = $guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents();
     $holds = json_decode($json);
-    $locations = json_decode($guzzle->get("http://$api_url/locations")->getBody()->getContents());
+    $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
     $output = '<h2>Requests</h2>';
     if (count($holds)) {

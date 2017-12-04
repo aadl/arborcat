@@ -99,7 +99,7 @@ class ArborcatBarcodeForm extends FormBase {
         $query['phone'] = $form_state->getValue('phone');
       }
 
-      $response = $guzzle->request('GET', "http://$api_url/patron/validate_barcode", ['query' => $query]);
+      $response = $guzzle->request('GET', "$api_url/patron/validate_barcode", ['query' => $query]);
       $response_body = json_decode($response->getBody()->getContents());
 
       if ($response_body->status == 'ERROR') {

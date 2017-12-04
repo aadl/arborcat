@@ -25,8 +25,8 @@ class PatronBlock extends BlockBase {
 
     // Get patron info from API
     $guzzle = \Drupal::httpClient();
-    $patron = json_decode($guzzle->get("http://$api_url/patron/$api_key/get")->getBody()->getContents());
-    $fines = json_decode($guzzle->get("http://$api_url/patron/$api_key/fines")->getBody()->getContents());
+    $patron = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
+    $fines = json_decode($guzzle->get("$api_url/patron/$api_key/fines")->getBody()->getContents());
 
     $output = '<h2>Account Summary</h2>';
     $output .= "<img id=\"bcode-img\" class=\"no-tabdesk-display\" src=\"http://laluba.aadl.org/bcode.php?input=$patron->card\" alt=\"Image of barcode for scanning at selfchecks\">"; 
