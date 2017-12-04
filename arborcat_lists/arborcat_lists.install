@@ -1,0 +1,99 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ *
+ * Defines the database tables used by this module.
+ *
+ * @see hook_schema()
+ *
+ * @ingroup dbtng_example
+ */
+function arborcat_lists_schema() {
+  $schema['arborcat_user_lists'] = [
+    'description' => 'User List information',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique List ID.',
+      ],
+      'uid' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => "Creator user's {users}.uid",
+      ],
+      'pnum' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => "Creator user's Patron ID from ILS (if set)",
+      ],
+      'public' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'size' => 'tiny',
+        'description' => 'Flag to set visibility of List to public',
+      ],
+      'title' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Title of the List',
+      ],
+      'description' => [
+        'type' => 'text',
+        'not null' => TRUE,
+        'description' => 'Description of List',
+      ],
+    ],
+    'primary key' => ['id'],
+    'indexes' => [
+      'uid' => ['uid'],
+    ],
+  ];
+  $schema['arborcat_user_list_items'] = [
+    'description' => 'User List Item information',
+    'fields' => [
+      'item_id' => [
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Unique List ID.',
+      ],
+      'list_id' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => "Creator user's {users}.uid",
+      ],
+      'bib' => [
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Bib Record Identifier for the list item',
+      ],
+      'timestamp' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Timestamp that the item was added to the list',
+      ],
+      'list_order' => [
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Order of the item in the list'
+      ],
+    ],
+    'primary key' => ['item_id'],
+    'indexes' => [
+      'list_id' => ['list_id'],
+    ],
+  ];
+
+  return $schema;
+}
