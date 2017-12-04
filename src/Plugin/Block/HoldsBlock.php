@@ -32,9 +32,8 @@ class HoldsBlock extends BlockBase {
     $output = '<h2>Requests</h2>';
     if (count($holds)) {
       $output .= "<table id=\"holds-table\" class=\"l-overflow-clear\" data-api-key=\"$api_key\"><thead><tr>";
-      $output .= '<th id="holds-checkbox" class="no-mobile-display">&#10004;</th>';
+      $output .= '<th class="no-mobile-display check-all" data-checked="false">&#10004;</th>';
       $output .= '<th>Title</th>';
-      $output .= '<th class="no-mobile-display">Author</th>';
       $output .= '<th>Status</th>';
       $output .= '<th class="no-mobile-display">Pickup</th>';
       $output .= '<th>Modify</th>';
@@ -74,7 +73,6 @@ class HoldsBlock extends BlockBase {
         }
         $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
         $output .= "<td><a href=\"/catalog/record/$hold->bnum\">" . (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title) . "</a></td>";
-        $output .= "<td class=\"no-mobile-display\">$hold->author</td>";
         $output .= "<td class=\"request-status\">$hold->status</td>";
         $output .= "<td class=\"request-pickup no-mobile-display\">$hold->pickup</td>";
         $output .= "<td class=\"modify-column\">
