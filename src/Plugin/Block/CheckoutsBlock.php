@@ -33,7 +33,7 @@ class CheckoutsBlock extends BlockBase {
       $output .= "<table id=\"checkouts-table\" data-api-key=\"$api_key\"><thead><tr>";
       $output .= '<th class="no-mobile-display check-all" data-checked="false">&#10004;</th>';
       $output .= '<th>Title</th>';
-      $output .= '<th>Format</th>';
+      $output .= '<th class="no-mobile-display">Format</th>';
       $output .= '<th>Due</th>';
       $output .= '<th>Renew</th>';
       $output .= '</tr></thead><tbody>';
@@ -43,7 +43,7 @@ class CheckoutsBlock extends BlockBase {
           $output .= '<tr class="checkout-row">';
           $output .="<td class=\"no-mobile-display\"><input class=\"renew-checkbox\" type=\"checkbox\"></td>";
           $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">$checkout->title</a></td>";
-          $output .= "<td>$checkout->material</td>";
+          $output .= "<td class=\"no-mobile-display\">$checkout->material</td>";
           $output .= "<td class=\"checkout-due\">$checkout->due</td>";
           $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
           $output .= '</tr>'; 
