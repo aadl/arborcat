@@ -28,21 +28,12 @@ class DefaultController extends ControllerBase {
 
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
-    $json = $guzzle->get("$api_url/record/$bnum")->getBody()->getContents();
+    $json = $guzzle->get("$api_url/record/$bnum/full")->getBody()->getContents();
     $bib_record = json_decode($json);
 
     $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
     $mat_name = json_decode($mat_types);
     $bib_record->mat_name = $mat_name->{$bib_record->mat_code};
-
-    try {
-      $avail = $guzzle->get('http://192.168.100.25:9200/bibs/bib/' . $bnum, ['auth' => ['elastic', 'changeme']])->getBody()->getContents();
-      $avail = json_decode($avail);
-      $bib_record->avail = $avail;
-    } catch (\Exception $e) {
-      $bib_record->avail = NULL;
-    }
-    
 
     if (isset($bib_record->tracks)) {
       $bib_record->tracks = (array) $bib_record->tracks;
