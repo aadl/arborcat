@@ -27,13 +27,14 @@ class PatronBlock extends BlockBase {
     $guzzle = \Drupal::httpClient();
     $patron = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
     $fines = json_decode($guzzle->get("$api_url/patron/$api_key/fines")->getBody()->getContents());
+    $payment_link = ($fines->total ? ' (<a href="/fees-payment">pay fees</a>)' : '');
 
     $output = '<h2 class="no-margin">Account Summary</h2>';
-    $output .= "<img id=\"bcode-img\" class=\"no-tabdesk-display\" src=\"//$api_url/patron/$api_key/barcode\" alt=\"Image of barcode for scanning at selfchecks\">"; 
+    $output .= "<img id=\"bcode-img\" class=\"no-tabdesk-display\" src=\"$api_url/patron/$api_key/barcode\" alt=\"Image of barcode for scanning at selfchecks\">"; 
     $output .= '<table class="account-summary" class="l-overflow-clear"><tbody>';
     $output .= "<tr><th scope=\"row\">Library Card Number</th><td>$patron->card</td></tr>";
     $output .= "<tr><th scope=\"row\">Items Checked Out</th><td>filler</td></tr>";
-    $output .= "<tr><th scope=\"row\">Account Balance</th><td>$" . number_format($fines->total, 2) . "</td></tr>";
+    $output .= "<tr><th scope=\"row\">Account Balance</th><td>$" . number_format($fines->total, 2) . $payment_link . "</td></tr>";
     $output .= "<tr><th scope=\"row\">Card Expiration Date</th><td>" . date('m-d-Y', strtotime($patron->expires)) . "</td></tr>";
     $output .= "<tr><th scope=\"row\">Account Email</th><td>$patron->email <a href=\"\">(edit)</a></td></tr>";
     $output .= '</tbody></table>';
