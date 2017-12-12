@@ -76,14 +76,14 @@ class HoldsBlock extends BlockBase {
         $output .= "<td class=\"request-status\">$hold->status</td>";
         $output .= "<td class=\"request-pickup no-mobile-display\">$hold->pickup</td>";
         $output .= "<td class=\"modify-column\">
-            <div><select class=\"request-modify\" data-request-id=\"$k\">
+            <div><select class=\"request-modify\" data-request-id=\"$k\" aria-describedby=\"aria-selects\">
               $options
             </select></div>
           </td>";
         $output .= '</tr>'; 
       }
       $output .= '</tbody></table>';
-      $output .= "<select id=\"request-modify-all\" class=\"no-mobile-display\">
+      $output .= "<select id=\"request-modify-all\" class=\"no-mobile-display\" aria-describedby=\"aria-selects\">
                     <option value=\"\">Modify Selected Holds</option>
                     <option value=\"frozen=t\">Freeze</option>
                     <option value=\"frozen=f\">Unfreeze</option>

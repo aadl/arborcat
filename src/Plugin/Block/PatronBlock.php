@@ -29,7 +29,7 @@ class PatronBlock extends BlockBase {
     $fines = json_decode($guzzle->get("$api_url/patron/$api_key/fines")->getBody()->getContents());
 
     $output = '<h2 class="no-margin">Account Summary</h2>';
-    //$output .= "<img id=\"bcode-img\" class=\"no-tabdesk-display\" src=\"?input=$patron->card\" alt=\"Image of barcode for scanning at selfchecks\">"; 
+    $output .= "<img id=\"bcode-img\" class=\"no-tabdesk-display\" src=\"//$api_url/patron/$api_key/barcode\" alt=\"Image of barcode for scanning at selfchecks\">"; 
     $output .= '<table class="account-summary" class="l-overflow-clear"><tbody>';
     $output .= "<tr><th scope=\"row\">Library Card Number</th><td>$patron->card</td></tr>";
     $output .= "<tr><th scope=\"row\">Items Checked Out</th><td>filler</td></tr>";
