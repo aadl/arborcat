@@ -30,7 +30,8 @@ class DefaultController extends ControllerBase {
     return [
       [
         '#theme' => 'user_lists',
-        '#lists' => $lists
+        '#lists' => $lists,
+        '#cache' => ['max-age' => 0]
       ],
       [
         '#type' => 'pager',
@@ -84,7 +85,8 @@ class DefaultController extends ControllerBase {
         [
           '#title' => t($list->title),
           '#theme' => 'user_list_view',
-          '#list_items' => $list_items
+          '#list_items' => $list_items,
+          '#cache' => ['max-age' => 0]
         ],
         [
           '#type' => 'pager',
