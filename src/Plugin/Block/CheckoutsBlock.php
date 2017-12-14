@@ -50,7 +50,7 @@ class CheckoutsBlock extends BlockBase {
         }
       }
       $output .= '</tbody></table>';
-      $output .= '<button class="button l-overflow-clear" id="renew-selected">Renew Selected</button>';
+      $output .= '<button class="button no-mobile-display l-overflow-clear" id="renew-selected">Renew Selected</button>';
       $output .= '<button class="button l-overflow-clear" id="item-renew-all">Renew All</button>';
     } else {
       $output .= '<p><em>You have no items checked out</em></p>';
