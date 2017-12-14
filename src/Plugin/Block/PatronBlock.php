@@ -40,10 +40,13 @@ class PatronBlock extends BlockBase {
     $output .= '</tbody></table>';
 
     $output .= '<a href="" class="button l-overflow-clear" role="button">Add another library card</a>';
+
+    arborcat_patron_fines_expired($fines, $patron);
+
     return array(
-      '#cache' => array(
+      '#cache' => [
         'max-age' => 0, // Don't cache, always get fresh data
-      ),
+      ],
       '#markup' => $output,
     );
   }
