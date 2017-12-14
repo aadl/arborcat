@@ -40,6 +40,10 @@ class DefaultController extends ControllerBase {
       ksort($bib_record->tracks);
     }
 
+    if(isset($bib_record->syndetics)) {
+      $bib_record->syndetics = (array) $bib_record->syndetics;
+    }
+
     // grab user api key for account actions
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $user_api_key = $user->field_api_key->value;
