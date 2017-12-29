@@ -30,7 +30,7 @@ class PatronBlock extends BlockBase {
     $payment_link = ($fines->total ? ' (<a href="/fees-payment">pay fees</a>)' : '');
 
     $output = '<h2 id="account-sum" class="no-margin">Account Summary</h2>';
-    $output .= "<img id=\"bcode-img\" class=\"no-tabdesk-display\" src=\"$api_url/patron/$api_key/barcode\" alt=\"Image of barcode for scanning at selfchecks\">"; 
+    $output .= "<img id=\"bcode-img\" src=\"$api_url/patron/$api_key/barcode\" alt=\"Image of barcode for scanning at selfchecks\">"; 
     $output .= '<table class="account-summary" class="l-overflow-clear"><tbody>';
     $output .= "<tr><th scope=\"row\">Library Card Number</th><td>$patron->card</td></tr>";
     $output .= "<tr><th scope=\"row\">Items Checked Out</th><td>filler</td></tr>";

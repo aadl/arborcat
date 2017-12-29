@@ -68,8 +68,10 @@ class HoldsBlock extends BlockBase {
           $hold->status = 'Frozen';
         } elseif ($hold->status == 'Waiting for Capture') {
           $hold->status = "You're next!";
-        } elseif ($hold->status == 'Waiting for Copy') {
-          $hold->status = 'Waiting for Item';
+        } elseif ($hold->status == 'Ready for Pickup') {
+          $hold->status = $hold->status;
+        } else {
+          $hold->status = $hold->queue->queue_position . ' of ' . $hold->queue->total_holds;
         }
         $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
         $output .= "<td><a href=\"/catalog/record/$hold->bnum\">" . (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title) . "</a></td>";
