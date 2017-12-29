@@ -15,13 +15,21 @@ function arborcat_lists_theme($existing, $type, $theme, $path) {
   ];
 }
 
+function arborcat_lists_user_update($user) {
+  if ($user->get('profile_cohist')->value &&
+      !$user->original->get('profile_cohist')->value) {
+    drupal_set_message('Enabling Checkout History');
+    arborcat_lists_update_user_history($user->get('uid')->value);
+  }
+}
+
 function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL) {
   $connection = \Drupal::database();
 
   $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset,$per_page" : '');
 
   // grab lists from DB
-  $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid $limit", 
+  $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid $limit",
     [':uid' => $uid]);
   $lists = $query->fetchAll();
 
@@ -35,4 +43,108 @@ function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL) {
   }
 
   return $lists;
+}
+
+function arborcat_lists_add_list_item($list_id, $bib, $timestamp = NULL) {
+  // Check if item is already on list
+  $db = \Drupal::database();
+  $existing = $db->query('SELECT * from arborcat_user_list_items WHERE list_id = :lid and bib = :bib',
+                         [':lid' => $list_id, ':bib' => $bib])->fetch();
+  if ($existing) {
+    // if timestamp passed in, update the timestamp on the existing tag
+    if ($timestamp) {
+      $db->update('arborcat_user_list_items')
+        ->fields(['timestamp' => $timestamp])
+        ->condition('item_id', $existing->item_id)
+        ->execute();
+      return TRUE;
+    }
+    else {
+      return FALSE;
+    }
+  }
+  else {
+    // New entry
+    $fields = [
+      'list_id' => $list_id,
+      'bib' => $bib,
+      'timestamp' => ($timestamp ? $timestamp : time()),
+    ];
+
+    $row = $db->query('SELECT MAX(list_order) as max FROM arborcat_user_list_items WHERE list_id = :lid',
+                      [':lid' => $list_id])->fetch();
+    $fields['list_order'] = $row->max + 1;
+
+    $db->insert('arborcat_user_list_items')
+      ->fields($fields)
+      ->execute();
+    return TRUE;
+  }
+}
+
+function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
+  // Get user's checkouts
+  $account = \Drupal\user\Entity\User::load($uid);
+  if ($api_key = $account->get('field_api_key')->value) {
+    // Get Checkouts from API
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $guzzle = \Drupal::httpClient();
+    $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
+
+    $checkouts = json_decode($json);
+
+    $co_bnums = array();
+    foreach ($checkouts->out as $checkout) {
+      $co_bnums[$checkout->bnum] = $checkout->bnum;
+    }
+
+    if (count($co_bnums) && !$seed_only) {
+      $bnums_to_add = [];
+
+      // Find user's checkout history list
+      $db = \Drupal::database();
+      $ch = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' LIMIT 1", [':uid' => $uid])->fetch();
+      if ($ch->id) {
+        $list_id = $ch->id;
+
+        // Grab current items in Checkout History
+        $ch_bnums = [];
+        $list_items = $db->query("SELECT bib FROM {arborcat_user_list_items} WHERE list_id = :lid", [':lid' => $ch->id])->fetchAll();
+        foreach ($list_items as $list_item) {
+          $ch_bnums[$list_item->bib] = $list_item->bib;
+        }
+
+        // Grab cache from last Checkout History check
+        $cc_bnums = \Drupal::service('user.data')->get('arborcat_lists', $uid, 'cc_bnums');
+        foreach ($co_bnums as $co_bnum) {
+          if (!isset($ch_bnums[$co_bnum]) && !isset($cc_bnums[$co_bnum])) {
+            $bnums_to_add[] = $co_bnum;
+          }
+        }
+      }
+      else {
+        // Create a new Checkout History list
+        $list_id = $db->insert('arborcat_user_lists')
+          ->fields(['uid' => $uid, 'title' => 'Checkout History', 'description' => 'My Checkout History'])
+          ->execute();
+        // Add all current checkouts into Checkout History
+        $bnums_to_add = $co_bnums;
+      }
+
+      $timestamp = mktime(0, 0, 0); // Make checkout date midnight
+      // add the bnums in checkouts not present in checkout history
+      foreach ($bnums_to_add as $bnum) {
+        arborcat_lists_add_list_item($list_id, $bnum, $timestamp);
+      }
+
+      if ($total = count($bnums_to_add)) {
+        drupal_set_message("Updated Checkout History with $total new checkouts");
+      }
+    }
+
+    // Save checkouts to checkout cache
+    $userData = \Drupal::service('user.data');
+    $userData->delete('arborcat_lists', $uid, 'cc_bnums');
+    $userData->set('arborcat_lists', $uid, 'cc_bnums', $co_bnums);
+  }
 }

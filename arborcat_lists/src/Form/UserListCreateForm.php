@@ -17,6 +17,43 @@ class UserListCreateForm extends FormBase {
     return 'user_list_create_form';
   }
 
+  public function buildForm(array $form, FormStateInterface $form_state) {
+    $form = [];
+    $form['title'] = [
+      '#type' => 'textfield',
+      '#title' => t('List Title'),
+      '#maxlength' => 256,
+      '#required' => true
+    ];
+    $form['description'] = [
+      '#type' => 'textarea',
+      '#title' => t('List Description'),
+    ];
+    $form['public'] = [
+      '#type' => 'checkbox',
+      '#title' => 'Public',
+      '#description' => t('Allow anyone to see this list?')
+    ];
+    $form['submit'] = [
+      '#prefix' => '<br><br>',
+      '#type' => 'submit',
+      '#value' => t('Submit')
+    ];
+
+    return $form;
+  }
+
+  public function validateForm(array &$form, FormStateInterface $form_state) {
+    $title = $form_state->getValue('title');
+    if ($title == 'Checkout History' || $title == 'Wishlist') {
+      $form_state->setErrorByName('title', $this->t('Cannot use reserved list title for a custom list, please choose another'));
+    }
+    $description = $form_state->getValue('description');
+    if ($description != strip_tags($description)) {
+      $form_state->setErrorByName('description', $this->t('HTML not allowed in List description'));
+    }
+  }
+
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
 
@@ -35,32 +72,4 @@ class UserListCreateForm extends FormBase {
 
     $form_state->setRedirect('arborcat_lists.view');
   }
-
-  public function buildForm(array $form, FormStateInterface $form_state) {
-    $form = [];
-    $form['title'] = [
-      '#type' => 'textfield',
-      '#title' => t('List Title'),
-      '#maxlength' => 256,
-      '#required' => true
-    ];
-    $form['description'] = [
-      '#type' => 'textarea',
-      '#title' => t('List Description'),
-      '#required' => true
-    ];
-    $form['public'] = [
-      '#type' => 'checkbox',
-      '#title' => 'Public',
-      '#description' => t('Allow anyone to see this list?')
-    ];
-    $form['submit'] = [
-      '#prefix' => '<br><br>',
-      '#type' => 'submit',
-      '#value' => t('Submit')
-    ];
-
-    return $form;
-  }
-
 }

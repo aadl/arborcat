@@ -45,11 +45,20 @@ class DefaultController extends ControllerBase {
     $connection = \Drupal::database();
 
     // grab list uid
-    $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid", 
+    $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid",
       [':lid' => $lid]);
     $list = $query->fetch();
     if ($user->get('uid')->value == $list->uid || $list->public || $user->hasRole('administrator')) {
-      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC", 
+
+      // Checkout History manual refresh
+      if ($list->title == 'Checkout History') {
+        $list_user = \Drupal\user\Entity\User::load($list->uid);
+        if ($list_user->get('profile_cohist')->value) {
+          arborcat_lists_update_user_history($list->uid);
+        }
+      }
+
+      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC",
         [':lid' => $lid]);
       $items = $query->fetchAll();
 
@@ -59,7 +68,7 @@ class DefaultController extends ControllerBase {
       $offset = $per_page * $page;
       $pager = pager_default_initialize(count($items), $per_page);
 
-      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC LIMIT $offset,$per_page", 
+      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC LIMIT $offset,$per_page",
         [':lid' => $lid]);
       $items = $query->fetchAll();
 
@@ -78,7 +87,7 @@ class DefaultController extends ControllerBase {
         $mat_name = json_decode($mat_types);
         $bib_record->mat_name = $mat_name->{$bib_record->mat_code};
         $list_items['items'][$item->item_id] = $bib_record;
-        $list_items['items'][$item->item_id]->list_order = $item->list_order; 
+        $list_items['items'][$item->item_id]->list_order = $item->list_order;
       }
 
       return [
@@ -107,7 +116,7 @@ class DefaultController extends ControllerBase {
     $connection = \Drupal::database();
 
     // grab list uid
-    $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid", 
+    $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid",
       [':lid' => $lid]);
     $result = $query->fetch();
 
@@ -132,7 +141,7 @@ class DefaultController extends ControllerBase {
     $connection = \Drupal::database();
 
     // grab list uid
-    $query = $connection->query("SELECT uid FROM arborcat_user_lists WHERE id=:lid", 
+    $query = $connection->query("SELECT uid FROM arborcat_user_lists WHERE id=:lid",
       [':lid' => $lid]);
     $result = $query->fetch();
 
@@ -172,7 +181,7 @@ class DefaultController extends ControllerBase {
     $connection = \Drupal::database();
 
     // grab list uid
-    $query = $connection->query("SELECT uid FROM arborcat_user_lists WHERE id=:lid", 
+    $query = $connection->query("SELECT uid FROM arborcat_user_lists WHERE id=:lid",
       [':lid' => $lid]);
     $result = $query->fetch();
 
