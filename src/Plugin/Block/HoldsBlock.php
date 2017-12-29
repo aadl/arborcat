@@ -66,8 +66,6 @@ class HoldsBlock extends BlockBase {
 
         if ($hold->status == 'Suspended') {
           $hold->status = 'Frozen';
-        } elseif ($hold->status == 'Waiting for Capture') {
-          $hold->status = "You're next!";
         } elseif ($hold->status == 'Ready for Pickup') {
           $hold->status = $hold->status;
         } else {
