@@ -6,7 +6,7 @@ arborcat.admin_form:
   requirements:
     _permission: 'access administration pages'
 arborcat.home:
-  path: /catalog
+  path: /collections
   defaults:
     _title: 'AADL Catalog'
     _controller: '\Drupal\arborcat\Controller\DefaultController::index'
