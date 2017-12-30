@@ -1,0 +1,10 @@
+{
+    "name": "aadl/arborcat",
+    "description": "Drupal module for building blocks for image sliders and providing staff interfaces",
+    "type": "drupal-custom-module",
+    "require": {
+        "php": "^7.0",
+        "drupal/core": "^8.0",
+        "aadl/arborelastic": "dev-master"
+    }
+}
