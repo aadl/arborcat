@@ -36,6 +36,10 @@ class ArborcatBarcodeForm extends FormBase {
       '#maxlength' => 32,
       '#description' => t('Your Library Card Barcode number for user ' . $uid),
     ];
+    $form['patron_data'] = [
+      '#prefix' => '<div id="barcode-form-patron-data"><h3>Validate Barcode with ONE of the following items</h3>',
+      '#suffix' => '</div>',
+    ];
     $form['patron_data']['name'] = [
       '#type' => 'textfield',
       '#title' => t('Last Name'),
