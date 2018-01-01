@@ -140,10 +140,33 @@ class DefaultController extends ControllerBase {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
 
-    // grab list uid
-    $query = $connection->query("SELECT uid FROM arborcat_user_lists WHERE id=:lid",
-      [':lid' => $lid]);
-    $result = $query->fetch();
+    if ($lid == 'wishlist') {
+      $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid AND title = 'Wishlist'",
+        [':uid' => $user->get('uid')->value]);
+      $result = $query->fetch();
+      if (!$result->id) {
+        // Create new wishlist
+        $lid = $connection->insert('arborcat_user_lists')
+          ->fields([
+            'uid' => $user->get('uid')->value,
+            'pnum' => $user->field_patron_id->value,
+            'title' => 'Wishlist',
+            'description' => '',
+            'public' => 0,
+          ])
+          ->execute();
+        $result->uid = $user->get('uid')->value;
+      }
+      else {
+        $lid = $result->id;
+      }
+    }
+    else {
+      // grab list uid
+      $query = $connection->query("SELECT uid FROM arborcat_user_lists WHERE id=:lid",
+        [':lid' => $lid]);
+      $result = $query->fetch();
+    }
 
     if ($user->get('uid')->value == $result->uid || $user->hasRole('administrator')) {
       // check if bib is already in the list
