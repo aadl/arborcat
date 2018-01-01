@@ -42,16 +42,16 @@ function arborcat_generate_api_key() {
 
 // set drupal messages for fees or expired card
 function arborcat_patron_fines_expired($fines, $patron) {
+  $patron_clean = TRUE;
+
   if ($fines->total > 25) {
     drupal_set_message("We're sorry, but your account balance is over $25. You won't be able to renew or request items.", 'error');
-    $balance = true;
+    $patron_clean = FALSE;
   }
   if (strtotime($patron->expires) < time()) {
     drupal_set_message("We're sorry, but your card has expired! You can renew in person at any AADL Location.", 'error');
-    $expired = true;
+    $patron_clean = FALSE;
   }
-  if ($balance || $expired) {
-    return false;
-  }
-  return true;
+
+  return $patron_clean;
 }
