@@ -32,13 +32,13 @@ arborcat_lists.view_other_list:
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::view_user_list'
   requirements:
     _permission: 'access arborcat'
-arborcat_lists_add_item:
+arborcat_lists.add_item:
   path: /user/lists/add/{lid}/{bib}
   defaults:
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::add_list_item'
   requirements:
     _permission: 'access arborcat'
-arborcat_lists_delete_item:
+arborcat_lists.delete_item:
   path: /user/lists/delete/{lid}/{bib}
   defaults:
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::delete_list_item'
