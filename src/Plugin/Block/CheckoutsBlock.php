@@ -28,7 +28,10 @@ class CheckoutsBlock extends BlockBase {
     $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
     $checkouts = json_decode($json);
 
-    $output = '<h2 id="checkouts">Checkouts</h2>';
+    $total = count($checkouts->out) + count($checkouts->lost);
+    $total = ($total ? " ($total)" : '');
+
+    $output = "<h2 id=\"checkouts\">Checkouts$total</h2>";
     if ($checkouts->out || $checkouts->lost) {
       $output .= "<table id=\"checkouts-table\" data-api-key=\"$api_key\"><thead><tr>";
       $output .= '<th class="no-mobile-display check-all" data-checked="false">&#10004;</th>';

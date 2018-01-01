@@ -29,7 +29,9 @@ class HoldsBlock extends BlockBase {
     $holds = json_decode($json);
     $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
-    $output = '<h2 id="requests">Requests</h2>';
+    $total = count($holds);
+    $total = ($total ? " ($total)" : '');
+    $output = "<h2 id=\"requests\">Requests$total</h2>";
     if (count($holds)) {
       $output .= "<table id=\"holds-table\" class=\"l-overflow-clear\" data-api-key=\"$api_key\"><thead><tr>";
       $output .= '<th class="no-mobile-display check-all" data-checked="false">&#10004;</th>';
