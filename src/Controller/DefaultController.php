@@ -17,9 +17,9 @@ class DefaultController extends ControllerBase {
   public function index() {
     return [
       '#theme' => 'catalog',
-      '#catalog_slider' => [],
-      '#community_slider' => [],
-      '#podcast_slider' => []
+      '#catalog_slider' => fesliders_build_cat_slider();,
+      '#community_slider' => fesliders_build_community_slider(119620),
+      '#podcast_slider' => fesliders_build_podcasts_slider();
     ];
   }
 
