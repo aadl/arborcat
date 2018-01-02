@@ -43,11 +43,11 @@ class CheckoutsBlock extends BlockBase {
     $output = "<h2 id=\"checkouts\">Checkouts</h2>";
     if ($checkouts->out || $checkouts->lost) {
       $output .= "<table id=\"checkouts-table\" data-api-key=\"$api_key\"><thead><tr>";
-      $output .= '<th class="no-mobile-display check-all" data-checked="false">&#10004;</th>';
+      $output .= '<th class="no-mobile-display check-all no-sort" data-checked="false" data-sort-method="none">&#10004;</th>';
       $output .= '<th>Title</th>';
       $output .= '<th class="no-mobile-display">Format</th>';
       $output .= '<th>Due</th>';
-      $output .= '<th>Renew</th>';
+      $output .= '<th class="no-sort" data-sort-method="none">Renew</th>';
       $output .= '</tr></thead><tbody>';
       // this loop catches both out and lost items to display
       foreach ($checkouts as $outType) {
