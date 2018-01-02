@@ -25,7 +25,19 @@ class CheckoutsBlock extends BlockBase {
 
     // Get Checkouts from API
     $guzzle = \Drupal::httpClient();
-    $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
+    try {
+      $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
+    }
+    catch (\Exception $e) {
+      drupal_set_message('Error retrieving checkouts', 'error');
+      return [
+        '#cache' => [
+          'max-age' => 0, // Don't cache, always get fresh data
+        ],
+        '#markup' => "<h2 id=\"checkouts\">Checkouts</h2>"
+      ];
+    }
+
     $checkouts = json_decode($json);
 
     $output = "<h2 id=\"checkouts\">Checkouts</h2>";
@@ -46,7 +58,7 @@ class CheckoutsBlock extends BlockBase {
           $output .= "<td class=\"no-mobile-display\">$checkout->material</td>";
           $output .= "<td class=\"checkout-due\">$checkout->due</td>";
           $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
-          $output .= '</tr>'; 
+          $output .= '</tr>';
         }
       }
       $output .= '</tbody></table>';
@@ -55,7 +67,7 @@ class CheckoutsBlock extends BlockBase {
     } else {
       $output .= '<p><em>You have no items checked out</em></p>';
     }
-    
+
     return array(
       '#cache' => array(
         'max-age' => 0, // Don't cache, always get fresh data
