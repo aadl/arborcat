@@ -148,3 +148,17 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
     $userData->set('arborcat_lists', $uid, 'cc_bnums', $co_bnums);
   }
 }
+
+function _arborcat_lists_batch_update_user_history($offset = 0, $limit = 0) {
+  // Select checkout history users
+  $query = \Drupal::entityQuery('user')->condition('profile_cohist', 1)->exists('field_api_key');
+  if ($offset || $limit) {
+    $limit = ($limit ? $limit : 9999999);
+    $query->range($offset, $limit);
+  }
+  $uids = $query->execute();
+
+  foreach ($uids as $uid) {
+    arborcat_lists_update_user_history($uid);
+  }
+}
