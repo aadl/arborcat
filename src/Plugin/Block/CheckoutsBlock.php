@@ -52,11 +52,12 @@ class CheckoutsBlock extends BlockBase {
       // this loop catches both out and lost items to display
       foreach ($checkouts as $outType) {
         foreach ($outType as $checkout) {
+          $timestamp = strtotime($checkout->due);
           $output .= '<tr class="checkout-row">';
           $output .="<td class=\"no-mobile-display\"><input class=\"renew-checkbox\" type=\"checkbox\"></td>";
           $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">$checkout->title</a></td>";
           $output .= "<td class=\"no-mobile-display\">$checkout->material</td>";
-          $output .= "<td class=\"checkout-due\">$checkout->due</td>";
+          $output .= "<td class=\"checkout-due\" data-sort=\"$timestamp\" data-sort-default>$checkout->due</td>";
           $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
           $output .= '</tr>';
         }
