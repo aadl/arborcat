@@ -32,11 +32,11 @@ class HoldsBlock extends BlockBase {
     $output = "<h2 id=\"requests\">Requests</h2>";
     if (count($holds)) {
       $output .= "<table id=\"holds-table\" class=\"l-overflow-clear\" data-api-key=\"$api_key\"><thead><tr>";
-      $output .= '<th class="no-mobile-display check-all" data-checked="false">&#10004;</th>';
+      $output .= '<th class="no-mobile-display check-all no-sort" data-checked="false" data-sort-method="none">&#10004;</th>';
       $output .= '<th>Title</th>';
       $output .= '<th>Status</th>';
       $output .= '<th class="no-mobile-display">Pickup</th>';
-      $output .= '<th>Modify</th>';
+      $output .= '<th class="no-sort" data-sort-method="none">Modify</th>';
       $output .= '</tr></thead><tbody>';
 
       // used to cancel a hold by updating canceled_time field
