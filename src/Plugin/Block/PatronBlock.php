@@ -20,8 +20,8 @@ class PatronBlock extends BlockBase {
    */
   public function build() {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-    $account = \Drupal::routeMatch()->getParameter('user');
-    $api_key = $account->get('field_api_key')->value;
+    $user = \Drupal::routeMatch()->getParameter('user');
+    $api_key = $user->get('field_api_key')->value;
 
     // Get patron info from API
     $guzzle = \Drupal::httpClient();
