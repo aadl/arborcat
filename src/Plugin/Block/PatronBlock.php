@@ -53,6 +53,14 @@ class PatronBlock extends BlockBase {
     $output .= "<tr><th scope=\"row\">Notifications Sent To</th><td>$patron->email</a></td></tr>";
     $output .= '</tbody></table>';
 
+    if ($addl_barcodes = $user->get('field_additional_barcode')) {
+      $output .= '<h2>Additional Barcodes</h2><em>We have stored your additional barcodes. ' .
+                 'Full functionality to see Checkouts, Requests, and Fines coming soon!</em><ul>';
+      foreach ($addl_barcodes as $addl_barcode) {
+        $output .= "<li>$addl_barcode->value</li>";
+      }
+      $output .= '</ul>';
+    }
     // $output .= '<a href="" class="button l-overflow-clear" role="button">Add another library card</a>';
 
     arborcat_patron_fines_expired($fines, $patron);
