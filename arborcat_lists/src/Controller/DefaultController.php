@@ -88,6 +88,7 @@ class DefaultController extends ControllerBase {
         $bib_record->mat_name = $mat_name->{$bib_record->mat_code};
         $list_items['items'][$item->item_id] = $bib_record;
         $list_items['items'][$item->item_id]->list_order = $item->list_order;
+        $list_items['items'][$item->item_id]->timestamp = $item->timestamp;
       }
 
       return [
