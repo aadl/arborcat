@@ -25,7 +25,19 @@ class HoldsBlock extends BlockBase {
 
     // Get holds from API
     $guzzle = \Drupal::httpClient();
-    $json = $guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents();
+    try {
+      $json = $guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents();
+    }
+    catch (\Exception $e) {
+      drupal_set_message('Error retrieving requests', 'error');
+      return [
+        '#cache' => [
+          'max-age' => 0, // Don't cache, always get fresh data
+        ],
+        '#markup' => "<h2 id=\"requests\">Requests</h2>"
+      ];
+    }
+
     $holds = json_decode($json);
     $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
@@ -55,7 +67,7 @@ class HoldsBlock extends BlockBase {
           $opt_val = 'frozen=f';
           $opt_display = 'Unfreeze';
         }
-        
+
         $options = '<option value="">Modify</option>';
         // show suspend and pickup options if hold isn't already in-transit or ready
         if ($hold->status != 'In-Transit' && $hold->status != 'Ready for Pickup') {
@@ -80,7 +92,7 @@ class HoldsBlock extends BlockBase {
               $options
             </select></div>
           </td>";
-        $output .= '</tr>'; 
+        $output .= '</tr>';
       }
       $output .= '</tbody></table>';
       $output .= "<select id=\"request-modify-all\" class=\"no-mobile-display\" aria-describedby=\"aria-selects\">
@@ -93,7 +105,7 @@ class HoldsBlock extends BlockBase {
     } else {
       $output .= '<p><em>You have no requested items</em></p>';
     }
-    
+
     return array(
       '#cache' => array(
         'max-age' => 0, // Don't cache, always get fresh data
