@@ -46,18 +46,20 @@ class CheckoutsBlock extends BlockBase {
       $output .= '<th class="no-mobile-display check-all no-sort" data-checked="false" data-sort-method="none">&#10004;</th>';
       $output .= '<th>Title</th>';
       $output .= '<th class="no-mobile-display">Format</th>';
-      $output .= '<th>Due</th>';
+      $output .= '<th data-sort-default>Due</th>';
       $output .= '<th class="no-sort" data-sort-method="none">Renew</th>';
       $output .= '</tr></thead><tbody>';
       // this loop catches both out and lost items to display
       foreach ($checkouts as $outType) {
         foreach ($outType as $checkout) {
-          $timestamp = strtotime($checkout->due);
+          $swapped = explode('-', $checkout->due);
+          $timestamp = $swapped[1] . '-' . $swapped[0] . '-' . $swapped[2];
+          $timestamp = strtotime($timestamp);
           $output .= '<tr class="checkout-row">';
           $output .="<td class=\"no-mobile-display\"><input class=\"renew-checkbox\" type=\"checkbox\"></td>";
           $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">$checkout->title</a></td>";
           $output .= "<td class=\"no-mobile-display\">$checkout->material</td>";
-          $output .= "<td class=\"checkout-due\" data-sort=\"$timestamp\" data-sort-default>$checkout->due</td>";
+          $output .= "<td class=\"checkout-due\" data-sort=\"$timestamp\">$checkout->due</td>";
           $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
           $output .= '</tr>';
         }
