@@ -5,11 +5,13 @@ function arborcat_lists_theme($existing, $type, $theme, $path) {
     'user_lists' => [
       'variables' => [
         'lists' => NULL,
+        'pager' => NULL
       ]
     ],
     'user_list_view' => [
       'variables' => [
         'list_items' => NULL,
+        'pager' => NULL
       ]
     ]
   ];
