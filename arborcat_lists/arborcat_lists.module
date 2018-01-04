@@ -89,13 +89,24 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
     // Get Checkouts from API
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $guzzle = \Drupal::httpClient();
-    $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
+    try {
+      $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
+    }
+    catch (\Exception $e) {
+      drupal_set_message('Error retrieving checkouts', 'error');
+      return [
+        'error' => 'Error retrieving checkouts',
+        'message' => $e->getMessage()
+      ];
+    }
 
     $checkouts = json_decode($json);
 
     $co_bnums = array();
-    foreach ($checkouts->out as $checkout) {
-      $co_bnums[$checkout->bnum] = $checkout->bnum;
+    if (isset($checkouts->out)) {
+      foreach ($checkouts->out as $checkout) {
+        $co_bnums[$checkout->bnum] = $checkout->bnum;
+      }
     }
 
     if (count($co_bnums) && !$seed_only) {
@@ -158,7 +169,22 @@ function _arborcat_lists_batch_update_user_history($offset = 0, $limit = 0) {
   }
   $uids = $query->execute();
 
+  $message = date('[Y-m-d H:i:s]') . ' Checkout History Start for ' . count($uids) . " Lists\n";
+  echo $message;
+  file_put_contents('update_checkout_history.log', $message, FILE_APPEND | LOCK_EX);
+
   foreach ($uids as $uid) {
-    arborcat_lists_update_user_history($uid);
+    $message = date('[Y-m-d H:i:s]') . " Updating UID:$uid";
+    $result = arborcat_lists_update_user_history($uid);
+    if (isset($result['error'])) {
+      $message .= ' ERROR:' . $result['error'];
+    }
+    else {
+      $message .= ' SUCCESS';
+    }
+    $message .= "\n";
+
+    echo $message;
+    file_put_contents('update_checkout_history.log', $message, FILE_APPEND | LOCK_EX);
   }
 }
