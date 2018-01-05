@@ -31,11 +31,11 @@ class DefaultController extends ControllerBase {
       [
         '#theme' => 'user_lists',
         '#lists' => $lists,
-        '#cache' => ['max-age' => 0]
-      ],
-      [
-        '#type' => 'pager',
-        '#quantity' => 3
+        '#cache' => ['max-age' => 0],
+        '#pager' => [
+          '#type' => 'pager',
+          '#quantity' => 3
+        ]
       ]
     ];
   }
@@ -96,11 +96,11 @@ class DefaultController extends ControllerBase {
           '#title' => t($list->title),
           '#theme' => 'user_list_view',
           '#list_items' => $list_items,
-          '#cache' => ['max-age' => 0]
-        ],
-        [
-          '#type' => 'pager',
-          '#quantity' => 3
+          '#cache' => ['max-age' => 0],
+          '#pager' => [
+            '#type' => 'pager',
+            '#quantity' => 3
+          ]
         ]
       ];
     } else {
