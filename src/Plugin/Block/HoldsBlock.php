@@ -38,10 +38,11 @@ class HoldsBlock extends BlockBase {
       ];
     }
 
-    $holds = json_decode($json);
+    $holds = (array) json_decode($json);
+    $total = (count($holds) ? ' (' . count($holds) . ')' : '');
     $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
-    $output = "<h2 id=\"requests\">Requests</h2>";
+    $output = "<h2 id=\"requests\">Requests$total</h2>";
     if (count($holds)) {
       $output .= "<table id=\"holds-table\" class=\"l-overflow-clear\" data-api-key=\"$api_key\"><thead><tr>";
       $output .= '<th class="no-mobile-display check-all no-sort" data-checked="false" data-sort-method="none">&#10004;</th>';
