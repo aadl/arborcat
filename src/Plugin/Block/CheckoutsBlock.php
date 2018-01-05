@@ -39,9 +39,10 @@ class CheckoutsBlock extends BlockBase {
     }
 
     $checkouts = json_decode($json);
+    $total = (count((array) $checkouts->out) ? ' (' . count((array) $checkouts->out) . ')' : '');
 
-    $output = "<h2 id=\"checkouts\">Checkouts</h2>";
-    if ($checkouts->out || $checkouts->lost) {
+    $output = "<h2 id=\"checkouts\">Checkouts$total</h2>";
+    if ($checkouts->out) {
       $output .= "<table id=\"checkouts-table\" data-api-key=\"$api_key\"><thead><tr>";
       $output .= '<th class="no-mobile-display check-all no-sort" data-checked="false" data-sort-method="none">&#10004;</th>';
       $output .= '<th>Title</th>';
@@ -50,19 +51,17 @@ class CheckoutsBlock extends BlockBase {
       $output .= '<th class="no-sort" data-sort-method="none">Renew</th>';
       $output .= '</tr></thead><tbody>';
       // this loop catches both out and lost items to display
-      foreach ($checkouts as $outType) {
-        foreach ($outType as $checkout) {
-          $swapped = explode('-', $checkout->due);
-          $timestamp = $swapped[1] . '-' . $swapped[0] . '-' . $swapped[2];
-          $timestamp = strtotime($timestamp);
-          $output .= '<tr class="checkout-row">';
-          $output .="<td class=\"no-mobile-display\"><input class=\"renew-checkbox\" type=\"checkbox\"></td>";
-          $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">$checkout->title</a></td>";
-          $output .= "<td class=\"no-mobile-display\">$checkout->material</td>";
-          $output .= "<td class=\"checkout-due\" data-sort=\"$timestamp\">$checkout->due</td>";
-          $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
-          $output .= '</tr>';
-        }
+      foreach ($checkouts->out as $checkout) {
+        $swapped = explode('-', $checkout->due);
+        $timestamp = $swapped[1] . '-' . $swapped[0] . '-' . $swapped[2];
+        $timestamp = strtotime($timestamp);
+        $output .= '<tr class="checkout-row">';
+        $output .="<td class=\"no-mobile-display\"><input class=\"renew-checkbox\" type=\"checkbox\"></td>";
+        $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">$checkout->title</a></td>";
+        $output .= "<td class=\"no-mobile-display\">$checkout->material</td>";
+        $output .= "<td class=\"checkout-due\" data-sort=\"$timestamp\">$checkout->due</td>";
+        $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
+        $output .= '</tr>';
       }
       $output .= '</tbody></table>';
       $output .= '<button class="button no-mobile-display l-overflow-clear" id="renew-selected">Renew Selected</button>';
