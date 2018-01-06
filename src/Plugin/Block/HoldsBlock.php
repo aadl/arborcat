@@ -104,8 +104,7 @@ class HoldsBlock extends BlockBase {
                     <option value=\"cancel_time=$cur_time\">Cancel Requests</option>
                  </select>";
     } else {
-      // $output .= '<p><em>You have no requested items</em></p>';
-      $output .= '<p><em>Your requests are safe and will be loaded soon!</em></p>';
+      $output .= '<p><em>You have no requested items</em></p>';
     }
 
     return array(
