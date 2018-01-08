@@ -26,7 +26,7 @@ class CheckoutsBlock extends BlockBase {
     // Get Checkouts from API
     $guzzle = \Drupal::httpClient();
     try {
-      $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
+      $json = $guzzle->get("$api_url/patron/$api_key/checkouts", ['timeout' => 180])->getBody()->getContents();
     }
     catch (\Exception $e) {
       drupal_set_message('Error retrieving checkouts', 'error');
