@@ -26,7 +26,7 @@ class HoldsBlock extends BlockBase {
     // Get holds from API
     $guzzle = \Drupal::httpClient();
     try {
-      $json = $guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents();
+      $json = $guzzle->get("$api_url/patron/$api_key/holds", ['timeout' => 180])->getBody()->getContents();
     }
     catch (\Exception $e) {
       drupal_set_message('Error retrieving requests', 'error');
