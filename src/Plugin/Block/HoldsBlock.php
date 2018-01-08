@@ -39,7 +39,7 @@ class HoldsBlock extends BlockBase {
     }
 
     $holds = (array) json_decode($json);
-    $total = (count($holds) ? ' (' . count($holds) . ')' : '');
+    $total = (count($holds) ? ' <span id="requests-count">(<span id="requests-count-num">' . count($holds) . '</span>)</span>' : '');
     $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
     $output = "<h2 id=\"requests\">Requests$total</h2>";
@@ -47,7 +47,9 @@ class HoldsBlock extends BlockBase {
       $output .= "<table id=\"holds-table\" class=\"l-overflow-clear\" data-api-key=\"$api_key\"><thead><tr>";
       $output .= '<th class="no-mobile-display check-all no-sort" data-checked="false" data-sort-method="none">&#10004;</th>';
       $output .= '<th>Title</th>';
-      $output .= '<th>Status</th>';
+      $output .= '<th class="no-mobile-display">Author</th>';
+      $output .= '<th class="no-mobile-display no-tab-display">Format</th>';
+      $output .= '<th id="status-column">Status</th>';
       $output .= '<th class="no-mobile-display">Pickup</th>';
       $output .= '<th class="no-sort" data-sort-method="none">Modify</th>';
       $output .= '</tr></thead><tbody>';
@@ -84,8 +86,11 @@ class HoldsBlock extends BlockBase {
         } else {
           $hold->status = $hold->queue->queue_position . ' of ' . $hold->queue->total_holds;
         }
+        $author = $hold->mvr->author;
         $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
-        $output .= "<td><a href=\"/catalog/record/$hold->bnum\">" . (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title) . "</a></td>";
+        $output .= "<td><a href=\"/catalog/record/$hold->bnum\">" . (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title) . " <span class=\"no-desk-display\">($hold->material)</span></a></td>";
+        $output .= "<td class=\"no-mobile-display\"><a href=\"/search/catalog/author:&quot;$author&quot;\">$author</a></td>";
+        $output .= "<td class=\"no-mobile-display no-tab-display\">$hold->material</td>";
         $output .= "<td class=\"request-status\">$hold->status</td>";
         $output .= "<td class=\"request-pickup no-mobile-display\">$hold->pickup</td>";
         $output .= "<td class=\"modify-column\">
@@ -112,7 +117,7 @@ class HoldsBlock extends BlockBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ),
       '#markup' => $output,
-      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a', 'select', 'option', 'div']
+      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a', 'select', 'option', 'div', 'span']
     );
   }
 
