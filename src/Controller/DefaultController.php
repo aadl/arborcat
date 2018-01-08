@@ -56,7 +56,8 @@ class DefaultController extends ControllerBase {
       '#theme' => 'catalog_record',
       '#record' => $bib_record,
       '#api_key' => $user_api_key,
-      '#lists' => $lists
+      '#lists' => $lists,
+      '#cache' => [ 'max-age' => 0 ]
     ];
   }
 
