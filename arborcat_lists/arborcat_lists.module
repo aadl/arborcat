@@ -26,17 +26,23 @@ function arborcat_lists_user_update($user) {
 }
 
 function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL) {
+  $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
   $connection = \Drupal::database();
 
-  $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset,$per_page" : '');
+  $public = '';
+  if (($user->get('uid')->value != $uid) && (!$user->hasPermission('administer users'))) {
+    // Not current user and not admin, limit to public lists
+    $public = " AND public = 1";
+  }
+
+  $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : '');
 
   // grab lists from DB
-  $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid $limit",
-    [':uid' => $uid]);
+  $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid $public $limit", [':uid' => $uid]);
   $lists = $query->fetchAll();
 
   for ($i = 0; $i < count($lists); $i++) {
-    $query = $connection->query("SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY item_id ASC LIMIT 1",
+    $query = $connection->query("SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC LIMIT 1",
       [':lid' => $lists[$i]->id]);
     $res = $query->fetch();
     if (isset($res->bib)) {

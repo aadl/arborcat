@@ -9,6 +9,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Default controller for the arborcat_lists module.
@@ -16,8 +17,15 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 class DefaultController extends ControllerBase {
 
   public function user_lists($uid = NULL) {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    $lists = arborcat_lists_get_lists($user->get('uid')->value);
+    if (!$uid) {
+      $uid = \Drupal::currentUser()->id();
+      if (!$uid) {
+        // Anonymous user, redirect to front page
+        drupal_set_message('Please log in or create an account to access your lists', 'warning');
+        return new RedirectResponse(\Drupal::url('user.page'));
+      }
+    }
+    $lists = arborcat_lists_get_lists($uid);
 
     // build the pager
     $page = pager_find_page();
@@ -25,7 +33,7 @@ class DefaultController extends ControllerBase {
     $offset = $per_page * $page;
     $pager = pager_default_initialize(count($lists), $per_page);
 
-    $lists = arborcat_lists_get_lists($user->get('uid')->value, $offset, $per_page);
+    $lists = arborcat_lists_get_lists($uid, $offset, $per_page);
 
     return [
       [
@@ -48,7 +56,7 @@ class DefaultController extends ControllerBase {
     $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid",
       [':lid' => $lid]);
     $list = $query->fetch();
-    if ($user->get('uid')->value == $list->uid || $list->public || $user->hasRole('administrator')) {
+    if ($user->get('uid')->value == $list->uid || $list->public || $user->hasPermission('administer users')) {
 
       // Checkout History manual refresh
       if ($list->title == 'Checkout History') {
@@ -58,7 +66,7 @@ class DefaultController extends ControllerBase {
         }
       }
 
-      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC",
+      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC",
         [':lid' => $lid]);
       $items = $query->fetchAll();
 
@@ -68,12 +76,12 @@ class DefaultController extends ControllerBase {
       $offset = $per_page * $page;
       $pager = pager_default_initialize(count($items), $per_page);
 
-      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC LIMIT $offset,$per_page",
+      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC LIMIT $offset,$per_page",
         [':lid' => $lid]);
       $items = $query->fetchAll();
 
       $list_items = [];
-      $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasRole('administrator') ? true : false);
+      $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('administer users') ? true : false);
       $list_items['title'] = $list->title;
       $list_items['id'] = $lid;
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
