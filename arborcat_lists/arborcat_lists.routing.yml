@@ -11,22 +11,15 @@ arborcat_lists.delete_list:
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::delete_list'
   requirements:
     _permission: 'access arborcat'
-arborcat_lists.view:
-  path: /user/lists
+arborcat_lists.user_lists:
+  path: /user/{uid}/lists
   defaults:
-    _title: 'View your lists'
+    _title: 'View User Lists'
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::user_lists'
   requirements:
     _permission: 'access arborcat'
 arborcat_lists.view_list:
   path: /user/lists/{lid}
-  defaults:
-    _title: 'View List'
-    _controller: '\Drupal\arborcat_lists\Controller\DefaultController::view_user_list'
-  requirements:
-    _permission: 'access arborcat'
-arborcat_lists.view_other_list:
-  path: /user/{uid}/lists/{lid}
   defaults:
     _title: 'View List'
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::view_user_list'
