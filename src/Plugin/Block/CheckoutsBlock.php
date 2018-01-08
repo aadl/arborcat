@@ -46,7 +46,8 @@ class CheckoutsBlock extends BlockBase {
       $output .= "<table id=\"checkouts-table\" data-api-key=\"$api_key\"><thead><tr>";
       $output .= '<th class="no-mobile-display check-all no-sort" data-checked="false" data-sort-method="none">&#10004;</th>';
       $output .= '<th>Title</th>';
-      $output .= '<th class="no-mobile-display">Format</th>';
+      $output .= '<th class="no-mobile-display">Author</th>';
+      $output .= '<th class="no-mobile-display no-tab-display">Format</th>';
       $output .= '<th data-sort-default>Due</th>';
       $output .= '<th class="no-sort" data-sort-method="none">Renew</th>';
       $output .= '</tr></thead><tbody>';
@@ -57,8 +58,9 @@ class CheckoutsBlock extends BlockBase {
         $timestamp = strtotime($timestamp);
         $output .= '<tr class="checkout-row">';
         $output .="<td class=\"no-mobile-display\"><input class=\"renew-checkbox\" type=\"checkbox\"></td>";
-        $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">$checkout->title</a></td>";
-        $output .= "<td class=\"no-mobile-display\">$checkout->material</td>";
+        $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">" . (strlen($checkout->title) > 35 ? substr($checkout->title, 0, 35) . '...' : $checkout->title) . " <span class=\"no-desk-display\">($checkout->material)</span></a></td>";
+        $output .= "<td class=\"no-mobile-display\"><a href=\"/search/catalog/author:&quot;$checkout->author&quot;\">$checkout->author</a></td>";
+        $output .="<td class=\"no-mobile-display no-tab-display\">$checkout->material</td>";
         $output .= "<td class=\"checkout-due\" data-sort=\"$timestamp\">$checkout->due</td>";
         $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
         $output .= '</tr>';
@@ -75,7 +77,7 @@ class CheckoutsBlock extends BlockBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ),
       '#markup' => $output,
-      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a', 'button']
+      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a', 'button', 'span']
     );
   }
 
