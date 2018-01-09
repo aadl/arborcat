@@ -82,7 +82,8 @@ class HoldsBlock extends BlockBase {
         if ($hold->status == 'Suspended') {
           $hold->status = 'Frozen';
         } elseif ($hold->status == 'Ready for Pickup') {
-          $hold->status = $hold->status;
+          $expire = strtotime($hold->hold->shelf_expire_time);
+          $hold->status .= ' through: ' . date('m/d/Y', $expire);
         } else {
           $hold->status = $hold->queue->queue_position . ' of ' . $hold->queue->total_holds;
         }
