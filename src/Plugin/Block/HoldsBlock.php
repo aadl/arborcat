@@ -101,13 +101,13 @@ class HoldsBlock extends BlockBase {
         $output .= '</tr>';
       }
       $output .= '</tbody></table>';
-      $output .= "<select id=\"request-modify-all\" class=\"no-mobile-display\" aria-describedby=\"aria-selects\">
+      $output .= "<div id=\"modify-all-container\"><select id=\"request-modify-all\" class=\"no-mobile-display\" aria-describedby=\"aria-selects\">
                     <option value=\"\">Modify Selected Holds</option>
                     <option value=\"frozen=t\">Freeze</option>
                     <option value=\"frozen=f\">Unfreeze</option>
                     $locOptions
                     <option value=\"cancel_time=$cur_time\">Cancel Requests</option>
-                 </select>";
+                 </select></div>";
     } else {
       $output .= '<p><em>You have no requested items</em></p>';
     }
