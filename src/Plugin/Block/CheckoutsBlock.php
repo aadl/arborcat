@@ -52,11 +52,12 @@ class CheckoutsBlock extends BlockBase {
       $output .= '<th class="no-sort" data-sort-method="none">Renew</th>';
       $output .= '</tr></thead><tbody>';
       // this loop catches both out and lost items to display
+      $count = 1;
       foreach ($checkouts->out as $checkout) {
         $swapped = explode('-', $checkout->due);
         $timestamp = $swapped[1] . '-' . $swapped[0] . '-' . $swapped[2];
         $timestamp = strtotime($timestamp);
-        $output .= '<tr class="checkout-row">';
+        $output .= ($count > 50 ? '<tr class="checkout-row hide-row">' : '<tr class="checkout-row">');
         $output .="<td class=\"no-mobile-display\"><input class=\"renew-checkbox\" type=\"checkbox\"></td>";
         $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">" . (strlen($checkout->title) > 35 ? substr($checkout->title, 0, 35) . '...' : $checkout->title) . " <span class=\"no-desk-display\">($checkout->material)</span></a></td>";
         $output .= "<td class=\"no-mobile-display\"><a href=\"/search/catalog/author:&quot;$checkout->author&quot;\">$checkout->author</a></td>";
@@ -64,8 +65,10 @@ class CheckoutsBlock extends BlockBase {
         $output .= "<td class=\"checkout-due\" data-sort=\"$timestamp\">$checkout->due</td>";
         $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
         $output .= '</tr>';
+        $count++;
       }
       $output .= '</tbody></table>';
+      if ($count - 1 > 50) $output .= '<a href="" data-target="#checkouts-table" data-state="hidden" class="show-table-rows l-block base-margin-bottom">View All</a>';
       $output .= '<button class="button no-mobile-display l-overflow-clear" id="renew-selected">Renew Selected</button>';
       $output .= '<button class="button l-overflow-clear" id="item-renew-all">Renew All</button>';
     } else {
