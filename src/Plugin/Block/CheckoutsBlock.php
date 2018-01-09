@@ -71,6 +71,8 @@ class CheckoutsBlock extends BlockBase {
     } else {
       $output .= '<p><em>You have no items checked out</em></p>';
     }
+    // protect against varying evg char encoding
+    $output = mb_convert_encoding($output, "UTF-8");
 
     return array(
       '#cache' => array(
