@@ -61,6 +61,7 @@ class HoldsBlock extends BlockBase {
       foreach ($locations as $n => $loc) {
         $locOptions .= "<option value=\"pickup_lib=$n\">Pickup: $loc</option>";
       }
+      $count = 1;
       foreach ($holds as $k => $hold) {
         // change display / value depending on if request is frozen
         if ($hold->hold->frozen == 'f') {
@@ -88,6 +89,7 @@ class HoldsBlock extends BlockBase {
           $hold->status = $hold->queue->queue_position . ' of ' . $hold->queue->total_holds;
         }
         $author = $hold->mvr->author;
+        $output .= ($count > 50 ? '<tr class="hide-row">' : '<tr>');
         $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
         $output .= "<td><a href=\"/catalog/record/$hold->bnum\">" . (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title) . " <span class=\"no-desk-display\">($hold->material)</span></a></td>";
         $output .= "<td class=\"no-mobile-display\"><a href=\"/search/catalog/author:&quot;$author&quot;\">$author</a></td>";
@@ -100,8 +102,10 @@ class HoldsBlock extends BlockBase {
             </select></div>
           </td>";
         $output .= '</tr>';
+        $count++;
       }
       $output .= '</tbody></table>';
+      if ($count - 1 > 50) $output .= '<a href="" data-target="#holds-table" data-state="hidden" class="show-table-rows l-block base-margin-bottom">View All</a>';
       $output .= "<div id=\"modify-all-container\"><select id=\"request-modify-all\" class=\"no-mobile-display\" aria-describedby=\"aria-selects\">
                     <option value=\"\">Modify Selected Holds</option>
                     <option value=\"frozen=t\">Freeze</option>
