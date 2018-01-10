@@ -42,7 +42,8 @@ class PatronBlock extends BlockBase {
     $uid = $user->get('uid')->value;
     $email = $user->get('mail')->value;
     $payment_link = ($fines->total ? ' (<a href="/fees-payment">pay fees</a>)' : '');
-
+    $card_is_current = $this->currentPatron($user, $patron->expires);
+    
     $output = '<h2 id="account-sum" class="no-margin">Account Summary</h2>';
     $output .= "<img id=\"bcode-img\" src=\"$api_url/patron/$api_key/barcode\" alt=\"Image of barcode for scanning at selfchecks\">";
     $output .= '<table class="account-summary" class="l-overflow-clear"><tbody>';
@@ -79,5 +80,18 @@ class PatronBlock extends BlockBase {
   public function access(AccountInterface $account, $return_as_object = FALSE) {
     $route_name = \Drupal::routeMatch()->getRouteName();
     return ($route_name == 'entity.user.canonical' ? AccessResult::allowed() : AccessResult::forbidden());
+  }
+
+  public function currentPatron($user, $expiration)
+  {
+    if (strtotime($expiration) >= time()) {
+      $user->addRole('patron');
+      $user->save();
+      return true;
+    } else {
+      $user->removeRole('patron');
+      $user->save();
+      return false;
+    }
   }
 }
