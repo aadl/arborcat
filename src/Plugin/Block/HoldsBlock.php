@@ -84,11 +84,14 @@ class HoldsBlock extends BlockBase {
           $hold->status = 'Frozen';
         } elseif ($hold->status == 'Ready for Pickup') {
           $expire = strtotime($hold->hold->shelf_expire_time);
-          $hold->status .= ' through: ' . date('m-d-Y', $expire);
-        } else {
+          $hold->status = "<span class=\"success-text\">$hold->status through: " . date('m-d-Y', $expire) . '</span>';
+        } elseif ($hold->status != 'In-Transit') {
           $hold->status = $hold->queue->queue_position . ' of ' . $hold->queue->total_holds;
         }
         $author = $hold->mvr->author;
+        if (strpos($hold->material, 'DVD') !== false || strpos($hold->material, 'Blu-Ray') !== false) {
+          $author = '';
+        }
         $output .= ($count > 50 ? '<tr class="hide-row">' : '<tr>');
         $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
         $output .= "<td><a href=\"/catalog/record/$hold->bnum\">" . (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title) . " <span class=\"no-desk-display\">($hold->material)</span></a></td>";

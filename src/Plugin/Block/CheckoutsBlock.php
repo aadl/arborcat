@@ -51,9 +51,12 @@ class CheckoutsBlock extends BlockBase {
       $output .= '<th data-sort-default>Due</th>';
       $output .= '<th class="no-sort" data-sort-method="none">Renew</th>';
       $output .= '</tr></thead><tbody>';
-      // this loop catches both out and lost items to display
       $count = 1;
       foreach ($checkouts->out as $checkout) {
+        if (strpos($checkout->material, 'DVD') !== false || strpos($checkout->material, 'Blu-Ray') !== false) {
+          $checkout->material = explode(' ', $checkout->material)[0];
+          $checkout->author = '';
+        }
         $swapped = explode('-', $checkout->due);
         $timestamp = $swapped[1] . '-' . $swapped[0] . '-' . $swapped[2];
         $timestamp = strtotime($timestamp);
