@@ -70,6 +70,6 @@ class UserListCreateForm extends FormBase {
 
     drupal_set_message('List created!');
 
-    $form_state->setRedirect('arborcat_lists.view');
+    $form_state->setRedirect('arborcat_lists.user_lists', ['uid' => $user->get('uid')->value]);
   }
 }
