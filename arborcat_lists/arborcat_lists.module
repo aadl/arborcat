@@ -196,3 +196,42 @@ function _arborcat_lists_batch_update_user_history($offset = 0, $limit = 0) {
     file_put_contents('update_checkout_history.log', $message, FILE_APPEND | LOCK_EX);
   }
 }
+
+/*
+  Import checkouts from old Sopac History entries
+  Can be removed once migration is complete
+*/
+function _arborcat_lists_import_sopac_history($uid) {
+  $db = \Drupal::database();
+
+  $query = $db->query('SELECT * FROM {sopac_history} WHERE uid = ' . $uid . ' ORDER BY codate ASC');
+  $checkouts = $query->fetchAll();
+
+  if (count($checkouts)) {
+    echo "Import History for User: $uid";
+
+    // Find Checkout History List
+    $ch = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' LIMIT 1", [':uid' => $uid])->fetch();
+    if ($ch->id) {
+      $list_id = $ch->id;
+      echo " Existing List: $list_id";
+    }
+    else {
+      // Create a new Checkout History list
+      $list_id = $db->insert('arborcat_user_lists')
+        ->fields(['uid' => $uid, 'title' => 'Checkout History', 'description' => 'My Checkout History'])
+        ->execute();
+      echo " New List: $list_id";
+    }
+
+    foreach ($checkouts as $checkout) {
+      // Get new bnum
+      $bnum = $checkout->bnum;
+      $row = $db->query('SELECT * FROM aadlexport.iii_to_evg WHERE iii_bibnumber = ' . $bnum)->fetch();
+      if (isset($row->evg_bibnumber)) {
+        $bnum = $row->evg_bibnumber;
+      }
+      arborcat_lists_add_list_item($list_id, $bnum, strtotime($checkout->codate));
+    }
+  }
+}
