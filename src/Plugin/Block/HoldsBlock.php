@@ -62,6 +62,7 @@ class HoldsBlock extends BlockBase {
         $locOptions .= "<option value=\"pickup_lib=$n\">Pickup: $loc</option>";
       }
       $count = 1;
+      $lockerLoc = false;
       foreach ($holds as $k => $hold) {
         // change display / value depending on if request is frozen
         if ($hold->hold->frozen == 'f') {
@@ -85,6 +86,11 @@ class HoldsBlock extends BlockBase {
         } elseif ($hold->status == 'Ready for Pickup') {
           $expire = strtotime($hold->hold->shelf_expire_time);
           $hold->status = "<span class=\"success-text\">$hold->status through: " . date('m-d-Y', $expire) . '</span>';
+          if (!$lockerLoc && $hold->pickup == 'Malletts Creek Branch') {
+            $lockerLoc = true;
+            $message = \Drupal\Core\Render\Markup::create('Need a locker? For now, just <a href="/contactus/renewal">contact us</a>!');
+            drupal_set_message($message, 'status');
+          }
         } elseif ($hold->status != 'In-Transit') {
           $hold->status = $hold->queue->queue_position . ' of ' . $hold->queue->total_holds;
         }
@@ -94,7 +100,12 @@ class HoldsBlock extends BlockBase {
         }
         $output .= ($count > 50 ? '<tr class="hide-row">' : '<tr>');
         $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
-        $output .= "<td><a href=\"/catalog/record/$hold->bnum\">" . (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title) . " <span class=\"no-desk-display\">($hold->material)</span></a></td>";
+        $title = (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title);
+        if ($hold->material == 'ILL') {
+          $output .= "<td>$title</td>";
+        } else {
+          $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title <span class=\"no-desk-display\">($hold->material)</span></a></td>";
+        }
         $output .= "<td class=\"no-mobile-display\"><a href=\"/search/catalog/author:&quot;$author&quot;\">$author</a></td>";
         $output .= "<td class=\"no-mobile-display no-tab-display\">$hold->material</td>";
         $output .= "<td class=\"request-status\">$hold->status</td>";
