@@ -235,3 +235,19 @@ function _arborcat_lists_import_sopac_history($uid) {
     }
   }
 }
+
+/*
+  Worker function for Sopac History import
+*/
+function _arborcat_lists_sopac_history_worker($start = 0, $length = 0) {
+  // Select all current users with checkout history enabled
+  $query = \Drupal::entityQuery('user')->condition('profile_cohist', 1);
+  if ($start || $length) {
+    $query->range($start, $length);
+  }
+  $uids = $query->execute();
+
+  foreach ($uids as $uid) {
+    _arborcat_lists_import_sopac_history($uid);
+  }
+}
