@@ -124,9 +124,9 @@ class ArborcatBarcodeForm extends FormBase {
     $uid = $form_state->getValue('uid');
 
     $account = \Drupal\user\Entity\User::load($uid);
-    $account->set('field_barcode', $form_state->getValue('barcode'));
-    $account->set('field_patron_id', $form_state->getValue('patron_id'));
-    $account->set('field_api_key', arborcat_generate_api_key());
+    $account->field_barcode[] = $form_state->getValue('barcode');
+    $account->field_patron_id[] = $form_state->getValue('patron_id');
+    $account->field_api_key[] = arborcat_generate_api_key();
     $account->save();
 
     drupal_set_message('Successfully added library card barcode to your website account');
