@@ -99,7 +99,11 @@ class HoldsBlock extends BlockBase {
           $author = '';
         }
         $output .= ($count > 50 ? '<tr class="hide-row">' : '<tr>');
-        $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
+        if ($hold->material == 'Magazine') {
+          $output .= '<td></td>';
+        } else {
+          $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
+        }
         $title = (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title);
         if ($hold->material == 'ILL') {
           $output .= "<td>$title</td>";
@@ -111,7 +115,7 @@ class HoldsBlock extends BlockBase {
         $output .= "<td class=\"request-status\">$hold->status</td>";
         $output .= "<td class=\"request-pickup no-mobile-display\">$hold->pickup</td>";
         if ($hold->material == 'Magazine') {
-          $output .= '<td><a href="/contactus/renewal">Contact us</a> to modify this request</td>';
+          $output .= '<td><a href="/contactus/renewal">Contact us</a> to modify or cancel this request</td>';
         } else {
           $output .= "<td class=\"modify-column\">
             <div><select class=\"request-modify\" data-request-id=\"$k\" aria-describedby=\"aria-selects\">
