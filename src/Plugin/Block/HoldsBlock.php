@@ -100,7 +100,7 @@ class HoldsBlock extends BlockBase {
         }
         $output .= ($count > 50 ? '<tr class="hide-row">' : '<tr>');
         if ($hold->material == 'Magazine') {
-          $output .= '<td></td>';
+          $output .= '<td class="no-mobile-display"></td>';
         } else {
           $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
         }
