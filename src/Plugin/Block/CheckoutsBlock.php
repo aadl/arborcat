@@ -68,7 +68,7 @@ class CheckoutsBlock extends BlockBase {
         if (strpos($checkout->material, 'ILL' !== false)) {
           $output .= "<td>$title</td>";
         } else {
-          $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">$title $checkout->mag_issue <span class=\"no-desk-display\">($checkout->material)</span></a></td>";
+          $output .= "<td><a href=\"/catalog/record/$checkout->bnum\">" . htmlentities($title) . " $checkout->mag_issue <span class=\"no-desk-display\">($checkout->material)</span></a></td>";
         }
         $output .= "<td class=\"no-mobile-display\"><a href=\"/search/catalog/author:&quot;$checkout->author&quot;\">$checkout->author</a></td>";
         $output .="<td class=\"no-mobile-display no-tab-display\">$checkout->material</td>";
