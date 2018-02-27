@@ -60,6 +60,8 @@ class CheckoutsBlock extends BlockBase {
         $swapped = explode('-', $checkout->due);
         $timestamp = $swapped[1] . '-' . $swapped[0] . '-' . $swapped[2];
         $timestamp = strtotime($timestamp);
+        // both these timestamps are for 12am of the given day, so greater than is sufficient in this case
+        $overdue = (strtotime(date('d-m-Y')) > $timestamp ? 'error-text' : '');
         $output .= ($count > 50 ? '<tr class="checkout-row hide-row">' : '<tr class="checkout-row">');
         $output .="<td class=\"no-mobile-display\"><input class=\"renew-checkbox\" type=\"checkbox\"></td>";
         $title = (strlen($checkout->title) > 35 ? substr($checkout->title, 0, 35) . '...' : $checkout->title);
@@ -70,7 +72,7 @@ class CheckoutsBlock extends BlockBase {
         }
         $output .= "<td class=\"no-mobile-display\"><a href=\"/search/catalog/author:&quot;$checkout->author&quot;\">$checkout->author</a></td>";
         $output .="<td class=\"no-mobile-display no-tab-display\">$checkout->material</td>";
-        $output .= "<td class=\"checkout-due\" data-sort=\"$timestamp\">$checkout->due</td>";
+        $output .= "<td class=\"checkout-due $overdue\" data-sort=\"$timestamp\">$checkout->due</td>";
         $output .= "<td class=\"item-renew-status\"><button class=\"button item-renew\" data-copy-id=\"$checkout->copyid\">Renew</button></td>";
         $output .= '</tr>';
         $count++;
