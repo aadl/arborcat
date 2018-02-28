@@ -26,7 +26,7 @@ class HoldsBlock extends BlockBase {
     // Get holds from API
     $guzzle = \Drupal::httpClient();
     try {
-      $json = $guzzle->get("$api_url/patron/$api_key/holds", ['timeout' => 180])->getBody()->getContents();
+      $json = $guzzle->get("$api_url/patron/$api_key/holds", ['timeout' => 240])->getBody()->getContents();
     }
     catch (\Exception $e) {
       drupal_set_message('Error retrieving requests', 'error');
@@ -99,22 +99,30 @@ class HoldsBlock extends BlockBase {
           $author = '';
         }
         $output .= ($count > 50 ? '<tr class="hide-row">' : '<tr>');
-        $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
+        if ($hold->material == 'Magazine') {
+          $output .= '<td class="no-mobile-display"></td>';
+        } else {
+          $output .="<td class=\"no-mobile-display\"><input class=\"modify-checkbox\" type=\"checkbox\" value=\"$k\"></td>";
+        }
         $title = (strlen($hold->title) > 35 ? substr($hold->title, 0, 35) . '...' : $hold->title);
         if ($hold->material == 'ILL') {
           $output .= "<td>$title</td>";
         } else {
-          $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title <span class=\"no-desk-display\">($hold->material)</span></a></td>";
+          $output .= "<td><a href=\"/catalog/record/$hold->bnum\">$hold->title $hold->mag_issue <span class=\"no-desk-display\">($hold->material)</span></a></td>";
         }
         $output .= "<td class=\"no-mobile-display\"><a href=\"/search/catalog/author:&quot;$author&quot;\">$author</a></td>";
         $output .= "<td class=\"no-mobile-display no-tab-display\">$hold->material</td>";
         $output .= "<td class=\"request-status\">$hold->status</td>";
         $output .= "<td class=\"request-pickup no-mobile-display\">$hold->pickup</td>";
-        $output .= "<td class=\"modify-column\">
+        if ($hold->material == 'Magazine') {
+          $output .= '<td><a href="/contactus/renewal">Contact us</a> to modify or cancel this request</td>';
+        } else {
+          $output .= "<td class=\"modify-column\">
             <div><select class=\"request-modify\" data-request-id=\"$k\" aria-describedby=\"aria-selects\">
               $options
             </select></div>
           </td>";
+        }
         $output .= '</tr>';
         $count++;
       }
