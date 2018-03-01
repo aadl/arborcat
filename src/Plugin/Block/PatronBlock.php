@@ -76,7 +76,7 @@ class PatronBlock extends BlockBase {
         }
         $output .= '</tbody></table>';
       } else {
-        $output .= "You haven't added any additional library cards to your account. <a href=\"/user/$uid/edit/barcode\">Add one now!</a>"
+        $output .= "You haven't added any additional library cards to your account. <a href=\"/user/$uid/edit/barcode\">Add one now!</a>";
       }
     }
     // $output .= '<a href="" class="button l-overflow-clear" role="button">Add another library card</a>';
