@@ -45,7 +45,10 @@ class PatronBlock extends BlockBase {
     $payment_link = ($fines->total ? ' (<a href="/fees-payment">pay fees</a>)' : '');
     $card_is_current = $this->currentPatron($user, $patron->expires);
 
-    $output = '<h2 id="account-sum" class="no-margin">Account Summary</h2>';
+    $addl_barcodes = $user->get('field_barcode');
+    $display_name = (count($addl_barcodes) > 1 ? ": $patron->name" : '');
+
+    $output = "<h2 id=\"account-sum\" class=\"no-margin\">Account Summary$display_name</h2>";
     $output .= "<img id=\"bcode-img\" src=\"$api_url/patron/$api_key/barcode\" alt=\"Image of barcode for scanning at selfchecks\">";
     $output .= '<table class="account-summary" class="l-overflow-clear"><tbody>';
     $output .= "<tr><th scope=\"row\">Library Card Number</th><td>$patron->card <a href=\"/user/$uid/edit/barcode\">(edit)</td></tr>";
@@ -55,7 +58,7 @@ class PatronBlock extends BlockBase {
     $output .= "<tr><th scope=\"row\">Notifications Sent To</th><td>$patron->email</a></td></tr>";
     $output .= '</tbody></table>';
 
-    if ($addl_barcodes = $user->get('field_barcode')) {
+    if ($addl_barcodes) {
       $output .= '<h2>Additional Barcodes</h2>';
       if (count($addl_barcodes) > 1) {
         $output .= '<table><thead><tr>';
