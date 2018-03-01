@@ -20,9 +20,9 @@ class PatronBlock extends BlockBase {
    */
   public function build() {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-    $user = \Drupal::routeMatch()->getParameter('user');
-    $delta = $_GET['subaccount'] ?? 0;
-    $api_key = $user->field_api_key[$delta]->value;
+    $api_key = $this->getConfiguration()['api_key'];
+    $user = $this->getConfiguration()['user'];
+    $delta = $this->getConfiguration()['delta'];
 
     // Get patron info from API
     $guzzle = \Drupal::httpClient();
@@ -55,13 +55,29 @@ class PatronBlock extends BlockBase {
     $output .= "<tr><th scope=\"row\">Notifications Sent To</th><td>$patron->email</a></td></tr>";
     $output .= '</tbody></table>';
 
-    if ($addl_barcodes = $user->get('field_additional_barcode')) {
-      $output .= '<h2>Additional Barcodes</h2><em>We have stored your additional barcodes. ' .
-                 'Full functionality to see Checkouts, Requests, and Fines coming soon!</em><ul>';
-      foreach ($addl_barcodes as $addl_barcode) {
-        $output .= "<li>$addl_barcode->value</li>";
+    if ($addl_barcodes = $user->get('field_barcode')) {
+      $output .= '<h2>Additional Barcodes</h2>';
+      if (count($addl_barcodes) > 1) {
+        $output .= '<table><thead><tr>';
+        $output .= '
+          <th>Name</th><th>Barcode</th></tr></thead><tbody>
+        ';
+        foreach ($addl_barcodes as $k => $addl_barcode) {
+          $api_key = $user->field_api_key[$k]->value;
+          $subaccount = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
+        // $output .= "<li>$addl_barcode->value</li>";
+          $output .= "<tr>";
+          if ($k == $delta) {
+            $output .= "<td>$subaccount->name</td>";
+          } else {
+            $output .= "<td><a href=\"/user/$uid?subaccount=$k\">$subaccount->name</a></td>";
+          }
+          $output .= "<td>$addl_barcode->value</td></tr>";
+        }
+        $output .= '</tbody></table>';
+      } else {
+        $output .= "You haven't added any additional library cards to your account. <a href=\"/user/$uid/edit/barcode\">Add one now!</a>"
       }
-      $output .= '</ul>';
     }
     // $output .= '<a href="" class="button l-overflow-clear" role="button">Add another library card</a>';
 

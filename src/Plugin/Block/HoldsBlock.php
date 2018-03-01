@@ -20,9 +20,7 @@ class HoldsBlock extends BlockBase {
    */
   public function build() {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-    $user = \Drupal::routeMatch()->getParameter('user');
-    $delta = $_GET['subaccount'] ?? 0;
-    $api_key = $user->field_api_key[$delta]->value;
+    $api_key = $this->getConfiguration()['api_key'];
 
     // Get holds from API
     $guzzle = \Drupal::httpClient();

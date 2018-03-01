@@ -37,7 +37,7 @@ class ArborcatBarcodeForm extends FormBase {
         '#value' => $account,
       ];
       $form['barcode'] = [
-        '#prefix' => '<h2>Add New Barcode</h2>',
+        '#prefix' => '<div class="barcode-form"><h2>Add New Barcode</h2>',
         '#type' => 'textfield',
         '#title' => t('Library Card Barcode'),
         '#default_value' => '', // User's current Barcode
@@ -77,6 +77,7 @@ class ArborcatBarcodeForm extends FormBase {
         '#button_type' => 'primary',
       );
       $form['actions']['cancel'] = [
+        '#suffix' => '</div>',
         '#type' => 'link',
         '#title' => $this->t('Cancel'),
         '#url' => \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user' => $uid]),
@@ -91,7 +92,8 @@ class ArborcatBarcodeForm extends FormBase {
         $api_keys = $account->get('field_api_key')->getValue();
 
         $form['existing_barcodes'] = [
-          '#prefix' => '<h2>Existing Barcodes</h2>',
+          '#prefix' => '<div class="barcode-form"><h2>Existing Barcodes</h2>',
+          '#suffix' => '</div>',
           'barcodes' => [
             '#type' => 'value',
           ]
@@ -117,14 +119,16 @@ class ArborcatBarcodeForm extends FormBase {
             $form['existing_barcodes']['barcodes']['#value'][] = $field_barcode;
             $form['existing_barcodes']['remove_barcode_' . $delta] = [
               '#prefix' => "<p>$field_barcode, $patron->name</p>",
+              '#suffix' => ($delta == 0 ? '<hr>' : ''),
               '#type' => 'submit',
-              '#value' => "Remove $field_barcode from Account",
+              '#value' => "Remove $field_barcode from account",
               '#submit' => [[$this, 'removeBarcodeSubmit']],
             ];
             if ($delta > 0) {
               $form['existing_barcodes']['make_primary_barcode_' . $delta] = [
+                '#suffix' => '<hr>',
                 '#type' => 'submit',
-                '#value' => "Move $field_barcode to top, set as primary",
+                '#value' => "Set $field_barcode as primary",
                 '#submit' => [[$this, 'primaryBarcodeSubmit']],
               ];
             }
