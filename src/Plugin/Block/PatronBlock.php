@@ -21,7 +21,8 @@ class PatronBlock extends BlockBase {
   public function build() {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $user = \Drupal::routeMatch()->getParameter('user');
-    $api_key = $user->get('field_api_key')->value;
+    $delta = $_GET['subaccount'] ?? 0;
+    $api_key = $user->field_api_key[$delta]->value;
 
     // Get patron info from API
     $guzzle = \Drupal::httpClient();
@@ -43,7 +44,7 @@ class PatronBlock extends BlockBase {
     $email = $user->get('mail')->value;
     $payment_link = ($fines->total ? ' (<a href="/fees-payment">pay fees</a>)' : '');
     $card_is_current = $this->currentPatron($user, $patron->expires);
-    
+
     $output = '<h2 id="account-sum" class="no-margin">Account Summary</h2>';
     $output .= "<img id=\"bcode-img\" src=\"$api_url/patron/$api_key/barcode\" alt=\"Image of barcode for scanning at selfchecks\">";
     $output .= '<table class="account-summary" class="l-overflow-clear"><tbody>';
