@@ -42,7 +42,7 @@ class PatronBlock extends BlockBase {
 
     $uid = $user->get('uid')->value;
     $email = $user->get('mail')->value;
-    $payment_link = ($fines->total ? ' (<a href="/fees-payment">pay fees</a>)' : '');
+    $payment_link = ($fines->total ? " (<a href=\"/fees-payment?subaccount=$delta\">pay fees</a>)" : '');
     $card_is_current = $this->currentPatron($user, $patron->expires);
 
     $addl_barcodes = $user->get('field_barcode');
@@ -59,11 +59,11 @@ class PatronBlock extends BlockBase {
     $output .= '</tbody></table>';
 
     if ($addl_barcodes) {
-      $output .= '<h2>Additional Barcodes</h2>';
+      $output .= '<h2>Additional Library Cards</h2>';
       if (count($addl_barcodes) > 1) {
         $output .= '<table><thead><tr>';
         $output .= '
-          <th>Name</th><th>Barcode</th></tr></thead><tbody>
+          <th>Name</th><th>Library Card Number</th></tr></thead><tbody>
         ';
         foreach ($addl_barcodes as $k => $addl_barcode) {
           $api_key = $user->field_api_key[$k]->value;
@@ -75,7 +75,7 @@ class PatronBlock extends BlockBase {
           } else {
             $output .= "<td><a href=\"/user/$uid?subaccount=$k\">$subaccount->name</a></td>";
           }
-          $output .= "<td>$addl_barcode->value</td></tr>";
+          $output .= "<td>$addl_barcode->value <a href=\"/user/$uid/edit/barcode\">(edit)</td></tr>";
         }
         $output .= '</tbody></table>';
       } else {
