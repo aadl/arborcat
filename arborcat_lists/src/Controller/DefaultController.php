@@ -196,6 +196,7 @@ class DefaultController extends ControllerBase {
         ->fields([
           'list_id' => $lid,
           'bib' => $bib,
+          'timestamp' => time(),
           'list_order' => $count + 1
         ])
         ->execute();
