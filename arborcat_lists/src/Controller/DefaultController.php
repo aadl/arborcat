@@ -65,8 +65,8 @@ class DefaultController extends ControllerBase {
           arborcat_lists_update_user_history($list->uid);
         }
       }
-
-      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC",
+      
+      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC",
         [':lid' => $lid]);
       $items = $query->fetchAll();
 
@@ -76,9 +76,9 @@ class DefaultController extends ControllerBase {
       $offset = $per_page * $page;
       $pager = pager_default_initialize(count($items), $per_page);
 
-      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC LIMIT $offset,$per_page",
-        [':lid' => $lid]);
-      $items = $query->fetchAll();
+      $term = (!empty($_GET['search']) ? $_GET['search'] : '*');
+      $sort = ($_GET['sort'] ?? 'list_order');
+      $items = arborcat_lists_search_list_items($lid, $term, $sort);
 
       $list_items = [];
       $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('administer users') ? true : false);
@@ -88,15 +88,19 @@ class DefaultController extends ControllerBase {
       $guzzle = \Drupal::httpClient();
 
       foreach ($items as $item) {
-        // grab bib record
-        $json = $guzzle->get("$api_url/record/$item->bib")->getBody()->getContents();
-        $bib_record = json_decode($json);
+        $bib_record = $item['_source'];
         $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
         $mat_name = json_decode($mat_types);
-        $bib_record->mat_name = $mat_name->{$bib_record->mat_code};
-        $list_items['items'][$item->item_id] = $bib_record;
-        $list_items['items'][$item->item_id]->list_order = $item->list_order;
-        $list_items['items'][$item->item_id]->timestamp = $item->timestamp;
+        $bib_record['mat_name'] = $mat_name->{$bib_record['mat_code']};
+        $list_items['items'][$item['_id']] = $bib_record;
+      }
+
+      if ($sort == 'list_order') {
+        $sorting = [];
+        foreach ($list_items['items'] as $key => $row) {
+          $sorting[$key] = $row[$sort[0]];
+        }
+        array_multisort($sorting, $sort[1], $list_items['items']);
       }
 
       return [

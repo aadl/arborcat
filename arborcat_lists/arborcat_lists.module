@@ -1,5 +1,7 @@
 <?php
 
+use Elasticsearch\ClientBuilder;
+
 function arborcat_lists_theme($existing, $type, $theme, $path) {
   return [
     'user_lists' => [
@@ -250,4 +252,103 @@ function _arborcat_lists_sopac_history_worker($start = 0, $length = 0) {
   foreach ($uids as $uid) {
     _arborcat_lists_import_sopac_history($uid);
   }
+}
+
+function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_order') {
+  // get all items in list
+  // use bibs to limit elastic search to these only
+  // pass back to the view list template in the default controller
+
+  $db = \Drupal::database();
+  $offset = ($_GET['page'] ?? 0) * 20;
+  if ($sort == 'list_order') {
+    $limit = " LIMIT $offset, 20";
+    $offset = 0;
+  } else {
+    $limit = '';
+  }
+  $query = $db->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC$limit",
+      [':lid' => $lid]);
+  $items = $query->fetchAll();
+
+  $hosts = [
+    [
+      'host' => \Drupal::config('arborelastic.settings')->get('arborelastic_host'),
+      'port' => \Drupal::config('arborelastic.settings')->get('arborelastic_port'),
+      'user' => \Drupal::config('arborelastic.settings')->get('arborelastic_user'),
+      'pass' => \Drupal::config('arborelastic.settings')->get('arborelastic_pass'),
+    ]
+  ];
+
+  $es_client = ClientBuilder::create()->setHosts($hosts)->build();
+
+  $es_query = [
+    'bool' => [
+      // the extra layer of array brackets is so we can add more to the must/should conditions
+      'must' => [
+        [
+          'query_string' => [
+            'query' => $term,
+            'fields' => ['_all'],
+            'default_operator' => 'and'
+          ]
+        ]
+      ],
+      'should' => [
+        [
+          'match' => [
+            'lang' => [
+              'query' => 'eng',
+              'boost' => 300
+            ]
+          ]
+        ]
+      ]
+    ]
+  ];
+
+  foreach ($items as $item) {
+    $es_query['bool']['filter']['terms']['bnum'][] = $item->bib;
+  }
+
+  $params = [
+    'index' => 'bibs',
+    'from' => $offset,
+    'body' => [
+      'size' => 20,
+      'query' => $es_query
+    ]
+  ];
+
+  if ($sort != 'list_order') {
+    $sort_field = $sort . '.keyword';
+    $sort = [
+      $sort_field => [
+        'order' => 'asc'
+      ]
+    ];
+    $params['body']['sort'] = $sort;
+  }
+
+  try {
+    $results = $es_client->search($params);
+  }
+  catch (\Exception $e) {
+    $result = [
+      'error' => 'Elasticsearch Query Failed',
+      'message' => $e->getMessage(),
+    ];
+  }
+
+  foreach ($results['hits']['hits'] as $k => $result) {
+    foreach ($items as $item) {
+      if ($result['_id'] == $item->bib) {
+        $results['hits']['hits'][$k]['_source']['list_order'] = $item->list_order;
+        $results['hits']['hits'][$k]['_source']['timestamp'] = $item->timestamp;
+      }
+    }
+  }
+
+  return $results['hits']['hits'];
+
 }
