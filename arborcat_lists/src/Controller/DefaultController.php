@@ -98,9 +98,9 @@ class DefaultController extends ControllerBase {
       if ($sort == 'list_order') {
         $sorting = [];
         foreach ($list_items['items'] as $key => $row) {
-          $sorting[$key] = $row[$sort[0]];
+          $sorting[$key] = $row[$sort];
         }
-        array_multisort($sorting, $sort[1], $list_items['items']);
+        array_multisort($sorting, SORT_ASC, $list_items['items']);
       }
 
       return [
