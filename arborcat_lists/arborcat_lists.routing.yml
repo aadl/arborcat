@@ -18,6 +18,13 @@ arborcat_lists.user_lists:
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::user_lists'
   requirements:
     _permission: 'access arborcat'
+arborcat_lists.public_lists:
+  path: /user/lists/public
+  defaults:
+    _title: 'View Public Lists'
+    _controller: '\Drupal\arborcat_lists\Controller\DefaultController::view_public_lists'
+  requirements:
+    _permission: 'access arborcat' 
 arborcat_lists.view_list:
   path: /user/lists/{lid}
   defaults:

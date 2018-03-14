@@ -7,6 +7,7 @@ function arborcat_lists_theme($existing, $type, $theme, $path) {
     'user_lists' => [
       'variables' => [
         'lists' => NULL,
+        'pub_view' => NULL,
         'pager' => NULL
       ]
     ],
@@ -254,11 +255,28 @@ function _arborcat_lists_sopac_history_worker($start = 0, $length = 0) {
   }
 }
 
-function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_order') {
-  // get all items in list
-  // use bibs to limit elastic search to these only
-  // pass back to the view list template in the default controller
+function arborcat_lists_search_lists($term) {
+  $offset = ($_GET['page'] ?? 0) * 20;
 
+  $db = \Drupal::database();
+  $query = $db->select('arborcat_user_lists', 'lists')
+    ->fields('lists', ['title', 'description'])
+    ->condition(db_or()->condition('title', "%" . $db->escapeLike($term) . "%", 'LIKE')
+      ->condition('description', "%" . $db->escapeLike($term) . "%", 'LIKE'));
+
+  $lists['total'] = $query->execute()->fetchAll();
+  $lists['lists'] = $query->range($offset, 20)->execute()->fetchAll();
+
+  // $lists = $db->select('arborcat_user_lists', 'lists')
+  //   ->fields('lists', ['title', 'description'])
+  //   ->condition('title', "%" . $db->escapeLike($term) . "%")
+  //   ->execute()
+  //   ->fetchAll();
+
+  return $lists;
+}
+
+function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_order') {
   $db = \Drupal::database();
   $offset = ($_GET['page'] ?? 0) * 20;
   if ($sort == 'list_order') {

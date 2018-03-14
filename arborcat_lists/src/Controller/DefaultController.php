@@ -48,6 +48,42 @@ class DefaultController extends ControllerBase {
     ];
   }
 
+  public function view_public_lists() {
+    
+    $page = pager_find_page();
+    $per_page = 20;
+    $offset = $per_page * $page;
+    $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : '');
+
+    // grab lists from DB
+    if (!empty($_GET['search'])) {
+      $term = $_GET['search'];
+      $lists = arborcat_lists_search_lists($term);
+      $total = count($lists['total']);
+      $lists = $lists['lists'];
+    } else {
+      $db = \Drupal::database();
+      $total = count($db->query("SELECT * FROM arborcat_user_lists WHERE public=1")->fetchAll());
+      $lists = $db->query("SELECT * FROM arborcat_user_lists WHERE public=1 $limit")->fetchAll();
+    }
+
+    // build the pager
+    $pager = pager_default_initialize($total, $per_page);
+
+    return [
+      [
+        '#theme' => 'user_lists',
+        '#lists' => $lists,
+        '#pub_view' => true,
+        '#cache' => ['max-age' => 0],
+        '#pager' => [
+          '#type' => 'pager',
+          '#quantity' => 3
+        ]
+      ]
+    ];
+  }
+
   public function view_user_list($lid = NULL) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
