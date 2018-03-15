@@ -39,6 +39,7 @@ class DefaultController extends ControllerBase {
       [
         '#theme' => 'user_lists',
         '#lists' => $lists,
+        '#total_results' => count($lists),
         '#cache' => ['max-age' => 0],
         '#pager' => [
           '#type' => 'pager',
@@ -74,6 +75,7 @@ class DefaultController extends ControllerBase {
       [
         '#theme' => 'user_lists',
         '#lists' => $lists,
+        '#total_results' => $total,
         '#pub_view' => true,
         '#cache' => ['max-age' => 0],
         '#pager' => [
@@ -104,39 +106,42 @@ class DefaultController extends ControllerBase {
       
       $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC",
         [':lid' => $lid]);
-      $items = $query->fetchAll();
-
-      // build the pager
-      $page = pager_find_page();
-      $per_page = 20;
-      $offset = $per_page * $page;
-      $pager = pager_default_initialize(count($items), $per_page);
+      $total = $query->fetchAll();
 
       $term = (!empty($_GET['search']) ? $_GET['search'] : '*');
       $sort = ($_GET['sort'] ?? 'list_order');
       $items = arborcat_lists_search_list_items($lid, $term, $sort);
 
+      // build the pager
+      $total = (!empty($_GET['search']) ? $items['hits']['total'] : count($total));
+      $page = pager_find_page();
+      $per_page = 20;
+      $offset = $per_page * $page;
+      $pager = pager_default_initialize($total, $per_page);
+
       $list_items = [];
       $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('administer users') ? true : false);
       $list_items['title'] = $list->title;
       $list_items['id'] = $lid;
-      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-      $guzzle = \Drupal::httpClient();
+      if (count($items['hits']['hits'])) {
+        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+        $guzzle = \Drupal::httpClient();
 
-      foreach ($items as $item) {
-        $bib_record = $item['_source'];
-        $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
-        $mat_name = json_decode($mat_types);
-        $bib_record['mat_name'] = $mat_name->{$bib_record['mat_code']};
-        $list_items['items'][$item['_id']] = $bib_record;
-      }
-
-      if ($sort == 'list_order') {
-        $sorting = [];
-        foreach ($list_items['items'] as $key => $row) {
-          $sorting[$key] = $row[$sort];
+        foreach ($items['hits']['hits'] as $item) {
+          $bib_record = $item['_source'];
+          $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
+          $mat_name = json_decode($mat_types);
+          $bib_record['mat_name'] = $mat_name->{$bib_record['mat_code']};
+          $list_items['items'][$item['_id']] = $bib_record;
         }
-        array_multisort($sorting, SORT_ASC, $list_items['items']);
+
+        if ($sort == 'list_order') {
+          $sorting = [];
+          foreach ($list_items['items'] as $key => $row) {
+            $sorting[$key] = $row[$sort];
+          }
+          array_multisort($sorting, SORT_ASC, $list_items['items']);
+        }
       }
 
       return [
@@ -144,6 +149,7 @@ class DefaultController extends ControllerBase {
           '#title' => t($list->title),
           '#theme' => 'user_list_view',
           '#list_items' => $list_items,
+          '#total_results' => $total,
           '#cache' => ['max-age' => 0],
           '#pager' => [
             '#type' => 'pager',

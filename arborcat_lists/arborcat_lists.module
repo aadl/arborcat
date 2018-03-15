@@ -8,12 +8,14 @@ function arborcat_lists_theme($existing, $type, $theme, $path) {
       'variables' => [
         'lists' => NULL,
         'pub_view' => NULL,
+        'total_results' => NULL,
         'pager' => NULL
       ]
     ],
     'user_list_view' => [
       'variables' => [
         'list_items' => NULL,
+        'total_results' => NULL,
         'pager' => NULL
       ]
     ]
@@ -260,18 +262,12 @@ function arborcat_lists_search_lists($term) {
 
   $db = \Drupal::database();
   $query = $db->select('arborcat_user_lists', 'lists')
-    ->fields('lists', ['title', 'description'])
+    ->fields('lists', ['title', 'description', 'public', 'id'])
     ->condition(db_or()->condition('title', "%" . $db->escapeLike($term) . "%", 'LIKE')
       ->condition('description', "%" . $db->escapeLike($term) . "%", 'LIKE'));
 
   $lists['total'] = $query->execute()->fetchAll();
   $lists['lists'] = $query->range($offset, 20)->execute()->fetchAll();
-
-  // $lists = $db->select('arborcat_user_lists', 'lists')
-  //   ->fields('lists', ['title', 'description'])
-  //   ->condition('title', "%" . $db->escapeLike($term) . "%")
-  //   ->execute()
-  //   ->fetchAll();
 
   return $lists;
 }
@@ -279,7 +275,7 @@ function arborcat_lists_search_lists($term) {
 function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_order') {
   $db = \Drupal::database();
   $offset = ($_GET['page'] ?? 0) * 20;
-  if ($sort == 'list_order') {
+  if ($sort == 'list_order' && $term == '*') {
     $limit = " LIMIT $offset, 20";
     $offset = 0;
   } else {
@@ -302,23 +298,12 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
 
   $es_query = [
     'bool' => [
-      // the extra layer of array brackets is so we can add more to the must/should conditions
       'must' => [
         [
           'query_string' => [
             'query' => $term,
             'fields' => ['_all'],
             'default_operator' => 'and'
-          ]
-        ]
-      ],
-      'should' => [
-        [
-          'match' => [
-            'lang' => [
-              'query' => 'eng',
-              'boost' => 300
-            ]
           ]
         ]
       ]
@@ -367,6 +352,6 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
     }
   }
 
-  return $results['hits']['hits'];
+  return $results;
 
 }
