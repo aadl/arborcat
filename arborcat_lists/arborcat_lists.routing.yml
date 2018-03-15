@@ -5,6 +5,13 @@ arborcat_lists.create_form:
     _form: \Drupal\arborcat_lists\Form\UserListCreateForm
   requirements:
     _permission: 'access arborcat'
+arborcat_lists.edit_list:
+  path: /user/lists/edit/{lid}
+  defaults:
+    _title: 'Edit list'
+    _form: \Drupal\arborcat_lists\Form\UserListCreateForm
+  requirements:
+    _permission: 'access arborcat'
 arborcat_lists.delete_list:
   path: /user/lists/delete/{lid}
   defaults:
