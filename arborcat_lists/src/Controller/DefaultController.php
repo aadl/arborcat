@@ -50,7 +50,6 @@ class DefaultController extends ControllerBase {
   }
 
   public function view_public_lists() {
-    
     $page = pager_find_page();
     $per_page = 20;
     $offset = $per_page * $page;

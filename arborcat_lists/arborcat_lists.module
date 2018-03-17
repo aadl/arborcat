@@ -284,7 +284,10 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
   $query = $db->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC$limit",
       [':lid' => $lid]);
   $items = $query->fetchAll();
-
+  if (!count($items)) {
+    return NULL;
+  }
+  
   $hosts = [
     [
       'host' => \Drupal::config('arborelastic.settings')->get('arborelastic_host'),
