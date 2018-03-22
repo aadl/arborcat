@@ -5,6 +5,13 @@ arborcat_lists.create_form:
     _form: \Drupal\arborcat_lists\Form\UserListCreateForm
   requirements:
     _permission: 'access arborcat'
+arborcat_lists.edit_list:
+  path: /user/lists/edit/{lid}
+  defaults:
+    _title: 'Edit list'
+    _form: \Drupal\arborcat_lists\Form\UserListCreateForm
+  requirements:
+    _permission: 'access arborcat'
 arborcat_lists.delete_list:
   path: /user/lists/delete/{lid}
   defaults:
@@ -18,6 +25,13 @@ arborcat_lists.user_lists:
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::user_lists'
   requirements:
     _permission: 'access arborcat'
+arborcat_lists.public_lists:
+  path: /user/lists/public
+  defaults:
+    _title: 'View Public Lists'
+    _controller: '\Drupal\arborcat_lists\Controller\DefaultController::view_public_lists'
+  requirements:
+    _permission: 'access arborcat' 
 arborcat_lists.view_list:
   path: /user/lists/{lid}
   defaults:
