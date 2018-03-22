@@ -17,14 +17,13 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 class DefaultController extends ControllerBase {
 
   public function user_lists($uid = NULL) {
-    if (!$uid) {
-      $uid = \Drupal::currentUser()->id();
-      if (!$uid) {
-        // Anonymous user, redirect to front page
-        drupal_set_message('Please log in or create an account to access your lists', 'warning');
-        return new RedirectResponse(\Drupal::url('user.page'));
-      }
+    $currentUid = \Drupal::currentUser()->id();
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    if ($currentUid != $uid && !$user->hasPermission('administer users')) {
+      drupal_set_message('You are not authorized to access view these lists', 'warning');
+      return new RedirectResponse(\Drupal::url('user.page'));
     }
+
     $lists = arborcat_lists_get_lists($uid);
 
     // build the pager
