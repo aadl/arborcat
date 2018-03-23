@@ -59,7 +59,7 @@ class PatronBlock extends BlockBase {
     $output .= '</tbody></table>';
 
     if ($addl_barcodes) {
-      $output .= "<h2>Additional Library Cards <a href=\"/user/$uid/edit/barcode\">(Add or Edit)</td></h2>";
+      $output .= "<h2>Additional Library Cards (<a href=\"/user/$uid/edit/barcode\">Add or Edit</a>)</td></h2>";
       if (count($addl_barcodes) > 1) {
         $output .= '<table><thead><tr>';
         $output .= '
