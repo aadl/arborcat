@@ -59,7 +59,7 @@ class PatronBlock extends BlockBase {
     $output .= '</tbody></table>';
 
     if ($addl_barcodes) {
-      $output .= '<h2>Additional Library Cards</h2>';
+      $output .= "<h2>Additional Library Cards <a href=\"/user/$uid/edit/barcode\">(Add or Edit)</td></h2>";
       if (count($addl_barcodes) > 1) {
         $output .= '<table><thead><tr>';
         $output .= '
@@ -68,14 +68,13 @@ class PatronBlock extends BlockBase {
         foreach ($addl_barcodes as $k => $addl_barcode) {
           $api_key = $user->field_api_key[$k]->value;
           $subaccount = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
-        // $output .= "<li>$addl_barcode->value</li>";
           $output .= "<tr>";
           if ($k == $delta) {
             $output .= "<td>$subaccount->name</td>";
           } else {
             $output .= "<td><a href=\"/user/$uid?subaccount=$k\">$subaccount->name</a></td>";
           }
-          $output .= "<td>$addl_barcode->value <a href=\"/user/$uid/edit/barcode\">(edit)</td></tr>";
+          $output .= "<td>$addl_barcode->value</tr>";
         }
         $output .= '</tbody></table>';
       } else {
