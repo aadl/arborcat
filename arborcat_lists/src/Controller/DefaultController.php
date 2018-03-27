@@ -49,6 +49,7 @@ class DefaultController extends ControllerBase {
   }
 
   public function view_public_lists() {
+    $db = \Drupal::database();
     $page = pager_find_page();
     $per_page = 20;
     $offset = $per_page * $page;
@@ -61,9 +62,17 @@ class DefaultController extends ControllerBase {
       $total = count($lists['total']);
       $lists = $lists['lists'];
     } else {
-      $db = \Drupal::database();
       $total = count($db->query("SELECT * FROM arborcat_user_lists WHERE public=1")->fetchAll());
-      $lists = $db->query("SELECT * FROM arborcat_user_lists WHERE public=1 $limit")->fetchAll();
+      $lists = $db->query("SELECT * FROM arborcat_user_lists WHERE public=1 ORDER BY id DESC $limit")->fetchAll();
+    }
+
+    for ($i = 0; $i < count($lists); $i++) {
+      $query = $db->query("SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC LIMIT 1",
+        [':lid' => $lists[$i]->id]);
+      $res = $query->fetch();
+      if (isset($res->bib)) {
+        $lists[$i]->bib = $res->bib;
+      }
     }
 
     // build the pager
