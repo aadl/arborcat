@@ -36,6 +36,15 @@ class DefaultController extends ControllerBase {
     $mat_name = json_decode($mat_types);
     $bib_record->mat_name = $mat_name->{$bib_record->mat_code};
 
+    $downloads = ['z,za,zb,zm,zp'];
+    if (in_array($bib_record->mat_code, $downloads)) {
+      if ($bib_record->mat_code == 'zb' || $bib_record->mat_code == 'zp') {
+        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/pdf")->getBody()->getContents();
+      }
+
+      $bib_record->download_url = $download_url;
+    }
+
     if (isset($bib_record->tracks)) {
       $bib_record->tracks = (array) $bib_record->tracks;
       ksort($bib_record->tracks);
