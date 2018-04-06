@@ -39,7 +39,11 @@ class DefaultController extends ControllerBase {
     $downloads = ['z','za','zb','zm','zp'];
     if (in_array($bib_record->mat_code, $downloads)) {
       foreach($bib_record->download_formats as $format) {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/$format")->getBody()->getContents();
+        if ($bib_record->mat_code != 'z' && $bib_record->mat_code =! 'za') {
+          $download_url = $guzzle->get("$api_url/download/$bib_record->_id/$format")->getBody()->getContents();
+        } else {
+          $download_url = $guzzle->get("$api_url/download/$bib_record->id/album/$format")->getBody()->getContents();
+        }
         $bib_record->download_urls[$format] = json_decode($download_url)->download_url;
       }
     }
