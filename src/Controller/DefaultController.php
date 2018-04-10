@@ -38,13 +38,21 @@ class DefaultController extends ControllerBase {
 
     $downloads = ['z','za','zb','zm','zp'];
     if (in_array($bib_record->mat_code, $downloads)) {
-      foreach($bib_record->download_formats as $format) {
-        if ($bib_record->mat_code != 'z' && $bib_record->mat_code =! 'za') {
-          $download_url = $guzzle->get("$api_url/download/$bib_record->_id/$format")->getBody()->getContents();
-        } else {
-          $download_url = $guzzle->get("$api_url/download/$bib_record->id/album/$format")->getBody()->getContents();
-        }
-        $bib_record->download_urls[$format] = json_decode($download_url)->download_url;
+      // below is what will be used when couch records have the download_formats field
+      // foreach($bib_record->download_formats as $format) {
+      //   if ($bib_record->mat_code != 'z' && $bib_record->mat_code =! 'za') {
+      //     $download_url = $guzzle->get("$api_url/download/$bib_record->_id/$format")->getBody()->getContents();
+      //   } else {
+      //     $download_url = $guzzle->get("$api_url/download/$bib_record->_id/album/$format")->getBody()->getContents();
+      //   }
+      //   $bib_record->download_urls[$format] = json_decode($download_url)->download_url;
+      // }
+      if ($bib_record->mat_code == 'zb' || $bib_record->mat_code == 'zp') {
+        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/pdf")->getBody()->getContents();
+        $bib_record->download_urls['pdf'] = json_decode($download_url)->download_url;
+      } elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
+        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/album/mp3")->getBody()->getContents();
+        $bib_record->download_urls['mp3'] = json_decode($download_url)->download_url;
       }
     }
 
