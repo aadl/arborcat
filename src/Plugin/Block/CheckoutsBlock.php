@@ -40,7 +40,8 @@ class CheckoutsBlock extends BlockBase {
     $checkouts = json_decode($json);
     $total = (count((array) $checkouts->out) ? ' (' . count((array) $checkouts->out) . ')' : '');
 
-    $output = "<h2 id=\"checkouts\">Checkouts$total</h2>";
+    $output = "<div><h2 id=\"checkouts\" class=\"l-inline-b\">Checkouts$total</h2>";
+    $output .= "<span class=\"checkouts-feeds\"><a href=\"webcal://api.aadl.org/patron/$api_key/feed/ical\">&nbsp;<i class=\"fa fa-calendar\" aria-hidden=\"true\"></i>&nbsp;iCal</a></span></div>";
     if ($checkouts->out) {
       $output .= "<table id=\"checkouts-table\" data-api-key=\"$api_key\"><thead><tr>";
       $output .= '<th class="no-mobile-display check-all no-sort" data-checked="false" data-sort-method="none">&#10004;</th>';
@@ -91,7 +92,7 @@ class CheckoutsBlock extends BlockBase {
         'max-age' => 0, // Don't cache, always get fresh data
       ),
       '#markup' => $output,
-      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a', 'button', 'span']
+      '#allowed_tags' => ['table', 'thead', 'th', 'tbody', 'tr', 'td', 'input', 'p', 'em', 'h2', 'a', 'button', 'span', 'div', 'i']
     );
   }
 
