@@ -85,9 +85,13 @@ class HoldsBlock extends BlockBase {
         } elseif ($hold->status == 'Ready for Pickup') {
           $expire = strtotime($hold->hold->shelf_expire_time);
           $hold->status = "<span class=\"success-text\">$hold->status through: " . date('m-d-Y', $expire) . '</span>';
-          if (!$lockerLoc && $hold->pickup == 'Malletts Creek Branch') {
+          if (!$lockerLoc) {
             $lockerLoc = true;
-            $message = \Drupal\Core\Render\Markup::create('Need a locker? For now, just <a href="/contactus/renewal">contact us</a>!');
+            if ($hold->pickup == 'Malletts Creek Branch') {
+              $message = \Drupal\Core\Render\Markup::create('Need a locker? For now, just <a href="/contactus/renewal">contact us</a>!');
+            } elseif ($hold->pickup == 'Pittsfield Branch') {
+              $message = \Drupal\Core\Render\Markup::create('Pittsfield lockers are now available! Need a locker? Just <a href="/contactus/renewal">contact us</a>!');
+            }
             drupal_set_message($message, 'status');
           }
         } elseif ($hold->status != 'In-Transit') {
