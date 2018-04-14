@@ -84,7 +84,7 @@ class HoldsBlock extends BlockBase {
           $hold->status = 'Frozen';
         } elseif ($hold->status == 'Ready for Pickup') {
           $expire = strtotime($hold->hold->shelf_expire_time);
-          $hold->status = "<span class=\"success-text\">$hold->status through: " . date('m-d-Y', $expire) . '</span>';
+          $hold->status = "<span class=\"success-text\">$hold->status through: " . date('m-d-Y', $expire) . " <span class=\"no-tabdesk-display\">@ $hold->pickup</span>" . '</span>';
           if (!$lockerLoc) {
             $lockerLoc = true;
             if ($hold->pickup == 'Malletts Creek Branch') {
