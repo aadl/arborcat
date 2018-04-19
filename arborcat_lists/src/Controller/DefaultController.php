@@ -142,12 +142,13 @@ class DefaultController extends ControllerBase {
           $list_items['items'][$item['_id']] = $bib_record;
         }
 
-        if ($sort == 'list_order') {
+        if ($sort == 'list_order' || $sort == 'list_order_desc') {
+          $order = ($sort == 'list_order' ? SORT_ASC : SORT_DESC);
           $sorting = [];
           foreach ($list_items['items'] as $key => $row) {
-            $sorting[$key] = $row[$sort];
+            $sorting[$key] = $row['list_order'];
           }
-          array_multisort($sorting, SORT_ASC, $list_items['items']);
+          array_multisort($sorting, $order, $list_items['items']);
         }
       }
 

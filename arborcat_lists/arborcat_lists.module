@@ -276,13 +276,14 @@ function arborcat_lists_search_lists($term) {
 function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_order') {
   $db = \Drupal::database();
   $offset = ($_GET['page'] ?? 0) * 20;
-  if ($sort == 'list_order' && $term == '*') {
+  if (($sort == 'list_order' || $sort == 'list_order_desc') && $term == '*') {
     $limit = " LIMIT $offset, 20";
     $offset = 0;
   } else {
     $limit = '';
   }
-  $query = $db->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order ASC$limit",
+  $order = ($sort == 'list_order_desc' ? 'DESC' : 'ASC');
+  $query = $db->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order $order$limit",
       [':lid' => $lid]);
   $items = $query->fetchAll();
   if (!count($items)) {
@@ -327,7 +328,7 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
     ]
   ];
 
-  if ($sort != 'list_order') {
+  if ($sort != 'list_order' && $sort != 'list_order_desc') {
     $sort_field = $sort . '.keyword';
     $sort = [
       $sort_field => [
