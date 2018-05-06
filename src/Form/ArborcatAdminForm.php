@@ -55,6 +55,14 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 64,
       '#description' => t('URL of the API server for Arborcat. (e.g. https://api.website.org)'),
     ];
+    $form['api_key'] = [
+      '#type' => 'textfield',
+      '#title' => t('API Auth Key'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('api_key'),
+      '#size' => 32,
+      '#maxlength' => 64,
+      '#description' => t('API Key for authentication'),
+    ];
 
     return parent::buildForm($form, $form_state);
   }
