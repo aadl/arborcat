@@ -6,6 +6,7 @@
 namespace Drupal\arborcat\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Symfony\Component\HttpFoundation\JsonResponse;
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
 
@@ -86,6 +87,18 @@ class DefaultController extends ControllerBase {
       '#lists' => $lists,
       '#cache' => [ 'max-age' => 0 ]
     ];
+  }
+
+  public function request_for_patron($barcode, $bnum, $loc, $type) {
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    if ($user->hasRole('staff')) {
+      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+      $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+      $guzzle = \Drupal::httpClient();
+      $hold = $guzzle->get("$api_url/patron/$barcode|$api_key/place_hold/$bnum/$loc/$type")->getBody()->getContents();
+      return new JsonResponse($hold);
+    }
+    return new JsonResponse('Request could not be processed'); 
   }
 
 }
