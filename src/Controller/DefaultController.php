@@ -91,7 +91,7 @@ class DefaultController extends ControllerBase {
 
   public function request_for_patron($barcode, $bnum, $loc, $type) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    if ($user->hasRole('staff')) {
+    if ($user->hasRole('staff') || $user->hasRole('administrator')) {
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
       $guzzle = \Drupal::httpClient();
