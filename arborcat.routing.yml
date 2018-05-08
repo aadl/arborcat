@@ -26,7 +26,7 @@ arborcat.barcode_form:
     _form: '\Drupal\arborcat\Form\ArborcatBarcodeForm'
   requirements:
     _permission: 'access arborcat'
-  arborcat.request_for_patron:
+arborcat.request_for_patron:
   path: /staff/request/{barcode}/{bnum}/{loc}/{type}
   defaults:
     _title: 'Request for Patron'
