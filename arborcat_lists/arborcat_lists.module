@@ -273,7 +273,7 @@ function arborcat_lists_search_lists($term) {
   return $lists;
 }
 
-function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_order') {
+function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_order_desc') {
   $db = \Drupal::database();
   $offset = ($_GET['page'] ?? 0) * 20;
   if (($sort == 'list_order' || $sort == 'list_order_desc') && $term == '*') {
