@@ -79,12 +79,27 @@ class DefaultController extends ControllerBase {
 
     $lists = arborcat_lists_get_lists($user->get('uid')->value);
 
+    // get community reviews
+    $connection = \Drupal::database();
+    $query = $connection->query("SELECT * FROM arborcat_reviews WHERE bib=:bib",
+        [':bib' => $bib_record->id]);
+    $reviews = $query->fetchAll();
+    foreach ($reviews as $k => $review) {
+      $user = \Drupal\user\Entity\User::load($review->uid);
+      $reviews[$k]->username = $user->get('name')->value;
+    }
+
+    // set up review form for users
+    $review_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserRecordReviewForm', $bib_record->id);
+
     return [
       '#title' => $bib_record->title,
       '#theme' => 'catalog_record',
       '#record' => $bib_record,
       '#api_key' => $user_api_key,
       '#lists' => $lists,
+      '#reviews' => $reviews,
+      '#review_form' => $review_form,
       '#cache' => [ 'max-age' => 0 ]
     ];
   }
