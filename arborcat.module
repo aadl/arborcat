@@ -28,7 +28,9 @@ function arborcat_theme($existing, $type, $theme, $path) {
       'variables' => [
         'record' => NULL,
         'api_key' => NULL,
-        'lists' => NULL
+        'lists' => NULL,
+        'reviews' => NULL,
+        'review_form' => NULL
       ]
     ],
   ];
