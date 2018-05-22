@@ -87,7 +87,9 @@ class UserRecordReviewForm extends FormBase {
           'title' => $form_state->getValue('title'),
           'review' => $form_state->getValue('review'),
           'created' => time(),
-          'edited' => time()
+          'edited' => time(),
+          'staff_reviewed' => 0,
+          'helpful_rating' => 0
         ])
         ->execute();
 
