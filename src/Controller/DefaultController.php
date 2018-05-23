@@ -86,7 +86,7 @@ class DefaultController extends ControllerBase {
     $reviews = $query->fetchAll();
     foreach ($reviews as $k => $review) {
       $user = \Drupal\user\Entity\User::load($review->uid);
-      $reviews[$k]->username = $user->get('name')->value;
+      $reviews[$k]->username = (isset($user) ? $user->get('name')->value : 'unknown');
     }
 
     // set up review form for users
