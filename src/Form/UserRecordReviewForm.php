@@ -89,7 +89,7 @@ class UserRecordReviewForm extends FormBase {
           'created' => time(),
           'edited' => time(),
           'staff_reviewed' => 0,
-          'helpful_rating' => 0
+          'helpful_ratings' => 0
         ])
         ->execute();
 
