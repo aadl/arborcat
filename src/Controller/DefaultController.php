@@ -90,7 +90,7 @@ class DefaultController extends ControllerBase {
     }
 
     // set up review form for users
-    $review_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserRecordReviewForm', $bib_record->id);
+    $review_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserRecordReviewForm', $bib_record->id, $bib_record->title);
 
     // if summer game codes, convert to array so template can loop over
     if (isset($bib_record->gamecodes)) {
