@@ -155,10 +155,24 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
         $bnums_to_add = $co_bnums;
       }
 
+      // Summer Game
+      if (\Drupal::moduleHandler()->moduleExists('summergame')) {
+        if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+          $player = summergame_player_load(['uid' => $uid]);
+        }
+      }
+
       $timestamp = mktime(0, 0, 0); // Make checkout date midnight
       // add the bnums in checkouts not present in checkout history
       foreach ($bnums_to_add as $bnum) {
         arborcat_lists_add_list_item($list_id, $bnum, $timestamp);
+        if ($player) {
+          $metadata = array('bnum' => $bnum);
+          $points = summergame_player_points($player['pid'], 50, 'Checkout History',
+                                             'Item added from Checkout History', $metadata);
+          $player_name = $player['nickname'] ? $player['nickname'] : $player['name'];
+          drupal_set_message("Player $player_name earned $points Summer Game points for a new checkout.");
+        }
       }
 
       if ($total = count($bnums_to_add)) {
@@ -289,7 +303,7 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
   if (!count($items)) {
     return NULL;
   }
-  
+
   $hosts = [
     [
       'host' => \Drupal::config('arborelastic.settings')->get('arborelastic_host'),
