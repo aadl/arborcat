@@ -106,7 +106,7 @@ class UserRecordReviewForm extends FormBase {
           $type = 'Wrote Review';
           $description = $form_state->getValue('bib_title');
           $metadata = 'bnum:' . $form_state->getValue('bib');
-          $result = summergame_player_points($player['pid'], 200, $type, $description, $metadata, $term);
+          $result = summergame_player_points($player['pid'], 100, $type, $description, $metadata, $term);
           drupal_set_message("You earned $result points for writing a review!");
         }
       }
