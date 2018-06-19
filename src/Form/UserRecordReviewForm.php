@@ -65,13 +65,13 @@ class UserRecordReviewForm extends FormBase {
   }
 
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    
+
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
-    
+
     if ($form_state->getValue('id')) {
       $connection->update('arborcat_reviews')
         ->condition('id', $form_state->getValue('id'), '=')
@@ -101,13 +101,13 @@ class UserRecordReviewForm extends FormBase {
 
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
         if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
-          $player = summergame_player_load(['uid' => $user->id()]);
-          $term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
-          $type = 'Wrote Review';
-          $description = $form_state->getValue('bib_title');
-          $metadata = 'bnum:' . $form_state->getValue('bib');
-          $result = summergame_player_points($player['pid'], 100, $type, $description, $metadata, $term);
-          drupal_set_message("You earned $result points for writing a review!");
+          if ($player = summergame_get_active_player()) {
+            $type = 'Wrote Review';
+            $description = $form_state->getValue('bib_title');
+            $metadata = 'bnum:' . $form_state->getValue('bib');
+            $result = summergame_player_points($player['pid'], 100, $type, $description, $metadata);
+            drupal_set_message("You earned $result points for writing a review!");
+          }
         }
       }
     }
