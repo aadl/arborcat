@@ -158,7 +158,13 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       // Summer Game
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
         if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
-          $player = summergame_player_load(['uid' => $uid]);
+          $userData = \Drupal::service('user.data');
+          if ($sg_active_pid = $userData->get('summergame', $uid, 'sg_active_pid')) {
+            $player = summergame_player_load($sg_active_pid);
+          }
+          else {
+            $player = summergame_player_load(['uid' => $uid]);
+          }
         }
       }
 
