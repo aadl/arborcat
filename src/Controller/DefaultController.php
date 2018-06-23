@@ -115,6 +115,28 @@ class DefaultController extends ControllerBase {
     ];
   }
 
+  public function delete_review($rid) {
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $connection = \Drupal::database();
+
+    // grab review uid
+    $query = $connection->query("SELECT * FROM arborcat_reviews WHERE id=:rid",
+      [':rid' => $rid]);
+    $result = $query->fetch();
+
+    if ($user->get('uid')->value == $result->uid || $user->hasRole('administrator')) {
+      $connection->delete('arborcat_reviews')
+        ->condition('id', $result->id)
+        ->execute();
+
+      $response['success'] = 'Review deleted';
+    } else {
+      $response['error'] = "You don't have permission to delete this review";
+    }
+
+    return new JsonResponse($response);
+  }
+
   public function request_for_patron($barcode, $bnum, $loc, $type) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     if ($user->hasRole('staff') || $user->hasRole('administrator')) {

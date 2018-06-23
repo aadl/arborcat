@@ -19,6 +19,13 @@ arborcat.bibrecord:
     _controller: '\Drupal\arborcat\Controller\DefaultController::bibrecord_page'
   requirements:
     _permission: 'access arborcat'
+arborcat.delete_review:
+  path: /user/reviews/{rid}/delete
+  defaults:
+    _title: 'Delete Review'
+    _controller: '\Drupal\arborcat\Controller\DefaultController::delete_review'
+  requirements:
+    _permission: 'access arborcat'
 arborcat.barcode_form:
   path: /user/{uid}/edit/barcode
   defaults:
