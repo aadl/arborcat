@@ -146,6 +146,40 @@ class DefaultController extends ControllerBase {
     return new JsonResponse($response);
   }
 
+  public function rate_record($bib, $rating) {
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    if ($user->isAuthenticated()) {
+      $db = \Drupal::database();
+      // check if user has already rated this item and update if so
+      $rated = $db->query("SELECT * FROM arborcat_ratings WHERE bib=:bib AND uid=:uid",
+        [':bib' => $bib, ':uid' => $user->id()])->fetch();
+      if (isset($rated->id)) {
+        $db->update('arborcat_ratings')
+          ->condition('id', $rated->id, '=')
+          ->condition('bib', $bib, '=')
+          ->fields([
+            'rating' => $rating
+          ])
+          ->execute();
+        $result['success'] = 'Rating updated!';
+      } else {
+        $db->insert('arborcat_ratings')
+          ->fields([
+            'uid' => $user->id(),
+            'bib' => $bib,
+            'rating' => $rating,
+            'timestamp' => time()
+          ])
+          ->execute();
+        $result['success'] = "You rated this item $rating out of 5!";
+      }
+    } else {
+      $result['error'] = 'You must be logged in to rate an item.';
+    }
+
+    return new JsonResponse($result);
+  }
+
   public function request_for_patron($barcode, $bnum, $loc, $type) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     if ($user->hasRole('staff') || $user->hasRole('administrator')) {
