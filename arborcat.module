@@ -30,7 +30,8 @@ function arborcat_theme($existing, $type, $theme, $path) {
         'api_key' => NULL,
         'lists' => NULL,
         'reviews' => NULL,
-        'review_form' => NULL
+        'review_form' => NULL,
+        'ratings' => NULL
       ]
     ],
   ];
