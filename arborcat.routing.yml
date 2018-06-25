@@ -27,7 +27,7 @@ arborcat.delete_review:
   requirements:
     _permission: 'access arborcat'
 arborcat.rate_record:
-  path: /catalog/record/{bnum}/rate/{rating}
+  path: /catalog/record/{bib}/rate/{rating}
   defaults:
     _title: 'Rate an record'
     _controller: '\Drupal\arborcat\Controller\DefaultController::rate_record'
