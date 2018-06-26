@@ -85,8 +85,8 @@ class DefaultController extends ControllerBase {
         [':bib' => $bib_record->id]);
     $reviews = $query->fetchAll();
     foreach ($reviews as $k => $review) {
-      $user = \Drupal\user\Entity\User::load($review->uid);
-      $reviews[$k]->username = (isset($user) ? $user->get('name')->value : 'unknown');
+      $review_user = \Drupal\user\Entity\User::load($review->uid);
+      $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
     }
 
     // set up review form for users
