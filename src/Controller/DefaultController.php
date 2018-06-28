@@ -172,6 +172,17 @@ class DefaultController extends ControllerBase {
           ])
           ->execute();
         $result['success'] = "You rated this item $rating out of 5!";
+        if (\Drupal::moduleHandler()->moduleExists('summergame')) {
+          if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+            if ($player = summergame_get_active_player()) {
+              $type = 'Rated an Item';
+              $description = 'Added a Rating to the Catalog';
+              $metadata = 'bnum:' . $bib;
+              $points = summergame_player_points($player['pid'], 10, $type, $description, $metadata);
+              $result['summergame'] = "You earned $points points for rating an item!";
+            }
+          }
+        }
       }
     } else {
       $result['error'] = 'You must be logged in to rate an item.';
