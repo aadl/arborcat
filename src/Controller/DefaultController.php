@@ -96,6 +96,7 @@ class DefaultController extends ControllerBase {
     $query = $db->query("SELECT AVG(rating) as average, count(id) as total FROM arborcat_ratings WHERE bib=:bib",
         [':bib' => $bib_record->id]);
     $ratings = $query->fetch();
+    $ratings->average = round($ratings->average, 1);
     $user_rating = $db->query("SELECT rating FROM arborcat_ratings WHERE bib=:bib AND uid=:uid",
         [':bib' => $bib_record->id, ':uid' => $user->id()])->fetch();
     $ratings->user_rating = $user_rating->rating;
@@ -109,7 +110,6 @@ class DefaultController extends ControllerBase {
         }
       }
     }
-    
 
     return [
       '#title' => $bib_record->title,
