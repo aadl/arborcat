@@ -80,17 +80,26 @@ class DefaultController extends ControllerBase {
     $lists = arborcat_lists_get_lists($user->get('uid')->value);
 
     // get community reviews
-    $connection = \Drupal::database();
-    $query = $connection->query("SELECT * FROM arborcat_reviews WHERE bib=:bib",
+    $db = \Drupal::database();
+    $query = $db->query("SELECT * FROM arborcat_reviews WHERE bib=:bib",
         [':bib' => $bib_record->id]);
     $reviews = $query->fetchAll();
     foreach ($reviews as $k => $review) {
-      $user = \Drupal\user\Entity\User::load($review->uid);
-      $reviews[$k]->username = (isset($user) ? $user->get('name')->value : 'unknown');
+      $review_user = \Drupal\user\Entity\User::load($review->uid);
+      $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
     }
 
     // set up review form for users
     $review_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserRecordReviewForm', $bib_record->id, $bib_record->title);
+
+    // get commuity ratings
+    $query = $db->query("SELECT AVG(rating) as average, count(id) as total FROM arborcat_ratings WHERE bib=:bib",
+        [':bib' => $bib_record->id]);
+    $ratings = $query->fetch();
+    $ratings->average = round($ratings->average, 1);
+    $user_rating = $db->query("SELECT rating FROM arborcat_ratings WHERE bib=:bib AND uid=:uid",
+        [':bib' => $bib_record->id, ':uid' => $user->id()])->fetch();
+    $ratings->user_rating = $user_rating->rating;
 
     // if summer game codes, convert to array so template can loop over
     if (isset($bib_record->gamecodes)) {
@@ -101,7 +110,6 @@ class DefaultController extends ControllerBase {
         }
       }
     }
-    
 
     return [
       '#title' => $bib_record->title,
@@ -111,6 +119,7 @@ class DefaultController extends ControllerBase {
       '#lists' => $lists,
       '#reviews' => $reviews,
       '#review_form' => $review_form,
+      '#ratings' => $ratings,
       '#cache' => [ 'max-age' => 0 ]
     ];
   }
@@ -135,6 +144,51 @@ class DefaultController extends ControllerBase {
     }
 
     return new JsonResponse($response);
+  }
+
+  public function rate_record($bib, $rating) {
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    if ($user->isAuthenticated()) {
+      $db = \Drupal::database();
+      // check if user has already rated this item and update if so
+      $rated = $db->query("SELECT * FROM arborcat_ratings WHERE bib=:bib AND uid=:uid",
+        [':bib' => $bib, ':uid' => $user->id()])->fetch();
+      if (isset($rated->id)) {
+        $db->update('arborcat_ratings')
+          ->condition('id', $rated->id, '=')
+          ->condition('bib', $bib, '=')
+          ->fields([
+            'rating' => $rating
+          ])
+          ->execute();
+        $result['success'] = 'Rating updated!';
+      } else {
+        $db->insert('arborcat_ratings')
+          ->fields([
+            'uid' => $user->id(),
+            'bib' => $bib,
+            'rating' => $rating,
+            'timestamp' => time()
+          ])
+          ->execute();
+        $result['success'] = "You rated this item $rating out of 5!";
+        if (\Drupal::moduleHandler()->moduleExists('summergame')) {
+          if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+            if ($player = summergame_get_active_player()) {
+              $type = 'Rated an Item';
+              $description = 'Added a Rating to the Catalog';
+              $metadata = 'bnum:' . $bib;
+              $points = summergame_player_points($player['pid'], 10, $type, $description, $metadata);
+              $result['summergame'] = "You earned $points points for rating an item!";
+            }
+          }
+        }
+      }
+    } else {
+      $result['error'] = 'You must be logged in to rate an item.';
+    }
+
+    return new JsonResponse($result);
   }
 
   public function request_for_patron($barcode, $bnum, $loc, $type) {
