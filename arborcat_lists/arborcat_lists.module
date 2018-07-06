@@ -174,7 +174,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
         arborcat_lists_add_list_item($list_id, $bnum, $timestamp);
         if ($player) {
           $metadata = array('bnum' => $bnum);
-          $points = summergame_player_points($player['pid'], 50, 'Checkout History',
+          $points = summergame_player_points($player['pid'], 10, 'Checkout History',
                                              'Item added from Checkout History', $metadata);
           $player_name = $player['nickname'] ? $player['nickname'] : $player['name'];
           drupal_set_message("Player $player_name earned $points Summer Game points for a new checkout.");
