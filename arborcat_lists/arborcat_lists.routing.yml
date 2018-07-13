@@ -25,6 +25,13 @@ arborcat_lists.user_lists:
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::user_lists'
   requirements:
     _permission: 'access arborcat'
+arborcat_lists.user_checkout_history:
+  path: /user/lists/checkouthistory
+  defaults:
+    _title: 'User Checkout History'
+    _controller: '\Drupal\arborcat_lists\Controller\DefaultController::user_checkout_history'
+  requirements:
+    _permission: 'access arborcat'
 arborcat_lists.public_lists:
   path: /user/lists/public
   defaults:
