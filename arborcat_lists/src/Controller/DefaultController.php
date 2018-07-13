@@ -48,6 +48,22 @@ class DefaultController extends ControllerBase {
     ];
   }
 
+  public function user_checkout_history() {
+    $user = \Drupal::currentUser();
+    if (!$user->isAuthenticated()) {
+      drupal_set_message("Sign in to see your checkout history.");
+      return new RedirectResponse("/user/login?destination=" . $_SERVER['REQUEST_URI']);
+    }
+    $db = \Drupal::database();
+    $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title='Checkout History' AND uid=:uid", [':uid' => $user->id()])->fetch();
+    if ($checkout_list->id) {
+      return new RedirectResponse("/user/lists/" . $checkout_list->id);
+    } else {
+      drupal_set_message(['#markup' => 'You do not have a checkout history list. Enable checkout history in your <a href="/user/' . $user->id() . '/edit">preferences</a>.']);
+      return new RedirectResponse("/user");
+    }
+  }
+
   public function view_public_lists() {
     $db = \Drupal::database();
     $page = pager_find_page();
