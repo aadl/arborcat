@@ -74,6 +74,14 @@ class UserRecordReviewForm extends FormBase {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
 
+    // check to make sure user review is unique from their other reviews
+    $unique = $connection->query("SELECT * FROM arborcat_reviews WHERE uid=:uid AND review=:review",
+      [':uid' => $user->get('uid')->value, ':review' => $form_state->getValue('review')])->fetch();
+    if ($unique->id) {
+      drupal_set_message("Sorry, you've already submitted that review for another item.", 'error');
+      return;
+    }
+
     if ($form_state->getValue('id')) {
       $connection->update('arborcat_reviews')
         ->condition('id', $form_state->getValue('id'), '=')
