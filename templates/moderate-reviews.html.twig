@@ -1,0 +1,19 @@
+<h1 class="t-center ruled-heading large-heading"><span>Moderate Reviews</span></h1>
+<div class="l-overflow-clear">
+  {{ pager }}
+</div>
+<div class="l-overflow-clear">
+  {% for review in reviews %}
+    <p class="search-result community-review l-overflow-clear">
+      <a href="/catalog/record/{{ review.bib }}" class="align-left base-margin-right">
+        <img src="https://cdn.aadl.com/cover/100/{{ review.bib }}.jpg">
+      </a>
+      by <a href="/user/{{ review.uid }}">{{ review.username }}</a><br>
+      {{ review.review }}<br><br>
+      <a href="/user/reviews/{{ review.id }}/approve" class="button moderate-review">Approve</a>
+      <a href="/user/reviews/{{ review.id }}/delete" class="button delete moderate-review">Delete</a>
+    </p>
+  {% endfor %}
+</div>
+
+{{ pager }}

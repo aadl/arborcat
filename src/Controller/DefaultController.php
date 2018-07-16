@@ -124,20 +124,82 @@ class DefaultController extends ControllerBase {
     ];
   }
 
-  public function delete_review($rid) {
+  public function moderate_reviews() {
+    $db = \Drupal::database();
+    $page = pager_find_page();
+    $per_page = 50;
+    $offset = $per_page * $page;
+    $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : '');
+    $total = $db->query("SELECT COUNT(*) as total FROM arborcat_reviews WHERE staff_reviewed=0")->fetch()->total;
+    $reviews = $db->query("SELECT * FROM arborcat_reviews WHERE staff_reviewed=0 ORDER BY id DESC $limit")->fetchAll();
+    foreach ($reviews as $k => $review) {
+      $review_user = \Drupal\user\Entity\User::load($review->uid);
+      $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
+    }
+
+    $pager = pager_default_initialize($total, $per_page);
+
+    return [
+      '#theme' => 'moderate_reviews',
+      '#reviews' => $reviews,
+      '#pager' => [
+        '#type' => 'pager',
+        '#quantity' => 5
+      ]
+    ];
+  }
+
+  public function approve_review($rid) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    $connection = \Drupal::database();
+    $db = \Drupal::database();
 
     // grab review uid
-    $query = $connection->query("SELECT * FROM arborcat_reviews WHERE id=:rid",
+    $query = $db->query("SELECT * FROM arborcat_reviews WHERE id=:rid",
+      [':rid' => $rid]);
+    $result = $query->fetch();
+
+    if ($user->hasRole('administrator')) {
+      $db->update('arborcat_reviews')
+        ->condition('id', $result->id)
+        ->fields([
+          'staff_reviewed' => 1
+        ])
+        ->execute();
+
+      $response['success'] = 'Review approved';
+    } else {
+      $response['error'] = "You don't have permission to approve this review";
+    }
+
+    return new JsonResponse($response);
+  }
+
+  public function delete_review($rid) {
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $db = \Drupal::database();
+
+    // grab review uid
+    $query = $db->query("SELECT * FROM arborcat_reviews WHERE id=:rid",
       [':rid' => $rid]);
     $result = $query->fetch();
 
     if ($user->get('uid')->value == $result->uid || $user->hasRole('administrator')) {
-      $connection->delete('arborcat_reviews')
+      $db->delete('arborcat_reviews')
         ->condition('id', $result->id)
         ->execute();
-
+      if (\Drupal::moduleHandler()->moduleExists('summergame')) {
+        if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+          if ($player = summergame_get_active_player()) {
+            $type = 'Wrote Review';
+            $metadata = 'bnum:' . $result->bib;
+            $db->delete('sg_ledger')
+             ->condition('pid', $player['pid'])
+             ->condition('type', $type)
+             ->condition('metadata', $metadata)
+             ->execute();
+          }
+        }
+      }
       $response['success'] = 'Review deleted';
     } else {
       $response['error'] = "You don't have permission to delete this review";
