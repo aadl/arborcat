@@ -190,10 +190,17 @@ class DefaultController extends ControllerBase {
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
         if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
           if ($player = summergame_get_active_player()) {
+            $players = [];
+            $players[] = $player['pid'];
+            if ($player['other_players']) {
+              foreach ($player['other_players'] as $play) {
+                $players[] = $play['pid'];
+              }
+            }
             $type = 'Wrote Review';
             $metadata = 'bnum:' . $result->bib;
             $db->delete('sg_ledger')
-             ->condition('pid', $player['pid'])
+             ->condition('pid', $players, 'IN')
              ->condition('type', $type)
              ->condition('metadata', $metadata)
              ->execute();
