@@ -19,6 +19,20 @@ arborcat.bibrecord:
     _controller: '\Drupal\arborcat\Controller\DefaultController::bibrecord_page'
   requirements:
     _permission: 'access arborcat'
+arborcat.moderate_review:
+  path: /staff/reviews/moderate
+  defaults:
+    _title: 'Moderate Reviews'
+    _controller: '\Drupal\arborcat\Controller\DefaultController::moderate_reviews'
+  requirements:
+    _permission: 'access arborcat'
+arborcat.approve_review:
+  path: /user/reviews/{rid}/approve
+  defaults:
+    _title: 'Delete Review'
+    _controller: '\Drupal\arborcat\Controller\DefaultController::approve_review'
+  requirements:
+    _permission: 'access arborcat'
 arborcat.delete_review:
   path: /user/reviews/{rid}/delete
   defaults:

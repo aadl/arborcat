@@ -34,6 +34,12 @@ function arborcat_theme($existing, $type, $theme, $path) {
         'ratings' => NULL
       ]
     ],
+    'moderate_reviews' => [
+      'variables' => [
+        'reviews' => NULL,
+        'pager' => NULL
+      ]
+    ]
   ];
 }
 
