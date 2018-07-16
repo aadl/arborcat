@@ -145,7 +145,8 @@ class DefaultController extends ControllerBase {
       '#pager' => [
         '#type' => 'pager',
         '#quantity' => 5
-      ]
+      ],
+      '#cache' => [ 'max-age' => 0 ]
     ];
   }
 
