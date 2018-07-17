@@ -159,7 +159,7 @@ class DefaultController extends ControllerBase {
       [':rid' => $rid]);
     $result = $query->fetch();
 
-    if ($user->hasRole('administrator')) {
+    if ($user->hasPermission('administer content')) {
       $db->update('arborcat_reviews')
         ->condition('id', $result->id)
         ->fields([
@@ -184,7 +184,7 @@ class DefaultController extends ControllerBase {
       [':rid' => $rid]);
     $result = $query->fetch();
 
-    if ($user->get('uid')->value == $result->uid || $user->hasRole('administrator')) {
+    if ($user->get('uid')->value == $result->uid || $user->hasPermission('administer content')) {
       $db->delete('arborcat_reviews')
         ->condition('id', $result->id)
         ->execute();

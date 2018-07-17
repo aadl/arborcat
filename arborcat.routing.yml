@@ -25,7 +25,7 @@ arborcat.moderate_review:
     _title: 'Moderate Reviews'
     _controller: '\Drupal\arborcat\Controller\DefaultController::moderate_reviews'
   requirements:
-    _permission: 'administer users'
+    _permission: 'administer content'
 arborcat.approve_review:
   path: /user/reviews/{rid}/approve
   defaults:
