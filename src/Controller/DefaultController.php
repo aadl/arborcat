@@ -159,7 +159,7 @@ class DefaultController extends ControllerBase {
       [':rid' => $rid]);
     $result = $query->fetch();
 
-    if ($user->hasPermission('administer content')) {
+    if ($user->hasPermission('administer nodes')) {
       $db->update('arborcat_reviews')
         ->condition('id', $result->id)
         ->fields([
@@ -184,19 +184,16 @@ class DefaultController extends ControllerBase {
       [':rid' => $rid]);
     $result = $query->fetch();
 
-    if ($user->get('uid')->value == $result->uid || $user->hasPermission('administer content')) {
+    if ($user->get('uid')->value == $result->uid || $user->hasPermission('administer nodes')) {
       $db->delete('arborcat_reviews')
         ->condition('id', $result->id)
         ->execute();
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
         if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
-          if ($player = summergame_get_active_player()) {
+          if ($player = summergame_player_load_all($result->uid)) {
             $players = [];
-            $players[] = $player['pid'];
-            if ($player['other_players']) {
-              foreach ($player['other_players'] as $play) {
-                $players[] = $play['pid'];
-              }
+            foreach ($player as $play) {
+              $players[] = $play['pid'];
             }
             $type = 'Wrote Review';
             $metadata = 'bnum:' . $result->bib;
