@@ -130,8 +130,8 @@ class DefaultController extends ControllerBase {
     $per_page = 50;
     $offset = $per_page * $page;
     $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : '');
-    $total = $db->query("SELECT COUNT(*) as total FROM arborcat_reviews WHERE staff_reviewed=0")->fetch()->total;
-    $reviews = $db->query("SELECT * FROM arborcat_reviews WHERE staff_reviewed=0 ORDER BY id DESC $limit")->fetchAll();
+    $total = $db->query("SELECT COUNT(*) as total FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0")->fetch()->total;
+    $reviews = $db->query("SELECT * FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0 ORDER BY id DESC $limit")->fetchAll();
     foreach ($reviews as $k => $review) {
       $review_user = \Drupal\user\Entity\User::load($review->uid);
       $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
