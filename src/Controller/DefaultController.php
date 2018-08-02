@@ -81,7 +81,7 @@ class DefaultController extends ControllerBase {
 
     // get community reviews
     $db = \Drupal::database();
-    $query = $db->query("SELECT * FROM arborcat_reviews WHERE bib=:bib",
+    $query = $db->query("SELECT * FROM arborcat_reviews WHERE bib=:bib AND deleted=0",
         [':bib' => $bib_record->id]);
     $reviews = $query->fetchAll();
     foreach ($reviews as $k => $review) {
