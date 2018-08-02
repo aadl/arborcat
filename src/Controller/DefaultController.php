@@ -185,8 +185,11 @@ class DefaultController extends ControllerBase {
     $result = $query->fetch();
 
     if ($user->get('uid')->value == $result->uid || $user->hasPermission('administer nodes')) {
-      $db->delete('arborcat_reviews')
+      $db->update('arborcat_reviews')
         ->condition('id', $result->id)
+        ->fields([
+          'deleted' => 1
+        ])
         ->execute();
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
         if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
@@ -197,11 +200,14 @@ class DefaultController extends ControllerBase {
             }
             $type = 'Wrote Review';
             $metadata = 'bnum:' . $result->bib;
-            $db->delete('sg_ledger')
-             ->condition('pid', $players, 'IN')
-             ->condition('type', $type)
-             ->condition('metadata', $metadata)
-             ->execute();
+            $db->update('sg_ledger')
+              ->condition('pid', $players, 'IN')
+              ->condition('type', $type)
+              ->condition('metadata', $metadata)
+              ->fields([
+                'points' => 0
+              ])
+              ->execute();
           }
         }
       }
