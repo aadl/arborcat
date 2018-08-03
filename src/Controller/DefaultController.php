@@ -205,7 +205,8 @@ class DefaultController extends ControllerBase {
               ->condition('type', $type)
               ->condition('metadata', $metadata)
               ->fields([
-                'points' => 0
+                'points' => 0,
+                'type' => 'Deleted Review'
               ])
               ->execute();
           }
