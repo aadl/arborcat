@@ -23,7 +23,7 @@ class UserRecordReviewForm extends FormBase {
         [':uid' => \Drupal::currentUser()->id(), ':bib' => $bib]);
     $review = $query->fetchObject();
 
-    $prefix = ($review->id ? '<h3 class="no-margin-bottom">EDIT YOUR REVIEW</h3>' : '<h3 class="no-margin-bottom">WRITE A REVIEW</h3>');
+    $prefix = (isset($review->id) ? '<h3 class="no-margin-bottom">EDIT YOUR REVIEW</h3>' : '<h3 class="no-margin-bottom">WRITE A REVIEW</h3>');
     $form = [];
     $form['#attributes'] = ['class' => ['form-width-exception']];
     $form['id'] = [
