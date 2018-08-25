@@ -326,7 +326,7 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
       'must' => [
         [
           'query_string' => [
-            'query' => $term,
+            'query' => "*$term*",
             'fields' => ['_all'],
             'default_operator' => 'and'
           ]
