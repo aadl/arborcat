@@ -7,6 +7,7 @@ namespace Drupal\arborcat\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Predis\Client;
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
 
@@ -129,18 +130,51 @@ class DefaultController extends ControllerBase {
     $page = pager_find_page();
     $per_page = 50;
     $offset = $per_page * $page;
-    $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : '');
-    $total = $db->query("SELECT COUNT(*) as total FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0")->fetch()->total;
-    $reviews = $db->query("SELECT * FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0 ORDER BY id DESC $limit")->fetchAll();
-    foreach ($reviews as $k => $review) {
-      $review_user = \Drupal\user\Entity\User::load($review->uid);
-      $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
+    $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : ''); //array slice 
+
+    $mode = NULL;
+    $total = NULL;
+    $reviews = NULL;
+    if (isset($_GET['mode'])) {
+      $mode = $_GET['mode'];
+    }
+
+    if ($mode == 'new') {
+      $total = $db->query("SELECT COUNT(*) as total FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0")->fetch()->total; //in
+      $reviews = $db->query("SELECT * FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0 ORDER BY id DESC $limit")->fetchAll();
+    } else if ($mode == 'flagged') {
+      //make sure pointsomatic module is enabled else display error
+      if (\Drupal::moduleHandler()->moduleExists('pointsomatic') == false) {
+        drupal_set_message('Error: pointsomatic temporarily out of service. Sorry!', 'error');
+        return new RedirectResponse(\Drupal::url('/staff/reviews/moderate'));
+      }
+      $pointsomatic_conf = \Drupal::config('pointsomatic.settings');
+      $redis_string = $pointsomatic_conf->get('redis_string');
+      $redis = new Client($redis_string);
+      $flagged_revs = $redis->smembers('flagged_reviews');
+      if (count($flagged_revs) != 0) {
+        $comma_separated = implode(',', $flagged_revs);
+        $total = $db->query("SELECT COUNT(*) as total FROM arborcat_reviews WHERE id IN ($comma_separated) AND deleted=0")->fetch()->total;
+        $reviews = $db->query("SELECT * FROM arborcat_reviews WHERE id IN ($comma_separated) AND deleted=0 ORDER BY id DESC $limit")->fetchAll();
+      }
+    }
+    
+    if ($reviews != NULL) {
+      foreach ($reviews as $k => $review) {
+        $review_user = \Drupal\user\Entity\User::load($review->uid);
+        $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
+      }
     }
 
     $pager = pager_default_initialize($total, $per_page);
 
+    //build mode selection form
+    $form = \Drupal::formBuilder()->getForm(
+      'Drupal\arborcat\Form\arborcatReviewModForm');
+
     return [
       '#theme' => 'moderate_reviews',
+      '#form' => $form,
       '#reviews' => $reviews,
       '#pager' => [
         '#type' => 'pager',
@@ -166,6 +200,14 @@ class DefaultController extends ControllerBase {
           'staff_reviewed' => 1
         ])
         ->execute();
+
+      $pointsomatic_conf = \Drupal::config('pointsomatic.settings');
+      $redis_string = $pointsomatic_conf->get('redis_string');
+      $redis = new Client($redis_string);
+      $flagged_revs = $redis->smembers('flagged_reviews');
+      if (in_array($rid, $flagged_revs)) {
+        $redis->srem('flagged_reviews', $rid);
+      }
 
       $response['success'] = 'Review approved';
     } else {
@@ -212,6 +254,15 @@ class DefaultController extends ControllerBase {
           }
         }
       }
+
+      $pointsomatic_conf = \Drupal::config('pointsomatic.settings');
+      $redis_string = $pointsomatic_conf->get('redis_string');
+      $redis = new Client($redis_string);
+      $flagged_revs = $redis->smembers('flagged_reviews');
+      if (in_array($rid, $flagged_revs)) {
+        $redis->srem('flagged_reviews', $rid);
+      }
+
       $response['success'] = 'Review deleted';
     } else {
       $response['error'] = "You don't have permission to delete this review";
