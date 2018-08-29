@@ -170,7 +170,7 @@ class DefaultController extends ControllerBase {
 
     //build mode selection form
     $form = \Drupal::formBuilder()->getForm(
-      'Drupal\arborcat\Form\arborcatReviewModForm');
+      'Drupal\arborcat\Form\ArborcatReviewModForm');
 
     return [
       '#theme' => 'moderate_reviews',
