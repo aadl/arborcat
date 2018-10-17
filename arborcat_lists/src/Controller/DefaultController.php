@@ -20,7 +20,7 @@ class DefaultController extends ControllerBase {
     $currentUid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     if ($currentUid != $uid && !$user->hasPermission('administer users')) {
-      drupal_set_message('You are not authorized to access view these lists', 'warning');
+      drupal_set_message('You are not authorized to view these lists', 'warning');
       return new RedirectResponse(\Drupal::url('user.page'));
     }
 
@@ -89,6 +89,12 @@ class DefaultController extends ControllerBase {
       if (isset($res->bib)) {
         $lists[$i]->bib = $res->bib;
       }
+      $user = \Drupal\user\Entity\User::load($lists[$i]->uid);
+      $lists[$i]->username = (isset($user) ? $user->get('name')->value : 'unknown');
+      if ($user->hasPermission('access accountfix')) {
+        $lists[$i]->staff = TRUE;
+      }
+      unset($user);
     }
 
     // build the pager
