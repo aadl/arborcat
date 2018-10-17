@@ -228,13 +228,20 @@ class DefaultController extends ControllerBase {
       $rated = $db->query("SELECT * FROM arborcat_ratings WHERE bib=:bib AND uid=:uid",
         [':bib' => $bib, ':uid' => $user->id()])->fetch();
       if (isset($rated->id)) {
-        $db->update('arborcat_ratings')
-          ->condition('id', $rated->id, '=')
-          ->condition('bib', $bib, '=')
-          ->fields([
-            'rating' => $rating
-          ])
-          ->execute();
+        if ($rating == 0) {
+          $db->delete('arborcat_ratings')
+            ->condition('id', $rated->id, '=')
+            ->condition('bib', $bib, '=')
+            ->execute();
+        } else {
+          $db->update('arborcat_ratings')
+            ->condition('id', $rated->id, '=')
+            ->condition('bib', $bib, '=')
+            ->fields([
+              'rating' => $rating
+            ])
+            ->execute();
+        }
         $result['success'] = 'Rating updated!';
       } else {
         $db->insert('arborcat_ratings')
