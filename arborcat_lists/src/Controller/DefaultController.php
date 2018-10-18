@@ -91,8 +91,10 @@ class DefaultController extends ControllerBase {
       }
       $user = \Drupal\user\Entity\User::load($lists[$i]->uid);
       $lists[$i]->username = (isset($user) ? $user->get('name')->value : 'unknown');
-      if ($user->hasPermission('access accountfix')) {
-        $lists[$i]->staff = TRUE;
+      if (isset($user)) {
+        if ($user->hasPermission('access accountfix')) {
+          $lists[$i]->staff = TRUE;
+        }
       }
       unset($user);
     }
