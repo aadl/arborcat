@@ -282,7 +282,7 @@ function arborcat_lists_search_lists($term) {
 
   $db = \Drupal::database();
   $query = $db->select('arborcat_user_lists', 'lists')
-    ->fields('lists', ['title', 'description', 'public', 'id'])
+    ->fields('lists', ['title', 'description', 'public', 'id', 'uid'])
     ->condition(db_or()->condition('title', "%" . $db->escapeLike($term) . "%", 'LIKE')
       ->condition('description', "%" . $db->escapeLike($term) . "%", 'LIKE'))
     ->condition('public', '1');
