@@ -118,7 +118,10 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
     $co_bnums = array();
     if (isset($checkouts->out)) {
       foreach ($checkouts->out as $checkout) {
-        $co_bnums[$checkout->bnum] = $checkout->bnum;
+        // Ignore MelCat items for Checkout History
+        if (stripos($checkout->material, 'melcat') !== 0) {
+          $co_bnums[$checkout->bnum] = $checkout->bnum;
+        }
       }
     }
 
