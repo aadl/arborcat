@@ -58,3 +58,9 @@ arborcat_lists.delete_item:
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::delete_list_item'
   requirements:
     _permission: 'access arborcat'
+arborcat_lists.download_list:
+  path: /user/lists/{lid}/download
+  defaults:
+    _controller: '\Drupal\arborcat_lists\Controller\DefaultController::download_user_list'
+  requirements:
+    _permission: 'access arborcat'
