@@ -317,4 +317,51 @@ class DefaultController extends ControllerBase {
     return new JsonResponse($response);
   }
 
+  public function download_user_list($lid) {
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $db = \Drupal::database();
+    $query = $db->query("SELECT * FROM arborcat_user_lists WHERE id=:lid", [':lid' => $lid]);
+    $list = $query->fetch();
+    // do an access check here in case someone messes with a button/link
+    if ($user->get('uid')->value == $list->uid || $list->public || $user->hasPermission('administer users')) {
+      $l_title = $list->title;
+      // prep for loading and parsing indvidual list items
+      $guzzle = \Drupal::httpClient();
+      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+      $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
+      $mat_name = json_decode($mat_types);
+
+      // set up format for generating a csv
+      $rows = [];
+      $header = ['Title', 'Author', 'Format', 'Website Link', 'Date Added to List'];
+      $rows[] = implode(',', $header);
+      $query = $db->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order",
+            [':lid' => $lid]);
+      $items = $query->fetchAll();
+      foreach ($items as $item) {
+        $bnum = $item->bib;
+        $json = $guzzle->get("$api_url/record/$bnum/full")->getBody()->getContents();
+        $json = json_decode($json);
+        $record = [
+          "\"$json->title\"",
+          "\"$json->author\"",
+          $mat_name->{$json->mat_code},
+          'https://aadl.org/catalog/record/' . $item->bib,
+          ($item->timestamp ? date('m-d-Y', $item->timestamp) : '')
+        ];
+        $rows[] = implode(',', $record);
+      }
+      
+      $list = implode("\n", $rows);
+      $response = new Response($list);
+      $response->headers->set('Content-Type', 'text/csv');
+      $response->headers->set('Content-Disposition','attachment; filename="' . str_replace(' ', '-', $l_title) . '.csv"');
+
+      return $response;
+    } else {
+      drupal_set_message('You do not have permission to download this list', 'warning');
+      return new RedirectResponse(\Drupal::url('user.page'));
+    }
+  }
+
 }
