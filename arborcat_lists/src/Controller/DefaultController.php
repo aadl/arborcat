@@ -341,14 +341,16 @@ class DefaultController extends ControllerBase {
         $bnum = $item->bib;
         $json = $guzzle->get("$api_url/record/$bnum/full")->getBody()->getContents();
         $json = json_decode($json);
-        $record = [
-          "\"$json->title\"",
-          "\"$json->author\"",
-          $mat_name->{$json->mat_code},
-          'https://aadl.org/catalog/record/' . $item->bib,
-          ($item->timestamp ? date('m-d-Y', $item->timestamp) : '')
-        ];
-        $rows[] = implode(',', $record);
+        if (!empty($json->title)) {
+          $record = [
+            "\"$json->title\"",
+            "\"$json->author\"",
+            $mat_name->{$json->mat_code},
+            'https://aadl.org/catalog/record/' . $item->bib,
+            ($item->timestamp ? date('m-d-Y', $item->timestamp) : '')
+          ];
+          $rows[] = implode(',', $record);
+        }
       }
       
       $list = implode("\n", $rows);
