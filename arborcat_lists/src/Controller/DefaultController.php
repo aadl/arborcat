@@ -137,14 +137,13 @@ class DefaultController extends ControllerBase {
       
       $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC",
         [':lid' => $lid]);
-      $total = $query->fetchAll();
 
       $term = (!empty($_GET['search']) ? $_GET['search'] : '*');
       $sort = ($_GET['sort'] ?? 'list_order_desc');
       $items = arborcat_lists_search_list_items($lid, $term, $sort);
 
       // build the pager
-      $total = (!empty($_GET['search']) ? $items['hits']['total'] : count($total));
+      $total = $items['hits']['total'];
       $page = pager_find_page();
       $per_page = 20;
       $offset = $per_page * $page;
