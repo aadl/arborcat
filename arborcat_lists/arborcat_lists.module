@@ -379,6 +379,29 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
       }
     }
   }
+  // get totals for records due to ones that don't exist anymore
+  $query = $db->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order",
+    [':lid' => $lid]);
+  $items = $query->fetchAll();
+  $es_query['bool']['filter']['terms']['bnum'] = [];
+  foreach ($items as $item) {
+    $es_query['bool']['filter']['terms']['bnum'][] = $item->bib;
+  }
+  $params['body']['query'] = $es_query;
+  unset($params['body']['size']);
+  unset($params['body']['offset']);
+
+  try {
+    $totals = $es_client->search($params);
+  }
+  catch (\Exception $e) {
+    $result = [
+      'error' => 'Elasticsearch Query Failed',
+      'message' => $e->getMessage(),
+    ];
+  }
+
+  $results['hits']['total'] = $totals['hits']['total'];
 
   return $results;
 
