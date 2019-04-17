@@ -9,23 +9,24 @@ class locker_form{
 
 	public function buildForm(array $form,FormStateInterface $form_state){
 		$guzzle = \Drupal::httpClient();
-        $uid = \Drupal::currentUser()->id();
+    $uid = \Drupal::currentUser()->id();
 		$account = \Drupal\user\Entity\User::load($uid);
 		$api_key = $account->get('field_api_key')->value;
 		$api_url = \Drupal::config('arborcat.settings')->get('api_url');
 		$patron_info = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
-
+		$locker_holds = json_decode($guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents());
+	
 		$form['lockeritems'] = [
 			'#type' => 'value',
-			'#value' => $patron_info->'',
+			'#default_value' => $locker_holds,
 		];
 	  	$form['lockercode'] = [
 			'#type' => 'value',
-			'#value' => $lockercode,
+			'#default_value' => $patron_info['phone'],
 	  	];
 	  	$form['patronname'] = [
 			'#type' => 'value',
-			'#value' => $patron_info['name'],
+			'#default_value' => $patron_info['first_given_name'],
 		];
 		$form['explanation'] = [
 			'#value' => "<h2>Locker Request Form</h2>" .
@@ -34,7 +35,7 @@ class locker_form{
 			"at locker-enabled locations be checked out to you and then placed into one of our outdoor pickup " .
 			"lockers for fast, easy pickup. " .
 			"The following items are currently ready for pickup:" .
-			t(["Title", "Cancel Date", "Pickup Location", "Status"], $lockeritems) .
+			t(["Title", "Cancel Date", "Pickup Location", "Status"], $form['locker_items']) .
 			"</div>" .
 			"<div>" .
 			"Requests will be processed within the next 45 minutes if submitted between 9 AM and 8:30 PM Monday through Friday, " .
@@ -58,23 +59,16 @@ class locker_form{
 
 	  	$form['submit'] = [
 			'#type' => 'submit',
-			'#value' => t('Check these items out to me and put them in a pickup locker'),
+			'#default_value' => t('Check these items out to me and put them in a pickup locker'),
 		];
 		  return $form;
 	}
 
-	function submit_form($form, FormStateInterface $form_state){
-
+	function submit_form(array $form, FormStateInterface $form_state){
+		if (!valid_email_address($form_state['values']['mail'])) {
+			$form_state -> setError('mail', t('You must enter a valid e-mail address.'));
+		}
 	}
-
-	function sopac_lockers_form_validate(array $form, FormStateInterface $form_state) {
-  		if (!valid_email_address($form_state['values']['mail'])) {
-    		$form_state -> setError('mail', t('You must enter a valid e-mail address.'));
-  		}
-	}
-
-
-
-	}
+}
 
 ?>
