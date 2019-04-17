@@ -1,0 +1,6 @@
+arborcat.aadl_locker_request:
+  path:/user/{uid}/lockerrequest
+  defaults:
+    _form:'\Drupal\arborcat\LockerRequestForm.php'
+  requirements:
+    _permission:'access arborcat'
