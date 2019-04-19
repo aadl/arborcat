@@ -24,7 +24,7 @@ class locker_form extends FormBase{
 					$locker_holds=[
 						'title'=>$hold['title'],
 						'status'=>$hold['status'],
-						'pickup_location'=>$hold['pickup']
+						'pickuploc'=>$hold['pickup']
 					]
 				}
 			}
@@ -62,7 +62,7 @@ class locker_form extends FormBase{
 			"</div>"
 		];
 
-	  	$form['mail'] = [
+	  	$form['email'] = [
 			'#type' => 'textfield',
 			'#title' => t('Notification Email'),
 			'#default_value' => $patroninfo['email'],
@@ -79,9 +79,84 @@ class locker_form extends FormBase{
 	}
 
 	function submit_form(array $form, FormStateInterface $form_state){
+        $email_from='support@aadl.org';
+        $user_input = $form_state->getUserInput();
 
-		$email_from='support@aadl.org';
-		$locations=[];
+        foreach($user_input['values']['lockeritems'] as $lockeritem) {
+          
+          if (!in_array($lockeritem['pickuploc'], $locations)) {
+            $locations[] = $lockeritem['pickuploc'];
+            $email_to = (stripos($lockeritem['pickuploc'], 'malletts') !== FALSE ? 'mcblockers@aadl.org' : 'pittslockers@aadl.org');
+            //not sure about mail manager implementation
+            $mailManager = \Drupal::service('plugin.manager.mail');
+            $result = $mailManager->mail('sopac_lockers', 'locker_request', $email_to, 'en', $user_input['values'], $email_from, $send);
+          }
+        }
+        $locations = implode(", ", $locations);
+        //add ini file
+        $redis = new Predis\Client([
+            'scheme'=>'ssh',
+            'host'=>'#######',
+            'port'=>'####'
+        ]);
+        $redis->rpush('lockerRequests',[time(), $user->uid, $user->name, $user->mail, count($user_input['values']['lockeritems']), $locations]);
+        $easter_ts = easter_date(date('Y'));
+        $easter_date = date('m-d', $easter_ts);
+        $holidays = [
+            '0101', // New Year's Day
+            $easter_date, // Easter
+            '0530', // Memorial Day
+            '0704', // Independence Day
+            '0905', // Labor Day
+            '1010', // Staff Day
+            '1124', // Thanksgiving
+            '1224', // Christmas Eve
+            '1225', // Christmas
+        ];
+
+        $date = date("md");
+        $day = date("w");
+        $hour = date("G") + (date("i") / 60);
+
+        if (in_array($date, $holidays))
+            $open = FALSE;
+        else {
+            switch($day) {
+                case 0: // Sunday
+                    $open = ($hour >= 12 && $hour < 18);
+                    break;
+                case 6: // Saturday
+                    $open = ($hour >= 9 && $hour < 18);
+                    break;
+                case 1: //Monday
+                    $open = ($hour >=10 && hour <21);
+                default: // Tuesday - Friday
+                    $open = ($hour >= 9 && $hour < 21);
+                    break;
+            }
+        }
+        if ($open)
+            drupal_set_message("You will receive an email at {$form_state['values']['email']} when the items are ready for pickup, within the next 45 minutes.");
+        else
+            drupal_set_message("The library is currently closed. You will receive an email at {$form_state['values']['email']} when the items are ready for pickup, after the library opens again");
+        return new RedirectResponse('user');
+	}
+
+	function sopac_lockers_form_validate($form, &$form_state) {
+  		if (!valid_email_address($form_state['values']['mail'])) {
+    		$form_state -> setError('mail', t('You must enter a valid e-mail address.'));
+  		}
+    }
+    
+       
+       
+
+
+
+
+
+
+
 
 		if (!valid_email_address($form_state['values']['email'])) {
 			$form_state -> setError('email', t('You must enter a valid e-mail address.'));
