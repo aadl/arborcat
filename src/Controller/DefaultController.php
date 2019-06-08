@@ -117,7 +117,8 @@ class DefaultController extends ControllerBase {
     // if summer game codes, convert to array so template can loop over
     if (isset($bib_record->gamecodes)) {
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
-        if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+        if (\Drupal::config('summergame.settings')->get('summergame_points_enabled') ||
+            $user->hasPermission('play test summergame')) {
           $bib_record->sg_enabled = true;
           $bib_record->gamecodes = (array) $bib_record->gamecodes;
         }
@@ -294,7 +295,7 @@ class DefaultController extends ControllerBase {
       $hold = $guzzle->get("$api_url/patron/$barcode|$api_key/place_hold/$bnum/$loc/$type")->getBody()->getContents();
       return new JsonResponse($hold);
     }
-    return new JsonResponse('Request could not be processed'); 
+    return new JsonResponse('Request could not be processed');
   }
 
 }
