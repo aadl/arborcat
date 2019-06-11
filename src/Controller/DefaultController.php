@@ -120,6 +120,7 @@ class DefaultController extends ControllerBase {
         if (\Drupal::config('summergame.settings')->get('summergame_points_enabled') ||
             $user->hasPermission('play test summergame')) {
           $bib_record->sg_enabled = true;
+          $bib_record->sg_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
           $bib_record->gamecodes = (array) $bib_record->gamecodes;
         }
       }
