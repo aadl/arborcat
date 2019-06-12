@@ -120,7 +120,27 @@ class DefaultController extends ControllerBase {
         if (\Drupal::config('summergame.settings')->get('summergame_points_enabled') ||
             $user->hasPermission('play test summergame')) {
           $bib_record->sg_enabled = true;
-          $bib_record->gamecodes = (array) $bib_record->gamecodes;
+          $gamecodes = [];
+          foreach ($bib_record->gamecodes as $gameterm => $gameterm_gamecodes) {
+            foreach ($gameterm_gamecodes as $gamecode) {
+              $badges = $db->query('SELECT d.nid, d.title FROM node__field_badge_formula f, node_field_data d ' .
+                                   'WHERE f.entity_id = d.nid ' .
+                                   'AND f.field_badge_formula_value LIKE :gamecode',
+                                   [':gamecode' => "%$gamecode%"])->fetchAll();
+
+              foreach ($badges as $badge) {
+                $gc_data = [
+                  'text' => $gamecode,
+                  'badge' => [
+                    'id' => $badge->nid,
+                    'title' => $badge->title,
+                  ]
+                ];
+                $gamecodes[$gameterm][] = $gc_data;
+              }
+            }
+          }
+          $bib_record->gamecodes = $gamecodes;
         }
       }
     }
