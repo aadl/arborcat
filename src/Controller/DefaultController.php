@@ -106,7 +106,7 @@ class DefaultController extends ControllerBase {
     $review_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserRecordReviewForm', $bib_record->id, $bib_record->title);
 
     // get commuity ratings
-    $query = $db->query("SELECT AVG(rating) as average, count(id) as total FROM arborcat_ratings WHERE bib=:bib",
+    $query = $db->query("SELECT AVG(rating) as average, count(id) as total FROM arborcat_ratings WHERE bib=:bib and rating > 0",
         [':bib' => $bib_record->id]);
     $ratings = $query->fetch();
     $ratings->average = round($ratings->average, 1);
@@ -264,12 +264,6 @@ class DefaultController extends ControllerBase {
       $rated = $db->query("SELECT * FROM arborcat_ratings WHERE bib=:bib AND uid=:uid",
         [':bib' => $bib, ':uid' => $user->id()])->fetch();
       if (isset($rated->id)) {
-        if ($rating == 0) {
-          $db->delete('arborcat_ratings')
-            ->condition('id', $rated->id, '=')
-            ->condition('bib', $bib, '=')
-            ->execute();
-        } else {
           $db->update('arborcat_ratings')
             ->condition('id', $rated->id, '=')
             ->condition('bib', $bib, '=')
@@ -277,7 +271,6 @@ class DefaultController extends ControllerBase {
               'rating' => $rating
             ])
             ->execute();
-        }
         $result['success'] = 'Rating updated!';
       } else {
         $db->insert('arborcat_ratings')
