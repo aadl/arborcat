@@ -127,8 +127,8 @@ class DefaultController extends ControllerBase {
             foreach ($gameterm_gamecodes as $gamecode) {
               $badges = $db->query('SELECT d.nid, d.title FROM node__field_badge_formula f, node_field_data d ' .
                                    'WHERE f.entity_id = d.nid ' .
-                                   'AND f.field_badge_formula_value LIKE :gamecode',
-                                   [':gamecode' => "%$gamecode%"])->fetchAll();
+                                   'AND f.field_badge_formula_value REGEXP :gamecode',
+                                   [':gamecode' => '[[:<:]]' . $gamecode . '[[:>:]]'])->fetchAll();
 
               foreach ($badges as $badge) {
                 $gc_data = [
