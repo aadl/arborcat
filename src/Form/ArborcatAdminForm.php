@@ -63,6 +63,38 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 64,
       '#description' => t('API Key for authentication'),
     ];
+    $form['mcb_lockers'] = [
+      '#type' => 'textfield',
+      '#title' => t('MCB Lockers URL'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('mcb_lockers'),
+      '#size' => 32,
+      '#maxlength' => 64,
+      '#description' => t('Lockers URL for checking availability'),
+    ];
+    $form['pts_lockers'] = [
+      '#type' => 'textfield',
+      '#title' => t('PTS Lockers URL'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('pts_lockers'),
+      '#size' => 32,
+      '#maxlength' => 64,
+      '#description' => t('Lockers URL for checking availability'),
+    ];
+    $form['pts_lockers_insert'] = [
+      '#type' => 'textfield',
+      '#title' => t('PTS Lockers Insert URL'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('pts_lockers_insert'),
+      '#size' => 32,
+      '#maxlength' => 64,
+      '#description' => t('Lockers URL for adding lockers'),
+    ];
+    $form['lockers_pass'] = [
+      '#type' => 'textfield',
+      '#title' => t('Lockers Interface Password'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('lockers_pass'),
+      '#size' => 32,
+      '#maxlength' => 64,
+      '#description' => t('Password for accessing lockers interfaces'),
+    ];
 
     return parent::buildForm($form, $form_state);
   }

@@ -68,3 +68,10 @@ arborcat.request_for_patron:
     _controller: '\Drupal\arborcat\Controller\DefaultController::request_for_patron'
   requirements:
     _permission: 'access arborcat'
+arborcat.locker_request_form:
+  path: /lockerrequest
+  defaults:
+    _form: '\Drupal\arborcat\Form\LockerRequestForm'
+  requirements:
+    _title: 'Locker Request'
+    _permission: 'access arborcat'
