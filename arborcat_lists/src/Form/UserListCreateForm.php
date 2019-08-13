@@ -91,7 +91,7 @@ class UserListCreateForm extends FormBase {
       $connection->insert('arborcat_user_lists')
         ->fields([
           'uid' => $user->get('uid')->value,
-          'pnum' => $user->field_patron_id->value,
+          'pnum' => ($user->field_patron_id->value ?? 0),
           'title' => $form_state->getValue('title'),
           'description' => $form_state->getValue('description'),
           'public' => $form_state->getValue('public')

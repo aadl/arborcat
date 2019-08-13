@@ -106,7 +106,7 @@ class DefaultController extends ControllerBase {
     $review_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserRecordReviewForm', $bib_record->id, $bib_record->title);
 
     // get commuity ratings
-    $query = $db->query("SELECT AVG(rating) as average, count(id) as total FROM arborcat_ratings WHERE bib=:bib",
+    $query = $db->query("SELECT AVG(rating) as average, count(id) as total FROM arborcat_ratings WHERE bib=:bib and rating > 0",
         [':bib' => $bib_record->id]);
     $ratings = $query->fetch();
     $ratings->average = round($ratings->average, 1);
@@ -117,9 +117,32 @@ class DefaultController extends ControllerBase {
     // if summer game codes, convert to array so template can loop over
     if (isset($bib_record->gamecodes)) {
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
-        if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+        if (\Drupal::config('summergame.settings')->get('summergame_points_enabled') ||
+            $user->hasPermission('play test summergame')) {
           $bib_record->sg_enabled = true;
-          $bib_record->gamecodes = (array) $bib_record->gamecodes;
+          $bib_record->sg_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
+
+          $gamecodes = [];
+          foreach ($bib_record->gamecodes as $gameterm => $gameterm_gamecodes) {
+            foreach ($gameterm_gamecodes as $gamecode) {
+              $badges = $db->query('SELECT d.nid, d.title FROM node__field_badge_formula f, node_field_data d ' .
+                                   'WHERE f.entity_id = d.nid ' .
+                                   'AND f.field_badge_formula_value REGEXP :gamecode',
+                                   [':gamecode' => '[[:<:]]' . $gamecode . '[[:>:]]'])->fetchAll();
+
+              foreach ($badges as $badge) {
+                $gc_data = [
+                  'text' => $gamecode,
+                  'badge' => [
+                    'id' => $badge->nid,
+                    'title' => $badge->title,
+                  ]
+                ];
+                $gamecodes[$gameterm][] = $gc_data;
+              }
+            }
+          }
+          $bib_record->gamecodes = $gamecodes;
         }
       }
     }
@@ -241,12 +264,6 @@ class DefaultController extends ControllerBase {
       $rated = $db->query("SELECT * FROM arborcat_ratings WHERE bib=:bib AND uid=:uid",
         [':bib' => $bib, ':uid' => $user->id()])->fetch();
       if (isset($rated->id)) {
-        if ($rating == 0) {
-          $db->delete('arborcat_ratings')
-            ->condition('id', $rated->id, '=')
-            ->condition('bib', $bib, '=')
-            ->execute();
-        } else {
           $db->update('arborcat_ratings')
             ->condition('id', $rated->id, '=')
             ->condition('bib', $bib, '=')
@@ -254,7 +271,6 @@ class DefaultController extends ControllerBase {
               'rating' => $rating
             ])
             ->execute();
-        }
         $result['success'] = 'Rating updated!';
       } else {
         $db->insert('arborcat_ratings')
@@ -294,7 +310,7 @@ class DefaultController extends ControllerBase {
       $hold = $guzzle->get("$api_url/patron/$barcode|$api_key/place_hold/$bnum/$loc/$type")->getBody()->getContents();
       return new JsonResponse($hold);
     }
-    return new JsonResponse('Request could not be processed'); 
+    return new JsonResponse('Request could not be processed');
   }
 
 }
