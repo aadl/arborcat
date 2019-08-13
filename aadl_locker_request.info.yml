@@ -1,5 +1,0 @@
-name: 'Arborcat Locker Requests'
-description: 'Submodule to request lockers for holds'
-core: 8.x
-package: 'AADL Modules'
-type: module
