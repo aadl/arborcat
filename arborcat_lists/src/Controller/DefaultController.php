@@ -88,6 +88,9 @@ class DefaultController extends ControllerBase {
       $res = $query->fetch();
       if (isset($res->bib)) {
         $lists[$i]->bib = $res->bib;
+      } else {
+        unset($lists[$i]);
+        continue;
       }
       $user = \Drupal\user\Entity\User::load($lists[$i]->uid);
       $lists[$i]->username = (isset($user) ? $user->get('name')->value : 'unknown');
