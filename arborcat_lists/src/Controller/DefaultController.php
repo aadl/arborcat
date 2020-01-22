@@ -165,6 +165,7 @@ class DefaultController extends ControllerBase {
           $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
           $mat_name = json_decode($mat_types);
           $bib_record['mat_name'] = $mat_name->{$bib_record['mat_code']};
+          $bib_record['_id'] = $item['_id'];
           $list_items['items'][$item['_id']] = $bib_record;
         }
 

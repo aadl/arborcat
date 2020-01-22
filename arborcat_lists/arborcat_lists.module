@@ -339,7 +339,7 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
   ];
 
   foreach ($items as $item) {
-    $es_query['bool']['filter']['terms']['bnum'][] = $item->bib;
+    $es_query['bool']['filter']['terms']['_id'][] = $item->bib;
   }
 
   $params = [
@@ -383,9 +383,9 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
   $query = $db->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order",
     [':lid' => $lid]);
   $items = $query->fetchAll();
-  $es_query['bool']['filter']['terms']['bnum'] = [];
+  $es_query['bool']['filter']['terms']['_id'] = [];
   foreach ($items as $item) {
-    $es_query['bool']['filter']['terms']['bnum'][] = $item->bib;
+    $es_query['bool']['filter']['terms']['_id'][] = $item->bib;
   }
   $params['body']['query'] = $es_query;
   unset($params['body']['size']);
