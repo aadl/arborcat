@@ -117,7 +117,7 @@ class DefaultController extends ControllerBase {
     // if summer game codes, convert to array so template can loop over
     if (isset($bib_record->gamecodes)) {
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
-        if (\Drupal::config('summergame.settings')->get('summergame_points_enabled') ||
+        if (\Drupal::config('summergame.settings')->get('summergame_show_gamecodes_in_catalog') ||
             $user->hasPermission('play test summergame')) {
           $bib_record->sg_enabled = true;
           $bib_record->sg_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
