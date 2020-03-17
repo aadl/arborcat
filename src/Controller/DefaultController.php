@@ -34,6 +34,7 @@ class DefaultController extends ControllerBase {
       $bib_record = $json;
       // Copy from Elasticsearch record id to same format as CouchDB _id
       //$bib_record->_id = $bib_record->id;
+      $bib_record->id = $bib_record->_id;
     } catch (\Exception $e) {
       $bib_record->_id = NULL;
     }
