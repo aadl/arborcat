@@ -12,32 +12,29 @@ class LockerRequestForm extends FormBase{
 		return 'locker_form_contents';
 	}
 
-	public function buildForm(array $form,FormStateInterface $form_state,$uid=NULL){
-		$branch = $_GET["branch"];
-		if($branch=="mcb"){
-			$branch = "Malletts Creek Branch";
-		}
-		elseif($branch=="pts"){
-			$branch = "Pittsfield Branch";
-		}
+	public function buildForm(array $form, FormStateInterface $form_state, $uid = NULL) {
+
 		$guzzle = \Drupal::httpClient();
     $uid = \Drupal::currentUser()->id();
+    $uid = 200631;
 		$account = \Drupal\user\Entity\User::load($uid);
 		$api_key = $account->get('field_api_key')->value;
 		$api_url = \Drupal::config('arborcat.settings')->get('api_url');
-		$patron_info = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents(),true);
-		$locker_holds = json_decode($guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents(),true);	
-		$eligible_holds=[];
+		$patron_info = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents(), true);
+		$locker_holds = json_decode($guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents(), true);	
+		$eligible_holds = [];
 		//start at 1 to avoid issue with eligible holds array not being zero-based 
 		$i=1;
 
-		if(count($locker_holds)){
-			foreach($locker_holds as $hold){
-				if($hold['pickup'] == $branch && $hold['status'] == 'Ready for Pickup'){
-					if(arborcat_eligible_for_locker($hold)){
-					$eligible_holds[$i]=['Title'=>$hold['title'],
-					'Status'=>$hold['status'],
-					'PickupLoc'=>$hold['pickup']];
+		if (count($locker_holds)) {
+			foreach ($locker_holds as $hold) {
+				if ($hold['status'] == 'Ready for Pickup') {
+					if(arborcat_eligible_for_locker($hold)) {
+						$eligible_holds[$i] = [
+							'Title' => $hold['title'],
+							'Status' => $hold['status'],
+							'PickupLoc' => $hold['pickup']
+						];
 					$i++;
 				}
 			}
@@ -51,21 +48,21 @@ class LockerRequestForm extends FormBase{
 			'#type' => 'value',
 			'#default_value' => $eligible_holds,
 		];
-	  	$form['lockercode'] = [
+  	$form['lockercode'] = [
 			'#type' => 'value',
 			'#default_value' => $patron_info['telephone'],
-	  	];
-	  	$form['patronname'] = [
+  	];
+  	$form['patronname'] = [
 			'#type' => 'value',
 			'#default_value' => $patron_info['name'],
-			];
-			$form['uid'] = [
-				'#type'=>'value',
-				'#default_value'=>$uid
-			];
+		];
+		$form['uid'] = [
+			'#type'=>'value',
+			'#default_value'=>$uid
+		];
 		$form['explanation'] = [	
-			'#markup'=>"<h2>$branch Locker Request Form</h2>" .
-			"Select items below to request that they be put into a locker:"
+			'#markup'=>"<h2>$branch Request Pickup Form</h2>" .
+			"Select items below to request for pickup:"
 		];
 		$header = [
 			'Title'=>t('Title'),
@@ -80,29 +77,80 @@ class LockerRequestForm extends FormBase{
 			'#empty'=>"You have no holds ready for pickup."
 		];
 		
-		$form['explanationcont']=[
-			'#markup'=>
-			"<div>" .
-			"Once your items are in a locker, please pick them up by 9 AM the next morning. Items still in the lockers when the library opens may be checked back in for the next patron. Requests placed within 30 minutes of closing may not be ready today. Thank you for using this service, and thank you for using your library!" .
-			"</div>"
+		// $form['explanationcont']=[
+		// 	'#markup'=>
+		// 	"<div>" .
+		// 	"Once your items are in a locker, please pick them up by 9 AM the next morning. Items still in the lockers when the library opens may be checked back in for the next patron. Requests placed within 30 minutes of closing may not be ready today. Thank you for using this service, and thank you for using your library!" .
+		// 	"</div>"
+		// ];
+
+		$form['pickup_type'] = [
+		  '#type' => 'select',
+		  '#title' => t('Pickup Method'),
+		  '#options' => [
+		    '0' => '',
+		    '1' => 'Vestibule',
+		    '2' => 'Locker',
+		  ],
+		  '#description' => t('Select how you would like to pick up your requests.'),
 		];
 
-	  	$form['email'] = [
+		$form['pickup_date'] = [
+			'#type' => 'date',
+			'#title' => t('Pickup Date'),
+			'#size' => 32,
+			'#maxlength' => 64,
+			'#description' => t('Please select a date to pickup your requests. We are unable to fulfill same day requests.'),
+		];
+
+		$form['pickup_time'] = [
+		  '#type' => 'select',
+		  '#title' => t('Pickup Time'),
+		  '#options' => [
+		  	'0' => '',
+		    '1' => '12pm - 2pm',
+		    '2' => '2pm - 4pm',
+		    '3' => '4pm - 6pm',
+		    '4' => '6pm - 8pm'
+		  ],
+		  '#description' => t('Select time period for when you would like to pick up your requests from a locker.'),
+		];
+
+		$form['sms'] = [
 			'#type' => 'textfield',
-			'#title' => t('Notification Email'),
+			'#title' => t('Notification by Text'),
+			'#default_value' => $patron_info['phone'],
+			'#size' => 32,
+			'#maxlength' => 64,
+			'#description' => t('Enter a phone number if you would like to receive a text when your requests are ready to be picked up.'),
+		];
+
+		$form['phone'] = [
+			'#type' => 'textfield',
+			'#title' => t('Notification by Phone Call'),
+			'#default_value' => $patron_info['phone'],
+			'#size' => 32,
+			'#maxlength' => 64,
+			'#description' => t('Enter a phone number if you would like to receive a call when your requests are ready to be picked up.'),
+		];
+
+  	$form['email'] = [
+			'#type' => 'textfield',
+			'#title' => t('Notification by Email'),
 			'#default_value' => $patron_info['email'],
 			'#size' => 32,
 			'#maxlength' => 64,
-			'#description' => t('Please enter the email address to receive notification of your locker request'),
+			'#description' => t('Enter an email if you would like to receive an email when your requests are ready to be picked up.'),
 		];
-			$form['branch'] = [
-				'#type' => 'value',
-				'#default_value'=>$branch
-			];
 
-	  	$form['submit'] = [
-			'#type' => 'submit',
-			'#default_value' => t('Check these items out to me and put them in a pickup locker'),
+		$form['branch'] = [
+			'#type' => 'value',
+			'#default_value'=>$branch
+		];
+
+  	$form['submit'] = [
+		'#type' => 'submit',
+		'#default_value' => t('Check these items out to me and put them out for pickup'),
 		];
 		  return $form;
 	}
