@@ -44,6 +44,8 @@ class LockerRequestForm extends FormBase{
 			}
 		}
 
+		$form['#attributes'] = ['class' => 'form-width-exception'];
+
 		$form['lockeritems'] = [
 			'#type' => 'value',
 			'#default_value' => $eligible_holds,
@@ -60,21 +62,25 @@ class LockerRequestForm extends FormBase{
 			'#type'=>'value',
 			'#default_value'=>$uid
 		];
-		$form['explanation'] = [	
-			'#markup'=>"<h2>$branch Request Pickup Form</h2>" .
-			"Select items below to request for pickup:"
-		];
+		// $form['explanation'] = [	
+		// 	'#markup'=>"<h2>$branch Request Pickup Form</h2>" .
+		// 	"Select items below to request for pickup:"
+		// ];
 		$header = [
 			'Title'=>t('Title'),
 			'PickupLoc'=>t('Pickup Location')
 		];
 
 		$form['item_table']=[
+			'#prefix' => '<h2>Request Pickup Form</h2>
+									 Select items below to request for pickup:
+									 <div><div class="l-inline-b side-by-side-form">',
 			'#type'=>'tableselect',
-			'#header'=>$header,
-			'#options'=>$eligible_holds,
-			'#multiple'=>'true',
-			'#empty'=>"You have no holds ready for pickup."
+			'#header' => $header,
+			'#options' => $eligible_holds,
+			'#multiple' => 'true',
+			'#empty' => "You have no holds ready for pickup.",
+			'#suffix' => '</div>'
 		];
 		
 		// $form['explanationcont']=[
@@ -85,6 +91,7 @@ class LockerRequestForm extends FormBase{
 		// ];
 
 		$form['pickup_type'] = [
+			'#prefix' => '<div class="l-inline-b side-by-side-form">',
 		  '#type' => 'select',
 		  '#title' => t('Pickup Method'),
 		  '#options' => [
@@ -145,7 +152,8 @@ class LockerRequestForm extends FormBase{
 
 		$form['branch'] = [
 			'#type' => 'value',
-			'#default_value'=>$branch
+			'#default_value' => $branch,
+			'#suffix' => '</div></div>'
 		];
 
   	$form['submit'] = [
