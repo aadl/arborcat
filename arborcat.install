@@ -1,0 +1,100 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the arborcat module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function arborcat_schema()
+{
+    $schema['arborcat_patron_pickup_request'] = [
+        'description' => 'table containing pickup requests ',
+        'fields' => [
+            'id' => [
+                'type' => 'serial',
+                'unsigned' => true,
+                'not null' => true,
+            ],
+           'requestId' => [
+                'description' => 'request holdId',
+                'type' => 'int',
+                'size' => 'big',
+                'unsigned' => true,
+                'not null' => true,
+            ],
+            'patronId' => [
+                'description' => 'Patron UID',
+                'type' => 'int',
+                'unsigned' => true,
+                'not null' => true,
+            ],
+            'branch' => [
+                'description' => 'pickup branch',
+                'type' => 'varchar',
+                'length' => 10,
+                'default' => '',
+            ],
+            'timeSlot' => [
+                'type' => 'int',
+                'description' => 'time slot for locker pickup',
+            ],
+            'pickupDate' => [
+                'type' => 'varchar',
+                'length' => 50,
+                'default' => '',
+                'description' => 'Date to pickup requested item',
+            ],
+           'contactEmail' => [
+                'type' => 'varchar',
+                'length' => 50,
+                'default' => '',
+                'description' => 'email to notify patron',
+            ],
+             'contactPhone' => [
+                'type' => 'varchar',
+                'length' => 50,
+                'default' => '',
+                'description' => 'telephone number to notify patron using voicemail',
+            ],
+             'contactSMS' => [
+                'type' => 'varchar',
+                'length' => 50,
+                'default' => '',
+                'description' => 'cell phone number to notify patron using an SMS text message',
+            ],
+             'completed' => [
+                'type' => 'int',
+                'default' => 0,
+               'description' => 'set to 1 when hold is checked out and placed for pickup',
+             ],
+        ],
+        'primary key' => ['id'],
+    ];
+
+    $schema['arborcat_pickup_location'] = [
+        'description' => 'table containing pickup locations with descriptions or each place',
+        'fields' => [
+           'locationId' => [
+                'description' => 'pickup location Id',
+                'type' => 'int',
+                'unsigned' => true,
+                'not null' => true,
+            ],
+            'locationName' => [
+                'description' => 'Patron UID',
+                'type' => 'varchar',
+                'length' => 50,
+                'not null' => true,
+            ],
+            'LocationDescription' => [
+                'type' => 'text',
+                'description' => 'Detailed description of the pickup location',
+            ],
+      ],
+      'primary key' => ['locationId']
+    ];
+    return $schema;
+}
