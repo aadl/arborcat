@@ -3,118 +3,121 @@
  * Display help and module information
  * @return help text for section
  */
-function arborcat_help($path, $arg) {
-  $output = '';
+function arborcat_help($path, $arg)
+{
+    $output = '';
 
-  switch ($path) {
+    switch ($path) {
     case "admin/help#arborcat":
       $output = '<p>' .  t("Catalog functions for Evergreen") . '</p>';
       break;
   }
 
-  return $output;
+    return $output;
 }
 
-function arborcat_theme($existing, $type, $theme, $path) {
-  return [
+function arborcat_theme($existing, $type, $theme, $path)
+{
+    return [
     'catalog' => [
       'variables' => [
-        'catalog_slider' => NULL,
-        'community_slider' => NULL,
-        'podcast_slider' => NULL
+        'catalog_slider' => null,
+        'community_slider' => null,
+        'podcast_slider' => null
       ]
     ],
     'catalog_record' => [
       'variables' => [
-        'record' => NULL,
-        'api_key' => NULL,
-        'lists' => NULL,
-        'reviews' => NULL,
-        'review_form' => NULL,
-        'ratings' => NULL
+        'record' => null,
+        'api_key' => null,
+        'lists' => null,
+        'reviews' => null,
+        'review_form' => null,
+        'ratings' => null
       ]
     ],
     'moderate_reviews' => [
       'variables' => [
-        'reviews' => NULL,
-        'pager' => NULL
+        'reviews' => null,
+        'pager' => null
       ]
     ]
   ];
 }
 
-function arborcat_generate_api_key() {
-  // Use the UUID service to generate a Unique identifier
-  $uuid_service = \Drupal::service('uuid');
-  return $uuid_service->generate();
+function arborcat_generate_api_key()
+{
+    // Use the UUID service to generate a Unique identifier
+    $uuid_service = \Drupal::service('uuid');
+    return $uuid_service->generate();
 }
 
 // set drupal messages for fees or expired card
-function arborcat_patron_fines_expired($fines, $patron) {
-  $patron_clean = TRUE;
+function arborcat_patron_fines_expired($fines, $patron)
+{
+    $patron_clean = true;
 
-  if ($fines->total > 25) {
-    drupal_set_message("We're sorry, but your account balance is over $25. You won't be able to renew or request items.", 'error');
-    $patron_clean = FALSE;
-  }
-  if (strtotime($patron->expires) < time()) {
-    drupal_set_message("We're sorry, but your card has expired! You can renew in person at any AADL Location.", 'error');
-    $patron_clean = FALSE;
-  }
+    if ($fines->total > 25) {
+        drupal_set_message("We're sorry, but your account balance is over $25. You won't be able to renew or request items.", 'error');
+        $patron_clean = false;
+    }
+    if (strtotime($patron->expires) < time()) {
+        drupal_set_message("We're sorry, but your card has expired! You can renew in person at any AADL Location.", 'error');
+        $patron_clean = false;
+    }
 
-  return $patron_clean;
+    return $patron_clean;
 }
 
 //check if a hold is eligible for a locker based on material type
-  function arborcat_eligible_for_locker($hold){
-    if($hold['material'] == "Art Print" || $hold['material'] == "Tools" || $hold['material'] == "Oversize") {
-      return FALSE;
-    } else {
-      return TRUE;
-    }
+  function arborcat_eligible_for_locker($hold)
+  {
+      if ($hold['material'] == "Art Print" || $hold['material'] == "Tools" || $hold['material'] == "Oversize") {
+          return false;
+      } else {
+          return true;
+      }
   }
 
   //check if there are lockers available to place holds into
-  function arborcat_lockers_available($branch){
-    $mess = \Drupal::messenger();
-    $available=false;
-      if(stripos($branch,'Malletts')!==false){
-        $locker_server = 'mcblockers';
+  function arborcat_lockers_available($branch)
+  {
+      $mess = \Drupal::messenger();
+      $available=false;
+      if (stripos($branch, 'Malletts')!==false) {
+          $locker_server = 'mcblockers';
+      } elseif (stripos($branch, 'Pittsfield')!==false) {
+          $locker_server = 'ptslockers';
       }
-      else if(stripos($branch,'Pittsfield')!==false){
-        $locker_server = 'ptslockers';
-      }
-      if($locker_server=='ptslockers'){
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, \Drupal::config('arborcat.settings')->get('pts_lockers'));
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERPWD, \Drupal::config('arborcat.settings')->get('lockers_pass'));
-        $result = curl_exec($ch);
+      if ($locker_server=='ptslockers') {
+          $ch = curl_init();
+          curl_setopt($ch, CURLOPT_URL, \Drupal::config('arborcat.settings')->get('pts_lockers'));
+          curl_setopt($ch, CURLOPT_HEADER, 0);
+          curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+          curl_setopt($ch, CURLOPT_USERPWD, \Drupal::config('arborcat.settings')->get('lockers_pass'));
+          $result = curl_exec($ch);
 
-        $simpleXML = simplexml_load_string($result);
-        $i=1;
-        $s = $simpleXML->doors->children();
-        if($s->assign1==0&$s->assign2==0&$s->assign3==0&$s->assign4==0){
-           $available=false;
-        }
-        else if($s->assign1!==0||$s->assign2!==0||$s->assign3!==0||$s->assign4!==0){
-          $available=true;
-        }
+          $simpleXML = simplexml_load_string($result);
+          $i=1;
+          $s = $simpleXML->doors->children();
+          if ($s->assign1==0&$s->assign2==0&$s->assign3==0&$s->assign4==0) {
+              $available=false;
+          } elseif ($s->assign1!==0||$s->assign2!==0||$s->assign3!==0||$s->assign4!==0) {
+              $available=true;
+          }
+      } elseif ($locker_server=='mcblockers') {
+          $ch = curl_init();
+          curl_setopt($ch, CURLOPT_URL, \Drupal::config('arborcat.settings')->get('mcb_lockers'));
+          curl_setopt($ch, CURLOPT_HEADER, 0);
+          curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+          curl_setopt($ch, CURLOPT_USERPWD, \Drupal::config('arborcat.settings')->get('lockers_pass'));
+          $result = curl_exec($ch);
+          if ($result != null) {
+              preg_match_all('%name="web_patroninserted_door.*?value="([\d]+?)"%s', $result, $matches);
+              if ($matches[1][0]>0) {
+                  $available = true;
+              }
+          }
       }
-        else if($locker_server=='mcblockers'){
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, \Drupal::config('arborcat.settings')->get('mcb_lockers'));
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERPWD, \Drupal::config('arborcat.settings')->get('lockers_pass'));
-        $result = curl_exec($ch);
-        preg_match_all('%name="web_patroninserted_door.*?value="([\d]+?)"%s', $result, $matches);
-        if ($matches[1][0]>0) {
-          $available = TRUE;
-        }
-      }
-    return $available;
+      return $available;
   }
-  
-?>

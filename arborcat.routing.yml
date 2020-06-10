@@ -76,16 +76,17 @@ arborcat.locker_request_form:
     _title: 'Locker Request'
     _permission: 'access arborcat'
 arborcat.pickup_test:
-  path: /pickuprequesttest
+  path: /pickuprequesttest/
   defaults:
     _controller: '\Drupal\arborcat\Controller\DefaultController::pickup_test'
   requirements:
     _title: 'Pickup Request Test'
     _permission: 'access arborcat'
+
 arborcat.pickup_request:
-  path: /pickuprequest
+  path: /pickuprequest/{pnum}/{encrypted_barcode}/{loc}
   defaults:
-    _form: '\Drupal\arborcat\Form\pickupRequestForm'
+    _controller: '\Drupal\arborcat\Controller\DefaultController::pickup_request'
   requirements:
     _title: 'Request Pickup Options'
     _permission: 'access arborcat'

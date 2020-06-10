@@ -7,6 +7,7 @@ namespace Drupal\arborcat\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Drupal\Core\Datetime\DrupalDateTime;
 
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
@@ -342,20 +343,87 @@ class DefaultController extends ControllerBase
 
     public function pickup_test()
     {
-        dblog('pickup_test ENTERED');
-        return $this->pickupLocations();
+        //$this->dblog('pickup_test ENTERED');
+        $pickupLocations = $this->pickupLocations();
+        //$this->dblog('pickup_test returned: ', $pickupLocations);
+        // $pickupLocations = $this->addPickupRequest();
+        return($pickupLocations);
     }
 
+    public function pickup_request($pnum, $encrypted_barcode, $loc)
+    {
+        $this->dblog('pickup_request ENTERED, pnum, $encrypted_barcode, $loc :', $pnum, $encrypted_barcode, $loc);
+        // pnum=xxx&key=xxx
+        if ($this->validateTransaction($pnum, $encrypted_barcode)) {
+            $this->dblog('pickup_request VALIDATED $key');
+            $requestPickup_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\PickupRequestForm', $pnum, $loc);
+            return $requestPickup_form;
+        } else {
+            return new JsonResponse('Request could not be processed');
+        }
+    }
+
+    private function validateTransaction($pnum, $encrypted_barcode)
+    {
+        $returnval = false;
+        $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+        $guzzle = \Drupal::httpClient();
+        $json = json_decode($guzzle->get("$api_url/patron?apikey=$api_key&pnum=$pnum")->getBody()->getContents());
+        if ($json) {
+            $barcode =  $json->evg_user->card->barcode;
+            $this->dblog('validateTransaction:: $barcode = '. $barcode);
+            $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
+            $hashedBarcode = md5($pickup_requests_salt . $barcode);
+            $this->dblog('validateTransaction:: $hashedBarcode, $encrypted_barcode = '. $hashedBarcode, $encrypted_barcode);
+
+            if ($hashedBarcode == $encrypted_barcode) {
+                $returnval =  true;
+            }
+        }
+        return $returnval;
+    }
+    
     private function pickupLocations()
     {
         $db = \Drupal::database();
-        $query = $db->select('arborcat_pickup_locations', 'apl')
+        $query = $db->select('arborcat_pickup_location', 'apl')
               ->fields('apl', ['locationId', 'locationName', 'locationDescription']);
-            
         $result = $query->execute();
-        $bookingRecords = $result->fetchAll();
-        dblog('pickupLocations RETURNING: ', json_encode($bookingRecords));
+        $pickupLocationRecords = $result->fetchAll();
+        //$this->dblog('pickupLocations RETURNING: ', json_encode($pickupLocationRecords));
+        return new JsonResponse($pickupLocationRecords);
     }
+
+    private function addPickupRequest($pickupLocation, $pickupDay, $timeSlot, $contactEmail, $contactPhone, $contactSMS)
+    {
+        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+        if ($user->isAuthenticated()) {
+            $db = \Drupal::database();
+            //$this->dblog('pickupLocations RETURNING: ', json_encode($pickupLocationRecords));
+            $db->insert('arborcat_patron_pickup_request')
+            ->fields([
+              'uid' => $user->id(),
+              'pickupDay' => $pickupDay,
+              'timeSlot' => $timeSlot,
+              'pickupLocation' => $pickupLocation,
+              'contactEmail' => $contactEmail,
+              'contactPhone' => $contactPhone,
+              'contactSMS' => $contactSMS,
+              'timestamp' => time()
+            ])
+            ->execute();
+            $result['success'] = "Successfully added pickup request";
+        } else {
+            $result['error'] = 'You must be logged in to make a pickup request.';
+        }
+
+        return new JsonResponse($result);
+    }
+
+
+
+
 
     /*
     * Debugging routine to log to the <root folder>/LWKLWK.log
