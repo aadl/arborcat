@@ -343,11 +343,29 @@ class DefaultController extends ControllerBase
 
     public function pickup_test()
     {
-        //$this->dblog('pickup_test ENTERED');
-        $pickupLocations = $this->pickupLocations();
-        //$this->dblog('pickup_test returned: ', $pickupLocations);
-        // $pickupLocations = $this->addPickupRequest();
-        return($pickupLocations);
+        $this->dblog('pickup_test ENTERED = ');
+        $returnval = '';
+        $barcode = \Drupal::request()->query->get('barcode');
+        $patronId = \Drupal::request()->query->get('patronid');
+
+        $this->dblog('pickup_test  barcode = ', $barcode);
+        $this->dblog('pickup_test patronId = ', $patronId);
+
+        $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
+     
+        if (strlen($patronId) > 0) {
+            $this->dblog('pickup_test Calling barcodeFromPatronId patronId =', $patronId);
+            $barcode =  $this->barcodeFromPatronId($patronId);
+        }
+
+        if (14 === strlen($barcode)) {
+            $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+            $returnval = '<h2>' . $barcode . ' -> ' . $encryptedBarcode . '</h2>';
+        }
+        return [
+         '#title' => 'pickup request test',
+         '#markup' => $returnval
+        ];
     }
 
     public function pickup_request($pnum, $encrypted_barcode, $loc)
@@ -363,15 +381,31 @@ class DefaultController extends ControllerBase
         }
     }
 
-    private function validateTransaction($pnum, $encrypted_barcode)
+    private function barcodeFromPatronId($patronId)
     {
-        $returnval = false;
+        $this->dblog('barcodeFromPatronId - ENTERED patronId:'. $patronId);
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
         $guzzle = \Drupal::httpClient();
-        $json = json_decode($guzzle->get("$api_url/patron?apikey=$api_key&pnum=$pnum")->getBody()->getContents());
+        $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
+        $this->dblog('barcodeFromPatronId - calling guzzle with URL: '. $requestURL);
+        $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
         if ($json) {
+            $this->dblog('barcodeFromPatronId -json > 0 ');
             $barcode =  $json->evg_user->card->barcode;
+            $this->dblog('barcodeFromPatronId -returning $barcode:', $barcode);
+            return $barcode;
+        } else {
+            return "";
+        }
+    }
+
+    private function validateTransaction($pnum, $encrypted_barcode)
+    {
+        $returnval = false;
+        
+        $barcode =  $this->barcodeFromPatronId($pnum);
+        if (14 == strlen($barcode)) {
             $this->dblog('validateTransaction:: $barcode = '. $barcode);
             $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
             $hashedBarcode = md5($pickup_requests_salt . $barcode);
