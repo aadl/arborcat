@@ -347,20 +347,38 @@ class DefaultController extends ControllerBase
         $returnval = '';
         $barcode = \Drupal::request()->query->get('barcode');
         $patronId = \Drupal::request()->query->get('patronid');
+        $location = \Drupal::request()->query->get('location');
 
         $this->dblog('pickup_test  barcode = ', $barcode);
         $this->dblog('pickup_test patronId = ', $patronId);
+
+ 
+        if (strlen($location) != 3) {
+            $location = '102';
+        }
 
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
      
         if (strlen($patronId) > 0) {
             $this->dblog('pickup_test Calling barcodeFromPatronId patronId =', $patronId);
             $barcode =  $this->barcodeFromPatronId($patronId);
+        } else {
+            $patronId = $this->patronIdFromBarcode($barcode);
         }
 
         if (14 === strlen($barcode)) {
             $encryptedBarcode = md5($pickup_requests_salt . $barcode);
-            $returnval = '<h2>' . $barcode . ' -> ' . $encryptedBarcode . '</h2>';
+            $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
+            
+            $host = 'https://pinkeye.aadl.org';
+            $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+            $html = '<a href="' . $link . '" target="_blank">' . $link  . '</a>';
+ 
+            $host = 'http://nginx.docker.localhost:8000';
+            $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+            $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
+
+            $returnval .= $html . $html2;
         }
         return [
          '#title' => 'pickup request test',
@@ -399,6 +417,25 @@ class DefaultController extends ControllerBase
             return "";
         }
     }
+    private function patronIdFromBarcode($barcode)
+    {
+        $this->dblog('patronIdFromBarcode - ENTERED barcode:'. $barcode);
+        $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+        $guzzle = \Drupal::httpClient();
+        $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
+        $this->dblog('patronIdFromBarcode - calling guzzle with URL: '. $requestURL);
+        $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+        if ($json) {
+            $this->dblog('patronIdFromBarcode -json > 0 ');
+            $patronId =  $json->pid;
+            $this->dblog('patronIdFromBarcode -returning $patronId:', $patronId);
+            return $patronId;
+        } else {
+            return "";
+        }
+    }
+
 
     private function validateTransaction($pnum, $encrypted_barcode)
     {

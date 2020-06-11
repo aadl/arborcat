@@ -23,18 +23,19 @@ class PickupRequestForm extends FormBase
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
-        $json = json_decode($guzzle->get("$api_url/patron?apikey=$api_key&pnum=$patronId")->getBody()->getContents());
+        $patron_info = json_decode((string) $guzzle->get("$api_url/patron?apikey=$api_key&pnum=$patronId")->getBody()->getContents(), true);
 
-        $uid = $json->evg_user->card->id;
+        $uid = $patron_info['evg_user']['card']['id'];
         $this->dblog('== buildForm::uid', $uid);
         $account = \Drupal\user\Entity\User::load($uid);
 
         $api_key = $account->get('field_api_key')->value;
         $this->dblog('== buildForm::api_key', $api_key);
 
-        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-        $patron_info = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents(), true);
         $patron_holds = json_decode($guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents(), true);
+        $patron_barcode = $patron_info['evg_user']['card']['barcode'];
+        $this->dblog('== buildForm::patron_barcode:<<', $patron_barcode, '>>');
+
         $eligible_holds = [];
         
         // Get the locations
@@ -97,7 +98,7 @@ class PickupRequestForm extends FormBase
         //$this->dblog('== buildForm::PickupRequestForm:: form = ', $form);
 
         $form['item_table']=[
-            '#prefix' => '<h2>Request Pickup Form for items at ' . $locationName . '</h2>
+            '#prefix' => '<h2>Request Pickup for items at ' . $locationName . ' for card# ' . $patron_barcode . '</h2>
 									 Select items below to request for pickup:
 									 <div><div class="l-inline-b side-by-side-form">',
             '#type'=>'tableselect',
