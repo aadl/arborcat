@@ -32,9 +32,15 @@ class PickupRequestForm extends FormBase
         $api_key = $account->get('field_api_key')->value;
         $this->dblog('== buildForm::api_key', $api_key);
 
-        $patron_holds = json_decode($guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents(), true);
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
         $this->dblog('== buildForm::patron_barcode:<<', $patron_barcode, '>>');
+
+        $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+        $selfCheckApi_key .= '-' .  $patron_barcode;
+        $this->dblog('== buildForm::count selfCheckApi_key:', $selfCheckApi_key);
+
+        $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), true);
+        $this->dblog('== buildForm::count patron_holds', count($patron_holds));
 
         $eligible_holds = [];
         

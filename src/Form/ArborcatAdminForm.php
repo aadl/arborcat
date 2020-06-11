@@ -110,6 +110,14 @@ class ArborcatAdminForm extends ConfigFormBase
       '#description' => t('Salt string for unpacking barcode numbers for pickup requests'),
     ];
 
+        $form['selfcheck_key'] = [
+      '#type' => 'textfield',
+      '#title' => t('Self-check key for patron api requests'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('selfcheck_key'),
+      '#size' => 32,
+      '#maxlength' => 64,
+      '#description' => t('self-check key for use with api requests pertaining to the patron data without the need to be signed in'),
+    ];
         return parent::buildForm($form, $form_state);
     }
 }
