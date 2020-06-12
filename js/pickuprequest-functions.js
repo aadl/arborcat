@@ -10,19 +10,21 @@
 //   }
 // })(jQuery, Drupal, drupalSettings);
 
-console.log(">>> \n");
+(function ($, Drupal) {
 
-$(function () {
-  console.log(">>> >>>\n");
+  $(function () {
+    console.log(">>> >>>\n");
+    
+    $('.edit-pickup-time input').change(function (e) {
+      console.log(">>> edit-pickup-time.change\n");
+    });
 
-  $('.edit-pickup-time input').change(function (e) {
-    console.log(">>> edit-pickup-time.change\n");
+    $('#edit-pickup-time').click(function () {
+      console.log(">>> edit-pickup-time CLICK \n");
+      $('html, body').animate({
+        scrollTop: $('#jump-link').offset().top - 40
+      }, 0);
+    });
   });
 
-  $('#edit-pickup-time').click(function () {
-    console.log(">>> edit-pickup-time CLICK \n");
-    $('html, body').animate({
-      scrollTop: $('#jump-link').offset().top - 40
-    }, 0);
-  });
-});
+})(jQuery, Drupal);
