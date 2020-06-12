@@ -406,7 +406,7 @@ class DefaultController extends ControllerBase
         }
 
         $render[] = [
-                '#theme' => 'pickup-request-form',
+                '#theme' => 'pickup_request_form',
                 '#formhtml' => $requestPickup_html,
             ];
 
