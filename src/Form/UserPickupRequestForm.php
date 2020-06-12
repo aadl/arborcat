@@ -134,10 +134,10 @@ class UserPickupRequestForm extends FormBase
 
         dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
 
-        // $pickupOptions =  [
-        //     '1' => 'Vestibule',
-        //     '2' => 'Locker',
-        // ];
+        $pickupOptions =  [
+            '1' => 'Vestibule',
+            '2' => 'Locker',
+        ];
 
 
         $form['pickup_type'] = [
