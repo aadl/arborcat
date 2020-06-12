@@ -7,8 +7,7 @@ use Drupal\Core\Mail\MailManagerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Predis\Client;
 use Drupal\Core\Datetime\DrupalDateTime;
-
-;
+use Drupal\arborcat\Controller;
 
 class PickupRequestForm extends FormBase
 {
@@ -17,7 +16,7 @@ class PickupRequestForm extends FormBase
         return 'locker_form_contents';
     }
 
-    public function buildForm(array $form, FormStateInterface $form_state, string $patronId = null, string $requestLocation = null)
+    public function buildForm(array $form, FormStateInterface $form_state, string $patronId = null, string $requestLocation = null, string $mode = null)
     {
         $guzzle = \Drupal::httpClient();
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
@@ -46,10 +45,12 @@ class PickupRequestForm extends FormBase
         
         // Get the locations
         $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
-        $this->dblog('== buildForm::locations', $locations);
         $locationName = $locations->$requestLocation;
-        $this->dblog('== buildForm::locationName: ', $locationName);
                      
+        // check the mode to see whether we need to display "Cancel Mode, rather than pickup request mode
+        if ('cancel' == $mode) {
+            $this->dblog('== PickupRequestForm::buildForm: cancel mode');
+        }
         //start at 1 to avoid issue with eligible holds array not being zero-based
         $i=1;
 
@@ -101,10 +102,10 @@ class PickupRequestForm extends FormBase
             'PickupLoc'=>t('Pickup Location')
         ];
 
-        //$this->dblog('== buildForm::PickupRequestForm:: form = ', $form);
-
+        $titleString = (strlen($mode) > 0) ? 'Cancel hold/request for item' : 'Request Pickup for item';
+        $titleString .= (count($eligible_holds) > 1) ? "'s" : '';
         $form['item_table']=[
-            '#prefix' => '<h2>Request Pickup for items at ' . $locationName . ' for card# ' . $patron_barcode . '</h2>
+            '#prefix' => '<h2>' . $titleString . ' at ' . $locationName . ' for card# ' . $patron_barcode . '</h2>
 									 Select items below to request for pickup:
 									 <div><div class="l-inline-b side-by-side-form">',
             '#type'=>'tableselect',
@@ -121,16 +122,29 @@ class PickupRequestForm extends FormBase
         // 	"Once your items are in a locker, please pick them up by 9 AM the next morning. Items still in the lockers when the library opens may be checked back in for the next patron. Requests placed within 30 minutes of closing may not be ready today. Thank you for using this service, and thank you for using your library!" .
         // 	"</div>"
         // ];
+        $pickupLocationsForRequest = pickupLocations($requestLocation);
+        $pickupOptions =  [];
+        $i = 1;
+
+        foreach ($pickupLocationsForRequest as $loc) {
+            $name = $loc->locationName;
+            $ikey = intval($i++);
+            $pickupOptions[$ikey] = $name;
+        }
+
+        $this->dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
+
+        // $pickupOptions =  [
+        //     '1' => 'Vestibule',
+        //     '2' => 'Locker',
+        // ];
+
 
         $form['pickup_type'] = [
-            '#prefix' => '<div class="l-inline-b side-by-side-form">',
+        '#prefix' => '<div class="l-inline-b side-by-side-form">',
           '#type' => 'select',
           '#title' => t('Pickup Method'),
-          '#options' => [
-            '0' => '',
-            '1' => 'Vestibule',
-            '2' => 'Locker',
-          ],
+          '#options' => $pickupOptions,
           '#description' => t('Select how you would like to pick up your requests.'),
         ];
 

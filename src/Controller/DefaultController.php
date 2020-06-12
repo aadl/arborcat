@@ -353,9 +353,14 @@ class DefaultController extends ControllerBase
         $this->dblog('pickup_test patronId = ', $patronId);
 
  
-        if (strlen($location) != 3) {
+        if (strlen($location) == 3) {
+            $this->dblog('pickup_test Before Calling pickupLocations for location =', $location);
+            $locations = $this->pickupLocations($location);
+            $this->dblog('pickup_test After Calling pickupLocations for location =', $location, $locations);
+        } else {
             $location = '102';
         }
+        
 
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
      
@@ -388,11 +393,12 @@ class DefaultController extends ControllerBase
 
     public function pickup_request($pnum, $encrypted_barcode, $loc)
     {
-        $this->dblog('pickup_request ENTERED, pnum, $encrypted_barcode, $loc :', $pnum, $encrypted_barcode, $loc);
+        $mode = \Drupal::request()->query->get('mode');
+        $this->dblog('pickup_request ENTERED, pnum, $encrypted_barcode, $loc :', $pnum, $encrypted_barcode, $loc, $mode);
         // pnum=xxx&key=xxx
         if ($this->validateTransaction($pnum, $encrypted_barcode)) {
             $this->dblog('pickup_request VALIDATED $key');
-            $requestPickup_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\PickupRequestForm', $pnum, $loc);
+            $requestPickup_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\PickupRequestForm', $pnum, $loc, $mode);
             return $requestPickup_form;
         } else {
             return new JsonResponse('Request could not be processed');
@@ -455,15 +461,21 @@ class DefaultController extends ControllerBase
         return $returnval;
     }
     
-    private function pickupLocations()
+    public function pickupLocations($destLocation = null)
     {
+        $this->dblog('pickupLocations ENTERED: destLocation =', $destLocation);
         $db = \Drupal::database();
-        $query = $db->select('arborcat_pickup_location', 'apl')
-              ->fields('apl', ['locationId', 'locationName', 'locationDescription']);
+        $query = $db->select('arborcat_pickup_location', 'apl');
+        $query->fields('apl', ['locationId', 'branchLocationId', 'locationName', 'locationDescription']);
+        
+        // add in a condition if a location is supplied to filter on
+        if (3== strlen($destLocation)) {
+            $query->condition('apl.branchLocationId', (int) $destLocation, '=');
+        }
         $result = $query->execute();
         $pickupLocationRecords = $result->fetchAll();
-        //$this->dblog('pickupLocations RETURNING: ', json_encode($pickupLocationRecords));
-        return new JsonResponse($pickupLocationRecords);
+        $this->dblog('pickupLocations RETURNING: ', json_encode($pickupLocationRecords));
+        return $pickupLocationRecords;
     }
 
     private function addPickupRequest($pickupLocation, $pickupDay, $timeSlot, $contactEmail, $contactPhone, $contactSMS)

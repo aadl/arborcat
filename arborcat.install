@@ -83,6 +83,12 @@ function arborcat_schema()
                 'unsigned' => true,
                 'not null' => true,
             ],
+          'branchLocationId' => [
+                'description' => 'library branch location Id',
+                'type' => 'int',
+                'unsigned' => true,
+                'not null' => true,
+            ],
             'locationName' => [
                 'description' => 'Patron UID',
                 'type' => 'varchar',

@@ -121,3 +121,20 @@ function arborcat_patron_fines_expired($fines, $patron)
       }
       return $available;
   }
+
+  function pickupLocations($destLocation = null)
+  {
+      //$this->dblog('pickupLocations ENTERED: destLocation =', $destLocation);
+      $db = \Drupal::database();
+      $query = $db->select('arborcat_pickup_location', 'apl');
+      $query->fields('apl', ['locationId', 'branchLocationId', 'locationName', 'locationDescription']);
+        
+      // add in a condition if a location is supplied to filter on
+      if (3== strlen($destLocation)) {
+          $query->condition('apl.branchLocationId', (int) $destLocation, '=');
+      }
+      $result = $query->execute();
+      $pickupLocationRecords = $result->fetchAll();
+      //$this->dblog('pickupLocations RETURNING: ', json_encode($pickupLocationRecords));
+      return $pickupLocationRecords;
+  }
