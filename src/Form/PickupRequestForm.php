@@ -13,11 +13,12 @@ class PickupRequestForm extends FormBase
 {
     public function getFormId()
     {
-        return 'locker_form_contents';
+        return 'pickup_request_form';
     }
 
     public function buildForm(array $form, FormStateInterface $form_state, string $patronId = null, string $requestLocation = null, string $mode = null)
     {
+        dblog('== buildForm ENTERED');
         $guzzle = \Drupal::httpClient();
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -25,21 +26,21 @@ class PickupRequestForm extends FormBase
         $patron_info = json_decode((string) $guzzle->get("$api_url/patron?apikey=$api_key&pnum=$patronId")->getBody()->getContents(), true);
 
         $uid = $patron_info['evg_user']['card']['id'];
-        $this->dblog('== buildForm::uid', $uid);
+        dblog('== buildForm::uid', $uid);
         $account = \Drupal\user\Entity\User::load($uid);
 
         $api_key = $account->get('field_api_key')->value;
-        $this->dblog('== buildForm::api_key', $api_key);
+        dblog('== buildForm::api_key', $api_key);
 
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
-        $this->dblog('== buildForm::patron_barcode:<<', $patron_barcode, '>>');
+        dblog('== buildForm::patron_barcode:<<', $patron_barcode, '>>');
 
         $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
         $selfCheckApi_key .= '-' .  $patron_barcode;
-        $this->dblog('== buildForm::count selfCheckApi_key:', $selfCheckApi_key);
+        dblog('== buildForm::count selfCheckApi_key:', $selfCheckApi_key);
 
         $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), true);
-        $this->dblog('== buildForm::count patron_holds', count($patron_holds));
+        dblog('== buildForm::count patron_holds', count($patron_holds));
 
         $eligible_holds = [];
         
@@ -49,13 +50,13 @@ class PickupRequestForm extends FormBase
                      
         // check the mode to see whether we need to display "Cancel Mode, rather than pickup request mode
         if ('cancel' == $mode) {
-            $this->dblog('== PickupRequestForm::buildForm: cancel mode');
+            dblog('== PickupRequestForm::buildForm: cancel mode');
         }
         //start at 1 to avoid issue with eligible holds array not being zero-based
         $i=1;
 
         if (count($patron_holds)) {
-            $this->dblog('== buildForm::PickupRequestForm::count -- patron_holds:', count($patron_holds));
+            dblog('== buildForm::PickupRequestForm::count -- patron_holds:', count($patron_holds));
 
             foreach ($patron_holds as $hold) {
                 if ($hold['status'] == 'Ready for Pickup') {
@@ -72,7 +73,7 @@ class PickupRequestForm extends FormBase
                 //     $msg = "There are currently no lockers available.";
                 // }
             }
-            $this->dblog('== buildForm::PickupRequestForm:: past foreach: eligible_holds count = ', count($eligible_holds));
+            dblog('== buildForm::PickupRequestForm:: past foreach: eligible_holds count = ', count($eligible_holds));
         }
 
         $form['#attributes'] = ['class' => 'form-width-exception'];
@@ -125,14 +126,13 @@ class PickupRequestForm extends FormBase
         $pickupLocationsForRequest = pickupLocations($requestLocation);
         $pickupOptions =  [];
         $i = 1;
-
         foreach ($pickupLocationsForRequest as $loc) {
             $name = $loc->locationName;
             $ikey = intval($i++);
             $pickupOptions[$ikey] = $name;
         }
 
-        $this->dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
+        dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
 
         // $pickupOptions =  [
         //     '1' => 'Vestibule',
@@ -148,15 +148,23 @@ class PickupRequestForm extends FormBase
           '#description' => t('Select how you would like to pick up your requests.'),
         ];
 
+
         $form['pickup_date'] = [
             '#type' => 'date',
             '#title' => t('Pickup Date'),
             '#size' => 32,
             '#maxlength' => 64,
             '#description' => t('Please select a date to pickup your requests. We are unable to fulfill same day requests.'),
-        ];
+            '#datepicker_options' => array(
+                // This needs to be in the same format as defined in #date_format.
+                'minDate' => '06/13/2020',
+                // You can also use this format.
+                'maxDate' => '06/20/2020')
+           ];
+
 
         $form['pickup_time'] = [
+          //'#attributes' => ['class' => 'no-display'],
           '#type' => 'select',
           '#title' => t('Pickup Time'),
           '#options' => [
@@ -207,7 +215,9 @@ class PickupRequestForm extends FormBase
         '#default_value' => t('Check these items out to me and put them out for pickup'),
         ];
 
-        //$this->dblog('== buildForm::PickupRequestForm:: RETURNING form = ', $form);
+        dblog('== buildForm::PickupRequestForm:: attaching JS lib: pickuprequest-functions');
+        $form['#attached']['library'][] = 'arborcat/pickuprequest-functions';
+
         return $form;
     }
 
@@ -332,21 +342,5 @@ class PickupRequestForm extends FormBase
         if (!valid_email_address($form_state->getValue('email'))) {
             $form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
         }
-    }
-    
-    /*
-    * Debugging routine to log to the <root folder>/LWKLWK.log
-    */
-    public function dblog(...$thingsToLog)
-    {
-        $lineToLog = '';
-        foreach ($thingsToLog as $item) {
-            $lineToLog = $lineToLog . ' ' . print_r($item, true);
-        }
-        // prepend date/time onto log line
-        $nowDateTime = new DrupalDateTime();
-        $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
-        $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
-        error_log($completeLine, 3, "LWKLWK.log");
     }
 }

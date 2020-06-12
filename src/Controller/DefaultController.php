@@ -396,13 +396,21 @@ class DefaultController extends ControllerBase
         $mode = \Drupal::request()->query->get('mode');
         $this->dblog('pickup_request ENTERED, pnum, $encrypted_barcode, $loc :', $pnum, $encrypted_barcode, $loc, $mode);
         // pnum=xxx&key=xxx
+        $requestPickup_form = '';
         if ($this->validateTransaction($pnum, $encrypted_barcode)) {
             $this->dblog('pickup_request VALIDATED $key');
-            $requestPickup_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\PickupRequestForm', $pnum, $loc, $mode);
-            return $requestPickup_form;
+            $requestPickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\PickupRequestForm', $pnum, $loc, $mode);
         } else {
-            return new JsonResponse('Request could not be processed');
+            drupal_set_message('The Pickup Request could not be processed');
+            $requestPickup_html('<h2>Request could not be processed</h2>');
         }
+
+        $render[] = [
+                '#theme' => 'pickup-request-form',
+                '#formhtml' => $requestPickup_html,
+            ];
+
+        return $render;
     }
 
     private function barcodeFromPatronId($patronId)
@@ -460,30 +468,13 @@ class DefaultController extends ControllerBase
         }
         return $returnval;
     }
-    
-    public function pickupLocations($destLocation = null)
-    {
-        $this->dblog('pickupLocations ENTERED: destLocation =', $destLocation);
-        $db = \Drupal::database();
-        $query = $db->select('arborcat_pickup_location', 'apl');
-        $query->fields('apl', ['locationId', 'branchLocationId', 'locationName', 'locationDescription']);
-        
-        // add in a condition if a location is supplied to filter on
-        if (3== strlen($destLocation)) {
-            $query->condition('apl.branchLocationId', (int) $destLocation, '=');
-        }
-        $result = $query->execute();
-        $pickupLocationRecords = $result->fetchAll();
-        $this->dblog('pickupLocations RETURNING: ', json_encode($pickupLocationRecords));
-        return $pickupLocationRecords;
-    }
 
     private function addPickupRequest($pickupLocation, $pickupDay, $timeSlot, $contactEmail, $contactPhone, $contactSMS)
     {
         $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
         if ($user->isAuthenticated()) {
             $db = \Drupal::database();
-            //$this->dblog('pickupLocations RETURNING: ', json_encode($pickupLocationRecords));
+            //$this->dblog('addPickupRequest RETURNING: ', json_encode($pickupLocationRecords));
             $db->insert('arborcat_patron_pickup_request')
             ->fields([
               'uid' => $user->id(),
@@ -504,7 +495,20 @@ class DefaultController extends ControllerBase
         return new JsonResponse($result);
     }
 
+    public function hook_form_FORM_ID_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id)
+    {
+        // Modification for the form with the given form ID goes here. For example, if
+        // FORM_ID is "user_register_form" this code would run only on the user
+        // registration form.
 
+        $this->dblog('== hook_form_FORM_ID_alter MODULE ENTERED');
+        // Add a checkbox to registration form about agreeing to terms of use.
+        $form['terms_of_use'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("I agree with the website's terms and conditions."),
+    '#required' => true,
+  );
+    }
 
 
 

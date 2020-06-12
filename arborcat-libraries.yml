@@ -1,0 +1,4 @@
+pickuprequest-functions:
+  version: 1
+    js:
+      js/pickuprequest-functions.js: {}

@@ -1,4 +1,7 @@
 <?php
+
+use Drupal\Core\Datetime\DrupalDateTime;
+
 /**
  * Display help and module information
  * @return help text for section
@@ -41,7 +44,13 @@ function arborcat_theme($existing, $type, $theme, $path)
         'reviews' => null,
         'pager' => null
       ]
-    ]
+      ],
+      'pickup-request-form' => [
+        'variables' => [
+            'formhtml' => null,
+        ],
+        'template' => 'pickup-request-form',
+        ]
   ];
 }
 
@@ -122,9 +131,12 @@ function arborcat_patron_fines_expired($fines, $patron)
       return $available;
   }
 
+  /*
+ * returns a list of request pickup locations.
+ * If a branch location is passed in, that a filtered list of pickup locations is returned
+ */
   function pickupLocations($destLocation = null)
   {
-      //$this->dblog('pickupLocations ENTERED: destLocation =', $destLocation);
       $db = \Drupal::database();
       $query = $db->select('arborcat_pickup_location', 'apl');
       $query->fields('apl', ['locationId', 'branchLocationId', 'locationName', 'locationDescription']);
@@ -135,6 +147,21 @@ function arborcat_patron_fines_expired($fines, $patron)
       }
       $result = $query->execute();
       $pickupLocationRecords = $result->fetchAll();
-      //$this->dblog('pickupLocations RETURNING: ', json_encode($pickupLocationRecords));
       return $pickupLocationRecords;
   }
+
+/*
+    * Debugging routine to log to the <root folder>/LWKLWK.log
+    */
+    function dblog(...$thingsToLog)
+    {
+        $lineToLog = '';
+        foreach ($thingsToLog as $item) {
+            $lineToLog = $lineToLog . ' ' . print_r($item, true);
+        }
+        // prepend date/time onto log line
+        $nowDateTime = new DrupalDateTime();
+        $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
+        $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
+        error_log($completeLine, 3, "LWKLWK.log");
+    }
