@@ -402,7 +402,7 @@ class DefaultController extends ControllerBase
             $requestPickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\PickupRequestForm', $pnum, $loc, $mode);
         } else {
             drupal_set_message('The Pickup Request could not be processed');
-            $requestPickup_html('<h2>Request could not be processed</h2>');
+            $requestPickup_html = '<h2>Request could not be processed</h2>';
         }
 
         $render[] = [
