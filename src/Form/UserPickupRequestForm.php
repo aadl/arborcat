@@ -9,11 +9,11 @@ use Predis\Client;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\arborcat\Controller;
 
-class PickupRequestForm extends FormBase
+class UserPickupRequestForm extends FormBase
 {
     public function getFormId()
     {
-        return 'pickup_request_form';
+        return 'user_pickup_request_form';
     }
 
     public function buildForm(array $form, FormStateInterface $form_state, string $patronId = null, string $requestLocation = null, string $mode = null)
@@ -85,7 +85,7 @@ class PickupRequestForm extends FormBase
         $form['lockercode'] = [
             '#type' => 'value',
             '#default_value' => $patron_info['telephone'],
-    ];
+        ];
         $form['patronname'] = [
             '#type' => 'value',
             '#default_value' => $patron_info['name'],
@@ -164,7 +164,7 @@ class PickupRequestForm extends FormBase
 
 
         $form['pickup_time'] = [
-          //'#attributes' => ['class' => 'no-display'],
+          '#prefix' => '<span class="no-display">',
           '#type' => 'select',
           '#title' => t('Pickup Time'),
           '#options' => [
@@ -175,6 +175,7 @@ class PickupRequestForm extends FormBase
             '4' => '6pm - 8pm'
           ],
           '#description' => t('Select time period for when you would like to pick up your requests from a locker.'),
+          '#suffix' => '</span>'
         ];
 
         $form['sms'] = [
@@ -216,7 +217,7 @@ class PickupRequestForm extends FormBase
         ];
 
         dblog('== buildForm::PickupRequestForm:: attaching JS lib: pickuprequest-functions');
-        $form['#attached']['library'][] = 'arborcat/pickuprequest-functions';
+        // $form['#attached']['library'][] = 'arborcat/pickuprequest-functions';
 
         return $form;
     }
