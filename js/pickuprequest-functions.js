@@ -14,10 +14,23 @@
 
   $(function () {
     console.log(">>> >>>\n");
-    
-    $('.edit-pickup-time input').change(function (e) {
-      console.log(">>> edit-pickup-time.change\n");
+    // Initially hide the pickup time item in the form as lobby selection is the default for any location
+    $(".form-item-pickup-time").hide();
+
+    $(document).on('change', '#edit-pickup-type', function () {
+      var selectedValue = $("#edit-pickup-type option:selected").text();
+      var lowercaseValue = selectedValue.toLowerCase();
+      console.log(">>> #edit-pickup-type' - selectedValue = " + lowercaseValue + "\n");
+      if (lowercaseValue.includes("locker")) {
+        console.log(">>> #edit-pickup-type - selected a locker\n");
+        $(".form-item-pickup-time").show();
+      } else {
+        console.log(">>> #edit-pickup-type - selected a lobby\n");
+        $(".form-item-pickup-time").hide();
+      }
     });
+
+
 
     $('#edit-pickup-time').click(function () {
       console.log(">>> edit-pickup-time CLICK \n");

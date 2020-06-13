@@ -132,13 +132,7 @@ class UserPickupRequestForm extends FormBase
             $pickupOptions[$ikey] = $name;
         }
 
-        dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
-
-        $pickupOptions =  [
-            '1' => 'Vestibule',
-            '2' => 'Locker',
-        ];
-
+        // dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
 
         $form['pickup_type'] = [
         '#prefix' => '<div class="l-inline-b side-by-side-form">',
@@ -164,7 +158,7 @@ class UserPickupRequestForm extends FormBase
 
 
         $form['pickup_time'] = [
-          '#prefix' => '<span class="no-display">',
+          //'#prefix' => '<span class="no-display">',
           '#type' => 'select',
           '#title' => t('Pickup Time'),
           '#options' => [
