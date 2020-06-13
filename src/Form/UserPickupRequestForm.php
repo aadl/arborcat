@@ -6,8 +6,9 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Mail\MailManagerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Predis\Client;
-use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\arborcat\Controller;
+use DateTime;
+use DateTimeHelper;
 
 class UserPickupRequestForm extends FormBase
 {
@@ -135,28 +136,47 @@ class UserPickupRequestForm extends FormBase
         // dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
 
         $form['pickup_type'] = [
-        '#prefix' => '<div class="l-inline-b side-by-side-form">',
+          '#prefix' => '<div class="l-inline-b side-by-side-form">',
           '#type' => 'select',
           '#title' => t('Pickup Method'),
           '#options' => $pickupOptions,
           '#description' => t('Select how you would like to pick up your requests.'),
         ];
 
+        // Populate the possible pickup dates popup menu
+        $possibleDates = $this->calculateLobbyPickupDates();
+        $pickupdates = [];
+        $i = 1;
+        foreach ($possibleDates as $datestr) {
+            $pickupdates[$i] = $datestr;
+            $i++;
+        }
+
 
         $form['pickup_date'] = [
-            '#type' => 'date',
-            '#title' => t('Pickup Date'),
-            '#size' => 32,
-            '#maxlength' => 64,
-            '#description' => t('Please select a date to pickup your requests. We are unable to fulfill same day requests.'),
-            '#datepicker_options' => array(
-                // This needs to be in the same format as defined in #date_format.
-                'minDate' => '06/13/2020',
-                // You can also use this format.
-                'maxDate' => '06/20/2020')
-           ];
+          '#prefix' => '<div class="l-inline-b side-by-side-form">',
+          '#type' => 'select',
+          '#title' => t('Available Pickup Dates'),
+          '#options' => $pickupdates,
+          '#description' => t('Choose the date to pick up your requests.'),
+        ];
 
+        // $form['pickup_date'] = [
+        //     '#type' => 'date',
+        //     '#title' => t('Pickup Date'),
+        //     '#size' => 32,
+        //     '#maxlength' => 64,
+        //     '#description' => t('Please select a date to pickup your requests. We are unable to fulfill same day requests.'),
+        //     '#datepicker_options' => array(
+        //         'minDate' => "1",
+        //         'maxDate' => "8")
+        //         // This needs to be in the same format as defined in #date_format.
+        //         //'minDate' => '06/13/2020',
+        //         // You can also use this format.
+        //         //'maxDate' => '06/20/2020')
+        //    ];
 
+        // This is hidden using Jquery when the javascript is loaded
         $form['pickup_time'] = [
           //'#prefix' => '<span class="no-display">',
           '#type' => 'select',
@@ -337,5 +357,33 @@ class UserPickupRequestForm extends FormBase
         if (!valid_email_address($form_state->getValue('email'))) {
             $form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
         }
+    }
+
+    private function calculateLobbyPickupDates()
+    {
+        $arrayOfDates = [];
+        // get the current date
+        $theDate = new DateTime('today');
+        dblog('Current Date:', $theDate->format('m-d-Y'));
+        // add 1 day to the current date
+        $startingDayOffset = 1; // Load these from ArborCat Settings?
+        $numPickupDays = 7;     // Load these from ArborCat Settings?
+
+        $incrementorString = '+$startingDayOffset day';
+        $theDate->modify('+1 day');
+
+        // now loop for x days and create a date string for each day, preceded with the day name
+        for ($x=0; $x < $numPickupDays; $x++) {
+            //dblog("\n", 'LOOP', $x, ' === date:', $theDate->format('m-d-Y'));
+            $day_of_week = intval($theDate->format('w'));
+            //dblog('LOOP $x, daynum:', $day_of_week);
+            $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
+            //dblog('LOOP $x, dayOfWeek:', $dayOfWeek);
+            $datestring = $dayOfWeek . ', ' . $theDate->format('m-d-Y');
+            array_push($arrayOfDates, $datestring);
+            $theDate->modify('+1 day');
+        }
+        dblog('calculatePickupDates: returning:', $arrayOfDates);
+        return $arrayOfDates;
     }
 }

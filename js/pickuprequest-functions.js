@@ -14,6 +14,7 @@
 
   $(function () {
     console.log(">>> >>>\n");
+    // INITIALIZATION/SETUP
     // Initially hide the pickup time item in the form as lobby selection is the default for any location
     $(".form-item-pickup-time").hide();
 
@@ -30,13 +31,11 @@
       }
     });
 
-
-
     $('#edit-pickup-time').click(function () {
       console.log(">>> edit-pickup-time CLICK \n");
-      $('html, body').animate({
-        scrollTop: $('#jump-link').offset().top - 40
-      }, 0);
+      // $('html, body').animate({
+      //   scrollTop: $('#jump-link').offset().top - 40
+      // }, 0);
     });
   });
 
