@@ -19,7 +19,6 @@ class UserPickupRequestForm extends FormBase
 
     public function buildForm(array $form, FormStateInterface $form_state, string $patronId = null, string $requestLocation = null, string $mode = null)
     {
-        dblog('== buildForm ENTERED');
         $guzzle = \Drupal::httpClient();
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -27,21 +26,16 @@ class UserPickupRequestForm extends FormBase
         $patron_info = json_decode((string) $guzzle->get("$api_url/patron?apikey=$api_key&pnum=$patronId")->getBody()->getContents(), true);
 
         $uid = $patron_info['evg_user']['card']['id'];
-        dblog('== buildForm::uid', $uid);
         $account = \Drupal\user\Entity\User::load($uid);
 
         $api_key = $account->get('field_api_key')->value;
-        dblog('== buildForm::api_key', $api_key);
 
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
-        dblog('== buildForm::patron_barcode:<<', $patron_barcode, '>>');
 
         $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
         $selfCheckApi_key .= '-' .  $patron_barcode;
-        dblog('== buildForm::count selfCheckApi_key:', $selfCheckApi_key);
 
         $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), true);
-        dblog('== buildForm::count patron_holds', count($patron_holds));
 
         $eligible_holds = [];
         
@@ -51,18 +45,15 @@ class UserPickupRequestForm extends FormBase
                      
         // check the mode to see whether we need to display "Cancel Mode, rather than pickup request mode
         if ('cancel' == $mode) {
-            dblog('== PickupRequestForm::buildForm: cancel mode');
+            // do cancel things
         }
         //start at 1 to avoid issue with eligible holds array not being zero-based
         $i=1;
 
         if (count($patron_holds)) {
-            dblog('== buildForm::PickupRequestForm::count -- patron_holds:', count($patron_holds));
-
             foreach ($patron_holds as $hold) {
                 if ($hold['status'] == 'Ready for Pickup') {
                     if (arborcat_eligible_for_locker($hold)) {
-                        dblog('== buildForm:: FOREACH eligible holdId =', $hold['id']);
                         $eligible_holds[$i] = [
                             'Title' => $hold['title'],
                             'Status' => $hold['status'],
@@ -76,7 +67,6 @@ class UserPickupRequestForm extends FormBase
                 //     $msg = "There are currently no lockers available.";
                 // }
             }
-            dblog('== buildForm::PickupRequestForm:: past foreach: eligible_holds count = ', count($eligible_holds));
         }
 
         $form['#attributes'] = ['class' => 'form-width-exception'];
@@ -156,28 +146,23 @@ class UserPickupRequestForm extends FormBase
         ];
 
         $pickupLocationsForRequest = pickupLocations($requestLocation);
-        dblog('++++  $pickupLocationsForRequest:', $pickupLocationsForRequest);
-        $selectedDate =
+
+        $selectedDate = '';
         $pickupOptions =  [];
         $i = 1;
         foreach ($pickupLocationsForRequest as $locationObj) {
             $addLocation = false;
-            dblog('++++ FOREACH $locationObj - timePeriod: ', $locationObj->timePeriod);
             if ($locationObj->timePeriod == 0) {    // for lobby (loc=0), always add it as a location)
-                dblog('++++ FOREACH $locationObj- lobby');
                 $addLocation = true;
             } else {
-                dblog('++++ Calling lockerAvailableForDateAndTimeSlot FOR - pickupdate:', $possibleDates[0]['date'], ' AND timePeriod: ', $locationObj->timePeriod);
                 $addLocation = lockerAvailableForDateAndTimeSlot($possibleDates[0]['date'], $locationObj);
             }
             if (true == $addLocation) {
-                dblog('++++ FOREACH true == $addLocation');
                 $name = $locationObj->locationName;
                 $ikey = intval($i++);
                 $pickupOptions[$ikey] = $name;
             }
         }
-        dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
 
         $form['pickup_type'] = [
           '#prefix' => '<div class="l-inline-b side-by-side-form">',
@@ -241,7 +226,6 @@ class UserPickupRequestForm extends FormBase
         '#default_value' => t('Check these items out to me and put them out for pickup'),
         ];
 
-        dblog('== buildForm::PickupRequestForm:: attaching JS lib: pickuprequest-functions');
         // $form['#attached']['library'][] = 'arborcat/pickuprequest-functions';
 
         return $form;
@@ -252,7 +236,6 @@ class UserPickupRequestForm extends FormBase
         $offset = $form_state->getValue('pickup_date');
         $possibleDates = $this->calculateLobbyPickupDates();
         $dateString = $possibleDates[$offset]['date'];
-        dblog('## submitForm: dateString:', $dateString);
         
         $key = $form_state->getValue('pickup_type');
         $val = $form['pickup_type']['#options'][$key];
@@ -260,13 +243,6 @@ class UserPickupRequestForm extends FormBase
         //I want to access pickupLocationsForRequest that was assigned a datastructure in the builfForm method.
         // need to make it glabal in some way
         $pickupTypeSelected = $this->$pickupLocationsForRequest[$key];
-
-        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
-        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
-        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
-        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
-
-
         
         $messenger = \Drupal::messenger();
         //parse telephone number into seven digit locker code
@@ -375,7 +351,6 @@ class UserPickupRequestForm extends FormBase
         $arrayOfDates = [];
         // get the current date
         $theDate = new DateTime('today');
-        dblog('calculateLobbyPickupDates: theDate:', $theDate);
         // add 1 day to the current date
         $startingDayOffset = 1; // Load these from ArborCat Settings?
         $numPickupDays = 7;     // Load these from ArborCat Settings?
@@ -409,7 +384,7 @@ class UserPickupRequestForm extends FormBase
             $arrayOfDates[$datestr_Ymd] = $twoDates;
             $theDate->modify('+1 day');
         }
-        dblog('calculateLobbyPickupDates: returning array of arrays:', $arrayOfDates);
+
         return $arrayOfDates;
     }
 }
