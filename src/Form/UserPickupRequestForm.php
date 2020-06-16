@@ -350,7 +350,7 @@ class UserPickupRequestForm extends FormBase
         // create a human friendly version - 'formattedDate' for display purposes in the UI
         // and a basic verson 'date' for use in date db queries
         for ($x=0; $x < $numPickupDays; $x++) {
-            $theDate_mdY = $theDate->format('M-j-Y');
+            $theDate_mdY = $theDate->format('M. j');
             $day_of_week = intval($theDate->format('w'));
             $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
             $datestring = $dayOfWeek . ', ' . $theDate_mdY;
