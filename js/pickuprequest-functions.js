@@ -40,6 +40,13 @@
       //   scrollTop: $('#jump-link').offset().top - 40
       // }, 0);
     });
+
+    $('#edit-item-table tr').click(function() {
+      console.log('table click');
+      var checkBox = $(this).find('input[type=checkbox]');
+      var checkStatus = checkBox.prop('checked');
+      checkBox.prop('checked', !checkStatus);
+    });
   });
 
 })(jQuery, Drupal);
