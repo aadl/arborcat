@@ -343,16 +343,11 @@ class DefaultController extends ControllerBase
 
     public function pickup_test()
     {
-        $this->dblog('pickup_test ENTERED = ');
         $returnval = '';
         $barcode = \Drupal::request()->query->get('barcode');
         $patronId = \Drupal::request()->query->get('patronid');
         $location = \Drupal::request()->query->get('location');
         $seedTestData = \Drupal::request()->query->get('seeddb');
-
-        $this->dblog('pickup_test  barcode = ', $barcode);
-        $this->dblog('pickup_test patronId = ', $patronId);
-        $this->dblog('pickup_test seedTestData = ', $seedTestData);
         
         if (strlen($patronId) > 0) {
             $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
@@ -361,9 +356,7 @@ class DefaultController extends ControllerBase
             $this->addPickupRequest($patronId, '$9999904', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
         } else {
             if (strlen($location) == 3) {
-                $this->dblog('pickup_test Before Calling pickupLocations for location =', $location);
                 $locations = $this->pickupLocations($location);
-                $this->dblog('pickup_test After Calling pickupLocations for location =', $location, $locations);
             } else {
                 $location = '102';
             }
@@ -372,7 +365,6 @@ class DefaultController extends ControllerBase
             $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
      
             if (strlen($patronId) > 0) {
-                $this->dblog('pickup_test Calling barcodeFromPatronId patronId =', $patronId);
                 $barcode =  $this->barcodeFromPatronId($patronId);
             } else {
                 $patronId = $this->patronIdFromBarcode($barcode);
@@ -402,10 +394,8 @@ class DefaultController extends ControllerBase
     public function pickup_request($pnum, $encrypted_barcode, $loc)
     {
         $mode = \Drupal::request()->query->get('mode');
-        $this->dblog('pickup_request ENTERED, pnum, $encrypted_barcode, $loc :', $pnum, $encrypted_barcode, $loc, $mode);
 
         if ($this->validateTransaction($pnum, $encrypted_barcode)) {
-            $this->dblog('pickup_request VALIDATED $key');
             $requestPickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
         } else {
             drupal_set_message('The Pickup Request could not be processed');
@@ -420,17 +410,13 @@ class DefaultController extends ControllerBase
 
     private function barcodeFromPatronId($patronId)
     {
-        $this->dblog('barcodeFromPatronId - ENTERED patronId:'. $patronId);
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
         $guzzle = \Drupal::httpClient();
         $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
-        $this->dblog('barcodeFromPatronId - calling guzzle with URL: '. $requestURL);
         $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
         if ($json) {
-            $this->dblog('barcodeFromPatronId -json > 0 ');
             $barcode =  $json->evg_user->card->barcode;
-            $this->dblog('barcodeFromPatronId -returning $barcode:', $barcode);
             return $barcode;
         } else {
             return "";
@@ -438,17 +424,13 @@ class DefaultController extends ControllerBase
     }
     private function patronIdFromBarcode($barcode)
     {
-        $this->dblog('patronIdFromBarcode - ENTERED barcode:'. $barcode);
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
         $guzzle = \Drupal::httpClient();
         $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
-        $this->dblog('patronIdFromBarcode - calling guzzle with URL: '. $requestURL);
         $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
         if ($json) {
-            $this->dblog('patronIdFromBarcode -json > 0 ');
             $patronId =  $json->pid;
-            $this->dblog('patronIdFromBarcode -returning $patronId:', $patronId);
             return $patronId;
         } else {
             return "";
@@ -462,10 +444,8 @@ class DefaultController extends ControllerBase
         
         $barcode =  $this->barcodeFromPatronId($pnum);
         if (14 == strlen($barcode)) {
-            $this->dblog('validateTransaction:: $barcode = '. $barcode);
             $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
             $hashedBarcode = md5($pickup_requests_salt . $barcode);
-            $this->dblog('validateTransaction:: $hashedBarcode, $encrypted_barcode = '. $hashedBarcode, $encrypted_barcode);
 
             if ($hashedBarcode == $encrypted_barcode) {
                 $returnval =  true;
@@ -474,12 +454,13 @@ class DefaultController extends ControllerBase
         return $returnval;
     }
 
+    // this needed? insert can be done on form submit
     private function addPickupRequest($pickupLocation, $pickupDay, $timeSlot, $contactEmail, $contactPhone, $contactSMS)
     {
         $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
         if ($user->isAuthenticated()) {
             $db = \Drupal::database();
-            //$this->dblog('addPickupRequest RETURNING: ', json_encode($pickupLocationRecords));
+
             $db->insert('arborcat_patron_pickup_request')
             ->fields([
               'uid' => $user->id(),
@@ -506,7 +487,6 @@ class DefaultController extends ControllerBase
         // FORM_ID is "user_register_form" this code would run only on the user
         // registration form.
 
-        $this->dblog('== hook_form_FORM_ID_alter MODULE ENTERED');
         // Add a checkbox to registration form about agreeing to terms of use.
         $form['terms_of_use'] = array(
     '#type' => 'checkbox',
