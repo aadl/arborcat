@@ -168,7 +168,7 @@ class UserPickupRequestForm extends FormBase
           '#required' => true
         ];
 
-        $pickupLocationsForRequest = pickupLocations($requestLocation);
+        $pickupLocationsForRequest = arborcat_pickupLocations($requestLocation);
 
         $selectedDate = '';
         $pickupOptions =  [];
