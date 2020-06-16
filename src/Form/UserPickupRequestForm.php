@@ -81,6 +81,17 @@ class UserPickupRequestForm extends FormBase
 
         $form['#attributes'] = ['class' => 'form-width-exception'];
 
+        // hidden values up here
+        $form['uid'] = [
+            '#type'=> 'hidden',
+            '#default_value' => $uid
+        ];
+
+        $form['pnum'] = [
+            '#type' => 'hidden',
+            '#default_value' => $patronId
+        ];
+
         $form['lockeritems'] = [
             '#type' => 'value',
             '#default_value' => $eligible_holds,
@@ -93,10 +104,7 @@ class UserPickupRequestForm extends FormBase
             '#type' => 'value',
             '#default_value' => $patron_info['name'],
         ];
-        $form['uid'] = [
-            '#type'=>'value',
-            '#default_value'=>$uid
-        ];
+        
         // $form['explanation'] = [
         // 	'#markup'=>"<h2>$branch Request Pickup Form</h2>" .
         // 	"Select items below to request for pickup:"
@@ -270,10 +278,13 @@ class UserPickupRequestForm extends FormBase
 
         $locker_items= $form_state->getValue('lockeritems');
         $table_values = $form_state->getValue('item_table');
+        $notification_types = $form_state->getValue('notification_types');
+        $time_slot = $form_state->getValue('pickup_type');
         $patron_name = $form_state->getValue('patronname');
         $patron_email = $form_state->getValue('email');
         $branch = $form_state->getValue('branch');
         $uid = $form_state->getValue('uid');
+        $pnum = $form_state->getValue('pnum');
 
         $selected_titles = array_filter($table_values);
 
@@ -286,10 +297,22 @@ class UserPickupRequestForm extends FormBase
         if (count($holds) == 0) {
             $messenger->addError(t("There are no request items selected."));
         } else {  // got at least one hold to be processed
-            
-            foreach ($holds as $holdToRequest) {
+            $db = \Drupal::database();
+            foreach ($holds as $hold) {
                 // set the expire date for each selected hold
                 // create arborcat_patron_pickup_request records for each of the selected holds
+                $connection->insert('arborcat_patron_pickup_request')
+                    ->fields([
+                      'requestId' => $hold,
+                      'patronId' => $pnum,
+                      'holdId' => $hold, // duplicate to requestId ???
+                      'branch' => $branch,
+                      'timeSlot' => $time_slot,
+                      'pickupLocation' => 1000, // needs rework, doesn't account for westgate with 2 lobbies
+                      'staff_reviewed' => 0,
+                      'helpful_ratings' => 0
+                    ])
+                    ->execute();
             }
         }
  
