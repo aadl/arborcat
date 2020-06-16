@@ -349,8 +349,18 @@ class UserPickupRequestForm extends FormBase
         // now loop for x days and create a date string for each day, preceded with the day name
         // create a human friendly version - 'formattedDate' for display purposes in the UI
         // and a basic verson 'date' for use in date db queries
+
+        // this is not ideal whatsoever and just quick way to address unavailable / closure dates
+        $date_exclude = [
+            'Jun. 20',
+            'Jun. 21',
+            'Jul. 4'
+        ];
         for ($x=0; $x < $numPickupDays; $x++) {
             $theDate_mdY = $theDate->format('M. j');
+            if (in_array($theDate_mdY, $date_exclude)) {
+                continue;
+            }
             $day_of_week = intval($theDate->format('w'));
             $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
             $datestring = $dayOfWeek . ', ' . $theDate_mdY;
