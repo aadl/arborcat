@@ -179,7 +179,6 @@ function addPickupRequest($pickupLocation, $pickupDay, $timeSlot, $contactEmail,
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     if ($user->isAuthenticated()) {
         $db = \Drupal::database();
-        //$this->dblog('addPickupRequest RETURNING: ', json_encode($pickupLocationRecords));
         $db->insert('arborcat_patron_pickup_request')
         ->fields([
             'uid' => $user->id(),

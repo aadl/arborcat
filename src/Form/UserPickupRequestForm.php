@@ -169,8 +169,6 @@ class UserPickupRequestForm extends FormBase
         ];
 
         $pickupLocationsForRequest = arborcat_pickupLocations($requestLocation);
-        // store pickupLocationsForRequest in form_state so it is accessible in the submitForm method
-        $form_state->set('pickupLocationsForRequest', $pickupLocationsForRequest);
 
         $selectedDate = '';
         $pickupOptions =  [];
@@ -184,6 +182,7 @@ class UserPickupRequestForm extends FormBase
             }
             if (true == $addLocation) {
                 $name = $locationObj->locationName;
+                // concatenate the locationId and the timeslot into the key
                 $pickupOptions["$locationObj->locationId-$locationObj->timePeriod"] = $name;
             }
         }
@@ -254,7 +253,6 @@ class UserPickupRequestForm extends FormBase
     public function submitForm(array &$form, FormStateInterface $form_state)
     {
         $pickup_date =  $form_state->getValue('pickup_date');
-        dblog('<<<< **** >>>> ', $pickup_date);
 
         $messenger = \Drupal::messenger();
         //parse telephone number into seven digit locker code
@@ -282,8 +280,7 @@ class UserPickupRequestForm extends FormBase
         $pickup_timeslot = explode('-', $form_state->getValue('pickup_type'));
 
         $pickupLocationsForRequest = $form_state->get('pickupLocationsForRequest');
-        $key = $form_state->getValue('pickup_type');
-        $selectedPickup = $pickupLocationsForRequest[$key-1];
+        $locationId_timeslot = explode('-', $form_state->getValue('pickup_type'));
 
         $selected_titles = array_filter($table_values);
 
@@ -302,21 +299,6 @@ class UserPickupRequestForm extends FormBase
             $api_url = \Drupal::config('arborcat.settings')->get('api_url');
             $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
             foreach ($holds as $holdToRequest) {
-                /* dblog('## submitForm: holds FOREACH - calling addPickupRequest', json_encode($holdRequested));
-                // create arborcat_patron_pickup_request records for each of the selected holds
-                addPickupRequest(
-                    $uid,
-                    $holdRequested->holdId,
-                    $selectedPickup->branchLocationId,
-                    $pickupDate,
-                    $selectedPickup->timePeriod,
-                    $selectedPickup->locationId,
-                    $patron_email,
-                    $phone,
-                    $sms
-                );
-                dblog('## submitForm: holds FOREACH - after calling addPickupRequest');
-                */
                 // set the expire date for each selected hold
                 // commented out for now during testing
                 // $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/updated_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
@@ -325,10 +307,9 @@ class UserPickupRequestForm extends FormBase
                     ->fields([
                       'requestId' => $holdToRequest['holdId'],
                       'patronId' => $pnum,
-                      'holdId' => $holdToRequest['holdId'], // duplicate to requestId ???
                       'branch' => (int) $branch,
-                      'timeSlot' => $selectedPickup->timePeriod,
-                      'pickupLocation' => $selectedPickup->locationId,
+                      'timeSlot' => $locationId_timeslot[1],
+                      'pickupLocation' => $locationId_timeslot[0],
                       'pickupDate' => $pickup_date,
                       'contactEmail' => ($notification_types['email'] ? $patron_email : null),
                       'contactSMS' => ($notification_types['sms'] ? $patron_phone : null),
