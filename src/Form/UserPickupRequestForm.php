@@ -105,7 +105,7 @@ class UserPickupRequestForm extends FormBase
 
         $form['branch'] = [
             '#type' => 'hidden',
-            '#default_value' => $request_location
+            '#default_value' => $requestLocation
         ];
 
         $form['lockeritems'] = [
@@ -300,7 +300,6 @@ class UserPickupRequestForm extends FormBase
             $messenger->addError(t("There are no request items selected."));
         } else {  // got at least one hold to be processed
             $db = \Drupal::database();
-            // this should really be in a constructor, but doing this for time
             $guzzle = \Drupal::httpClient();
             $api_key = \Drupal::config('arborcat.settings')->get('api_key');
             $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -315,7 +314,7 @@ class UserPickupRequestForm extends FormBase
                       'requestId' => $hold['holdId'],
                       'patronId' => $pnum,
                       'holdId' => $hold['holdId'], // duplicate to requestId ???
-                      'branch' => (int) $requestLocation,
+                      'branch' => (int) $branch,
                       'timeSlot' => $pickup_timeslot[1],
                       'pickupLocation' => $pickup_timeslot[0],
                       'pickupDate' => $pickup_date,
