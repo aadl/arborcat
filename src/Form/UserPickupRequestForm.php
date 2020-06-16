@@ -50,17 +50,27 @@ class UserPickupRequestForm extends FormBase
         //start at 1 to avoid issue with eligible holds array not being zero-based
         $i=1;
 
+        $mel_mappings = [
+            113 => 102,
+            114 => 103,
+            115 => 104,
+            116 => 105,
+            117 => 106
+        ];
+
         if (count($patron_holds)) {
             foreach ($patron_holds as $hold) {
                 if ($hold['status'] == 'Ready for Pickup') {
-                    if (arborcat_eligible_for_locker($hold)) {
-                        $eligible_holds[$i] = [
-                            'Title' => $hold['title'],
-                            'Status' => $hold['status'],
-                            'PickupLoc' => $hold['pickup'],
-                            'holdId' => $hold['id']
-                        ];
-                        $i++;
+                    if ($hold['hold']['pickup_lib'] == $requestLocation || isset($mel_mappings[$hold['hold']['pickup_lib']])) {
+                        if (arborcat_eligible_for_locker($hold)) {
+                            $eligible_holds[$i] = [
+                                'Title' => $hold['title'],
+                                'Status' => $hold['status'],
+                                'PickupLoc' => $hold['pickup'],
+                                'holdId' => $hold['id']
+                            ];
+                            $i++;
+                        }
                     }
                 }
                 // if (!arborcat_lockers_available($hold['pickup'])) {
