@@ -92,6 +92,11 @@ class UserPickupRequestForm extends FormBase
             '#default_value' => $patronId
         ];
 
+        $form['patron_barcode'] = [
+            '#type' => 'hidden',
+            '#default_value' => $patron_barcode
+        ];
+
         $form['lockeritems'] = [
             '#type' => 'value',
             '#default_value' => $eligible_holds,
@@ -276,6 +281,7 @@ class UserPickupRequestForm extends FormBase
 
         $uid = $form_state->getValue('uid');
         $pnum = $form_state->getValue('pnum');
+        $patron_barcode = $form_state->getValue('patron_barcode');
         $locker_items= $form_state->getValue('lockeritems');
         $table_values = $form_state->getValue('item_table');
         $notification_types = $form_state->getValue('notification_types');
@@ -298,15 +304,21 @@ class UserPickupRequestForm extends FormBase
             $messenger->addError(t("There are no request items selected."));
         } else {  // got at least one hold to be processed
             $db = \Drupal::database();
+            // this should really be in a constructor, but doing this for time
+            $guzzle = \Drupal::httpClient();
+            $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+            $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+            $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
             foreach ($holds as $hold) {
                 // set the expire date for each selected hold
+                $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/updated_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents(), true);
                 // create arborcat_patron_pickup_request records for each of the selected holds
                 $db->insert('arborcat_patron_pickup_request')
                     ->fields([
                       'requestId' => $hold['holdId'],
                       'patronId' => $pnum,
                       'holdId' => $hold['holdId'], // duplicate to requestId ???
-                      'branch' => $branch,
+                      'branch' => (int) $requestLocation,
                       'timeSlot' => $time_slot,
                       'pickupLocation' => 1000, // needs rework, doesn't account for westgate with 2 lobbies
                       'pickupDate' => $pickup_date,
