@@ -103,6 +103,11 @@ class UserPickupRequestForm extends FormBase
             '#default_value' => $patron_barcode
         ];
 
+        $form['branch'] = [
+            '#type' => 'hidden',
+            '#default_value' => $request_location
+        ];
+
         $form['lockeritems'] = [
             '#type' => 'value',
             '#default_value' => $eligible_holds,
@@ -233,12 +238,6 @@ class UserPickupRequestForm extends FormBase
             '#default_value' => $patron_info['email'],
             '#size' => 32,
             '#maxlength' => 64
-        ];
-
-        $form['branch'] = [
-            '#type' => 'value',
-            '#default_value' => '',	// $branch,
-            '#suffix' => '</div></div>'
         ];
 
         $form['submit'] = [
