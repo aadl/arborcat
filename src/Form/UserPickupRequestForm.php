@@ -221,7 +221,7 @@ class UserPickupRequestForm extends FormBase
 
         $form['phone'] = [
             '#type' => 'textfield',
-            '#title' => t('Notification by Phone Call'),
+            '#title' => t('Phone Number'),
             '#default_value' => $patron_info['telephone'],
             '#size' => 32,
             '#maxlength' => 64
@@ -229,7 +229,7 @@ class UserPickupRequestForm extends FormBase
 
         $form['email'] = [
             '#type' => 'textfield',
-            '#title' => t('Notification by Email'),
+            '#title' => t('Email'),
             '#default_value' => $patron_info['email'],
             '#size' => 32,
             '#maxlength' => 64
