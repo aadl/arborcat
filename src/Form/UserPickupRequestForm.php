@@ -306,7 +306,8 @@ class UserPickupRequestForm extends FormBase
             $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
             foreach ($holds as $hold) {
                 // set the expire date for each selected hold
-                $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/updated_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
+                // commented out for now during testing
+                // $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/updated_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
                 // create arborcat_patron_pickup_request records for each of the selected holds
                 $db->insert('arborcat_patron_pickup_request')
                     ->fields([
@@ -315,7 +316,7 @@ class UserPickupRequestForm extends FormBase
                       'holdId' => $hold['holdId'], // duplicate to requestId ???
                       'branch' => (int) $requestLocation,
                       'timeSlot' => $time_slot,
-                      'pickupLocation' => 1000, // needs rework, doesn't account for westgate with 2 lobbies
+                      'pickupLocation' => 1000,
                       'pickupDate' => $pickup_date,
                       'contactEmail' => ($notification_types['email'] ? $patron_email : null),
                       'contactSMS' => ($notification_types['sms'] ? $patron_phone : null),
