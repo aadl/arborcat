@@ -100,6 +100,7 @@ class UserPickupRequestForm extends FormBase
         $form['lockeritems'] = [
             '#type' => 'value',
             '#default_value' => $eligible_holds,
+            '#required' => true
         ];
         $form['lockercode'] = [
             '#type' => 'value',
@@ -153,6 +154,7 @@ class UserPickupRequestForm extends FormBase
           '#title' => t('Available Pickup Dates'),
           '#options' => $pickupdates,
           '#description' => t('Choose the date to pick up your requests.'),
+          '#required' => true
         ];
 
         $pickupLocationsForRequest = pickupLocations($requestLocation);
@@ -180,6 +182,7 @@ class UserPickupRequestForm extends FormBase
           '#title' => t('Pickup Method'),
           '#options' => $pickupOptions,
           '#description' => t('Select how you would like to pick up your requests. To use a locker, please choose an available timeslot'),
+          '#required' => true
         ];
 
         // This is hidden using Jquery when the javascript is loaded
@@ -206,7 +209,8 @@ class UserPickupRequestForm extends FormBase
                 'sms' => 'Text',
                 'phone' => 'Phone Call'
             ],
-            '#description' => t('Select which ways you would like to be notified when your request is ready for pickup')
+            '#description' => t('Select which ways you would like to be notified when your request is ready for pickup'),
+            '#required' => true
         ];
 
         $form['phone'] = [
