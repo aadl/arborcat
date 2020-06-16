@@ -81,7 +81,7 @@ class UserPickupRequestForm extends FormBase
 
         $form['#attributes'] = ['class' => 'form-width-exception'];
 
-        $form['lockeritems'] = [
+        $form['holditems'] = [
             '#type' => 'value',
             '#default_value' => $eligible_holds,
         ];
@@ -134,7 +134,6 @@ class UserPickupRequestForm extends FormBase
             $pickupdates[$i] = $dateStringsArray['formattedDate'];
             $i++;
         }
-
         // Populate the possible pickup dates popup menu
         $form['pickup_date'] = [
           '#prefix' => '<div class="l-inline-b side-by-side-form">',
@@ -145,22 +144,19 @@ class UserPickupRequestForm extends FormBase
         ];
 
         $pickupLocationsForRequest = pickupLocations($requestLocation);
-        dblog('++++  $pickupLocationsForRequest:', $pickupLocationsForRequest);
-        $selectedDate =
+        // store pickupLocationsForRequest in form_state so it is accessible in the submitFOrm method
+        $form_state->set('pickupLocationsForRequest', $pickupLocationsForRequest);
+ 
         $pickupOptions =  [];
         $i = 1;
         foreach ($pickupLocationsForRequest as $locationObj) {
             $addLocation = false;
-            dblog('++++ FOREACH $locationObj - timePeriod: ', $locationObj->timePeriod);
             if ($locationObj->timePeriod == 0) {    // for lobby (loc=0), always add it as a location)
-                dblog('++++ FOREACH $locationObj- lobby');
                 $addLocation = true;
             } else {
-                dblog('++++ Calling lockerAvailableForDateAndTimeSlot FOR - pickupdate:', $possibleDates[0]['date'], ' AND timePeriod: ', $locationObj->timePeriod);
                 $addLocation = lockerAvailableForDateAndTimeSlot($possibleDates[0]['date'], $locationObj);
             }
             if (true == $addLocation) {
-                dblog('++++ FOREACH true == $addLocation');
                 $name = $locationObj->locationName;
                 $ikey = intval($i++);
                 $pickupOptions[$ikey] = $name;
@@ -240,35 +236,32 @@ class UserPickupRequestForm extends FormBase
     {
         $offset = $form_state->getValue('pickup_date');
         $possibleDates = $this->calculateLobbyPickupDates();
-        $dateString = $possibleDates[$offset]['date'];
-        dblog('## submitForm: dateString:', $dateString);
+        $pickupDate = $possibleDates[$offset-1]['date'];
+        dblog('## submitForm: dateString:', $pickupDate);
         
         $key = $form_state->getValue('pickup_type');
         $val = $form['pickup_type']['#options'][$key];
+        $pickupLocationsForRequest = $form_state->get('pickupLocationsForRequest');
 
-        //I want to access pickupLocationsForRequest that was assigned a datastructure in the builfForm method.
-        // need to make it glabal in some way
-        $pickupTypeSelected = $this->$pickupLocationsForRequest[$key];
-
-        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
-        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
-        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
-        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
-
-
+        $selectedPickup = $pickupLocationsForRequest[$key-1];
+        dblog('## submitForm: $selectedPickup:branchLocationId', $selectedPickup->locationId);
+        dblog('## submitForm: $selectedPickup:timePeriod', $selectedPickup->timePeriod);
         
-        $messenger = \Drupal::messenger();
-        //parse telephone number into seven digit locker code
-        $lockercode = $form_state->getValue('lockercode');
-        $lockercode = preg_replace("/[\\s\\-()]/", "", $lockercode);
-        $lockercode = preg_replace("/^\d\d\d/", "", $lockercode);
+        $phone = $form_state->getValue('phone');
+        $sms = $form_state->getValue('sms');
 
-        //if no phone number is provided, use a random seven digit number
-        if ($lockercode=="") {
-            $lockercode = strval(rand(1111111, 9999999));
-        }
+        /*   $messenger = \Drupal::messenger();
+           //parse telephone number into seven digit locker code
+           $lockercode = $form_state->getValue('lockercode');
+           $lockercode = preg_replace("/[\\s\\-()]/", "", $lockercode);
+           $lockercode = preg_replace("/^\d\d\d/", "", $lockercode);
 
-        $locker_items= $form_state->getValue('lockeritems');
+           //if no phone number is provided, use a random seven digit number
+           if ($lockercode=="") {
+               $lockercode = strval(rand(1111111, 9999999));
+           }
+    */
+        $hold_items= $form_state->getValue('holditems');
         $table_values = $form_state->getValue('item_table');
         $patron_name = $form_state->getValue('patronname');
         $patron_email = $form_state->getValue('email');
@@ -280,16 +273,32 @@ class UserPickupRequestForm extends FormBase
         $holds = [];
             
         foreach ($selected_titles as $key=>$val) {
-            array_push($holds, $locker_items[$val]);
+            array_push($holds, $hold_items[$val]);
         }
 
         if (count($holds) == 0) {
             $messenger->addError(t("There are no request items selected."));
         } else {  // got at least one hold to be processed
             
-            foreach ($holds as $holdToRequest) {
-                // set the expire date for each selected hold
+            foreach ($holds as $holdRequested) {
+                dblog('## submitForm: holds FOREACH - calling addPickupRequest', json_encode($holdRequested));
                 // create arborcat_patron_pickup_request records for each of the selected holds
+                addPickupRequest(
+                    $uid,
+                    $holdRequested->holdId,
+                    $selectedPickup->branchLocationId,
+                    $pickupDate,
+                    $selectedPickup->timePeriod,
+                    $selectedPickup->locationId,
+                    $patron_email,
+                    $phone,
+                    $sms
+                );
+                dblog('## submitForm: holds FOREACH - after calling addPickupRequest');
+
+                // set the expire date for each selected hold
+                //update the shelf_expire times for holds corresponding to pickup date selected,
+                //this works: https://api.aadl.org/patron/932e54adb710dbe5a0eaf9624ee04d5cself-21621033196070/update_hold/2100273?shelf_expire_time=2020-07-03%2023:59:59
             }
         }
  
@@ -301,6 +310,12 @@ class UserPickupRequestForm extends FormBase
 
         return $form_state->setRedirectUrl($url);
     }
+
+
+
+
+
+
 
     public function arborcat_mail($key, $email_to, $patron, $code, $holds)
     {

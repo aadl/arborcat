@@ -156,10 +156,8 @@ function arborcat_patron_fines_expired($fines, $patron)
   function lockerAvailableForDateAndTimeSlot($queryDate, $locationObject)
   {
       $availableLockers = 0;
-      dblog('lockerAvailableForDateAndTimeSlot ENTERED queryDate =', $queryDate, $locationObject->timePeriod, $locationObject->maxLockers);
       // Query current arborcat_patron_pickup_request records for the date and timePeriod to get inuse count
       // fields pickupDate & timeSlot
-      dblog('lockerAvailableForDateAndTimeSlot:: BEFORE QUERY: queryDate:', $queryDate, 'timeSlot:', $locationObject->timePeriod);
       $db = \Drupal::database();
       $timeperiod = $locationObject->timePeriod;
       $query = $db->select('arborcat_patron_pickup_request', 'appr');
@@ -171,11 +169,35 @@ function arborcat_patron_fines_expired($fines, $patron)
       $lockersInUse = count($results);
       $availableLockers = $locationObject->maxLockers - $lockersInUse;
       
-      dblog('lockerAvailableForDateAndTimeSlot:: availableLockers', $availableLockers, $locationObject->maxLockers, $lockersInUse);
       return ($availableLockers > 0);
   }
 
-
+function addPickupRequest($pickupLocation, $pickupDay, $timeSlot, $contactEmail, $contactPhone, $contactSMS)
+{
+    $result = [];
+    
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    if ($user->isAuthenticated()) {
+        $db = \Drupal::database();
+        //$this->dblog('addPickupRequest RETURNING: ', json_encode($pickupLocationRecords));
+        $db->insert('arborcat_patron_pickup_request')
+        ->fields([
+            'uid' => $user->id(),
+            'pickupDay' => $pickupDay,
+            'timeSlot' => $timeSlot,
+            'pickupLocation' => $pickupLocation,
+            'contactEmail' => $contactEmail,
+            'contactPhone' => $contactPhone,
+            'contactSMS' => $contactSMS,
+            'timestamp' => time()
+        ])
+        ->execute();
+        $result['success'] = "Successfully added pickup request";
+    } else {
+        $result['error'] = 'You must be logged in to make a pickup request.';
+    }
+    return $result;
+}
 
 /*
     * Debugging routine to log to the <root folder>/LWKLWK.log
