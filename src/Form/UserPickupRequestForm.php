@@ -58,10 +58,16 @@ class UserPickupRequestForm extends FormBase
             117 => 106
         ];
 
+        $db = \Drupal::database();
         if (count($patron_holds)) {
             foreach ($patron_holds as $hold) {
                 if ($hold['status'] == 'Ready for Pickup') {
                     if ($hold['hold']['pickup_lib'] == $requestLocation || isset($mel_mappings[$hold['hold']['pickup_lib']])) {
+                        // if pickup appt already set, don't display item
+                        $pickup_req_exists = $db->query("SELECT * from arborcat_patron_pickup_request WHERE requestId = :hid", [':hid' => $hold['id']])->fetch();
+                        if (isset($pickup_req_exists->id)) {
+                            continue;
+                        }
                         if (arborcat_eligible_for_locker($hold)) {
                             $eligible_holds[$i] = [
                                 'Title' => $hold['title'],
