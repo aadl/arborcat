@@ -137,10 +137,8 @@ class UserPickupRequestForm extends FormBase
 
         $possibleDates = $this->calculateLobbyPickupDates();
         $pickupdates = [];
-        $i = 1;
-        foreach ($possibleDates as $dateStringsArray) {
-            $pickupdates[$i] = $dateStringsArray['formattedDate'];
-            $i++;
+        foreach ($possibleDates as $key => $dateStringsArray) {
+            $pickupdates[$key] = $dateStringsArray['formattedDate'];
         }
 
         // Populate the possible pickup dates popup menu
@@ -276,15 +274,17 @@ class UserPickupRequestForm extends FormBase
             $lockercode = strval(rand(1111111, 9999999));
         }
 
+        $uid = $form_state->getValue('uid');
+        $pnum = $form_state->getValue('pnum');
         $locker_items= $form_state->getValue('lockeritems');
         $table_values = $form_state->getValue('item_table');
         $notification_types = $form_state->getValue('notification_types');
-        $time_slot = $form_state->getValue('pickup_type');
         $patron_name = $form_state->getValue('patronname');
         $patron_email = $form_state->getValue('email');
+        $patron_phone = $form_state->getValue('phone');
         $branch = $form_state->getValue('branch');
-        $uid = $form_state->getValue('uid');
-        $pnum = $form_state->getValue('pnum');
+        $time_slot = $form_state->getValue('pickup_type');
+        $pickup_date = $form_state->getValue('pickup_date');
 
         $selected_titles = array_filter($table_values);
 
@@ -301,16 +301,18 @@ class UserPickupRequestForm extends FormBase
             foreach ($holds as $hold) {
                 // set the expire date for each selected hold
                 // create arborcat_patron_pickup_request records for each of the selected holds
-                $connection->insert('arborcat_patron_pickup_request')
+                $db->insert('arborcat_patron_pickup_request')
                     ->fields([
-                      'requestId' => $hold,
+                      'requestId' => $hold['holdId'],
                       'patronId' => $pnum,
-                      'holdId' => $hold, // duplicate to requestId ???
+                      'holdId' => $hold['holdId'], // duplicate to requestId ???
                       'branch' => $branch,
                       'timeSlot' => $time_slot,
                       'pickupLocation' => 1000, // needs rework, doesn't account for westgate with 2 lobbies
-                      'staff_reviewed' => 0,
-                      'helpful_ratings' => 0
+                      'pickupDate' => $pickup_date,
+                      'contactEmail' => ($notification_types['email'] ? $patron_email : null),
+                      'contactSMS' => ($notification_types['sms'] ? $patron_phone : null),
+                      'contactPhone' => ($notification_types['phone'] ? $patron_phone : null),
                     ])
                     ->execute();
             }
@@ -391,7 +393,8 @@ class UserPickupRequestForm extends FormBase
             $datestr_Ymd = $theDate->format('Y-m-d');
             $twoDates = array("date" => $datestr_Ymd, "formattedDate" => $datestring);
 
-            array_push($arrayOfDates, $twoDates);
+            // array_push($arrayOfDates, $twoDates);
+            $arrayOfDates[$datestr_Ymd] = $twoDates;
             $theDate->modify('+1 day');
         }
         dblog('calculateLobbyPickupDates: returning array of arrays:', $arrayOfDates);
