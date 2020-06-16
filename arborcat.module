@@ -155,27 +155,24 @@ function arborcat_patron_fines_expired($fines, $patron)
    */
   function lockerAvailableForDateAndTimeSlot($queryDate, $locationObject)
   {
+      $availableLockers = 0;
       dblog('lockerAvailableForDateAndTimeSlot ENTERED queryDate =', $queryDate, $locationObject->timePeriod, $locationObject->maxLockers);
-      $returnCount = 0;
-      // check if this is a locker - timePeriod must be > 0
-      if ($locationObject->timePeriod > 0) {
-          // Query current arborcat_patron_pickup_request records for the date and timePeriod to get inuse count
-          // fields pickupDate & timeSlot
-          dblog('lockerAvailableForDateAndTimeSlot:: BEFORE QUERY: queryDate:', $queryDate, 'timeSlot:', $locationObject->timePeriod);
-          $db = \Drupal::database();
-          $timeperiod = $locationObject->timePeriod;
-          $query = $db->select('arborcat_patron_pickup_request', 'appr');
-          $query-> fields('appr', ['id']);
-          $query-> condition('pickupDate', $queryDate);
-          $query-> condition('timeSlot', $timeperiod, '=');
-          $results = $query->execute()->fetchAll();
+      // Query current arborcat_patron_pickup_request records for the date and timePeriod to get inuse count
+      // fields pickupDate & timeSlot
+      dblog('lockerAvailableForDateAndTimeSlot:: BEFORE QUERY: queryDate:', $queryDate, 'timeSlot:', $locationObject->timePeriod);
+      $db = \Drupal::database();
+      $timeperiod = $locationObject->timePeriod;
+      $query = $db->select('arborcat_patron_pickup_request', 'appr');
+      $query-> fields('appr', ['id']);
+      $query-> condition('pickupDate', $queryDate);
+      $query-> condition('timeSlot', $timeperiod, '=');
+      $results = $query->execute()->fetchAll();
 
-          $count = count($results);
-          $returnCount = $count;
-          dblog('lockerAvailableForDateAndTimeSlot:: returnCount' . $returnCount);
-      }
-  
-      return ($returnCount > 0);
+      $lockersInUse = count($results);
+      $availableLockers = $locationObject->maxLockers - $lockersInUse;
+      
+      dblog('lockerAvailableForDateAndTimeSlot:: availableLockers', $availableLockers, $locationObject->maxLockers, $lockersInUse);
+      return ($availableLockers > 0);
   }
 
 

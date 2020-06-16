@@ -145,19 +145,28 @@ class UserPickupRequestForm extends FormBase
         ];
 
         $pickupLocationsForRequest = pickupLocations($requestLocation);
+        dblog('++++  $pickupLocationsForRequest:', $pickupLocationsForRequest);
         $selectedDate =
         $pickupOptions =  [];
         $i = 1;
         foreach ($pickupLocationsForRequest as $locationObj) {
-            dblog('++++ Calling pickupdates - ', $possibleDates[0], $locationObj->timePeriod);
-            if (true == lockerAvailableForDateAndTimeSlot($possibleDates[0]['date'], $locationObj)) {
+            $addLocation = false;
+            dblog('++++ FOREACH $locationObj - timePeriod: ', $locationObj->timePeriod);
+            if ($locationObj->timePeriod == 0) {    // for lobby (loc=0), always add it as a location)
+                dblog('++++ FOREACH $locationObj- lobby');
+                $addLocation = true;
+            } else {
+                dblog('++++ Calling lockerAvailableForDateAndTimeSlot FOR - pickupdate:', $possibleDates[0]['date'], ' AND timePeriod: ', $locationObj->timePeriod);
+                $addLocation = lockerAvailableForDateAndTimeSlot($possibleDates[0]['date'], $locationObj);
+            }
+            if (true == $addLocation) {
+                dblog('++++ FOREACH true == $addLocation');
                 $name = $locationObj->locationName;
                 $ikey = intval($i++);
                 $pickupOptions[$ikey] = $name;
             }
         }
-
-        // dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
+        dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
 
         $form['pickup_type'] = [
           '#prefix' => '<div class="l-inline-b side-by-side-form">',
@@ -229,6 +238,25 @@ class UserPickupRequestForm extends FormBase
 
     public function submitForm(array &$form, FormStateInterface $form_state)
     {
+        $offset = $form_state->getValue('pickup_date');
+        $possibleDates = $this->calculateLobbyPickupDates();
+        $dateString = $possibleDates[$offset]['date'];
+        dblog('## submitForm: dateString:', $dateString);
+        
+        $key = $form_state->getValue('pickup_type');
+        $val = $form['pickup_type']['#options'][$key];
+
+        //I want to access pickupLocationsForRequest that was assigned a datastructure in the builfForm method.
+        // need to make it glabal in some way
+        $pickupTypeSelected = $this->$pickupLocationsForRequest[$key];
+
+        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
+        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
+        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
+        dblog('## submitForm: val:', $val, ' ---- $pickupTypeSelected :', $pickupTypeSelected);
+
+
+        
         $messenger = \Drupal::messenger();
         //parse telephone number into seven digit locker code
         $lockercode = $form_state->getValue('lockercode');
@@ -251,67 +279,22 @@ class UserPickupRequestForm extends FormBase
 
         $holds = [];
             
-        if (arborcat_lockers_available($branch)) {
-            foreach ($selected_titles as $key=>$val) {
-                array_push($holds, $locker_items[$val]);
-            }
-            $email_from='support@aadl.org';
-            $user_input = $form_state->getUserInput();
-            $email_to = (stripos($branch, 'Malletts') !== false ? 'mcblockers@aadl.org' : 'pittslockers@aadl.org');
-            $this->arborcat_mail('locker_requests', $email_to, $patron_name, $lockercode, $holds);
-
-            $redis = new Client(\Drupal::config('events.settings')->get('events_redis_conn'));
-
-            $time = strftime(time());
-            $redis_query = $time . "#" . $branch;
-            $redis->lPush('lockerRequests', $redis_query);
-            
-            //check for holidays
-            $easter_ts = easter_date();
-            $easter_date = date('md', $easter_ts);
-            $holidays = [
-                '0101', // New Year's Day
-                $easter_date, // Easter
-        '0530', // Memorial Day
-        '0704', // Independence Day
-        '0905', // Labor Day
-        '1010', // Staff Day
-        '1124', // Thanksgiving
-        '1224', // Christmas Eve
-        '1225', // Christmas
-         ];
-
-            $date = date("md");
-            $day = date("w");
-            $hour = date("G") + (date("i") / 60);
-
-            if (in_array($date, $holidays)) {
-                $open = false;
-            } else {
-                switch ($day) {
-            case 0: // Sunday
-              $open = ($hour >= 12 && $hour < 18);
-              break;
-            case 6: // Saturday
-                 $open = ($hour >= 9 && $hour < 18);
-              break;
-            case 1: //Monday
-              $open = ($hour >=10 && hour <21);
-              // no break
-            default: // Tuesday - Friday
-              $open = ($hour >= 9 && $hour < 21);
-              break;
-            }
-            }
-            if ($open) {
-                $message = "You will receive an email at {$user_input['email']} when your items are ready for pickup. If there is any issue preventing these items from being placed in a locker, library staff will contact you.";
-                $messenger->addStatus(t($message));
-            } else {
-                $messenger->addStatus(t("The library is currently closed. You will receive an email at {$user_input['email']} when the items are ready for pickup, after the library opens again."), 'closed');
-            }
-        } else {
-            $messenger->addError(t("There are no lockers are currently available."));
+        foreach ($selected_titles as $key=>$val) {
+            array_push($holds, $locker_items[$val]);
         }
+
+        if (count($holds) == 0) {
+            $messenger->addError(t("There are no request items selected."));
+        } else {  // got at least one hold to be processed
+            
+            foreach ($holds as $holdToRequest) {
+                // set the expire date for each selected hold
+                // create arborcat_patron_pickup_request records for each of the selected holds
+            }
+        }
+ 
+        // Need to add a c"confirm the request" modal dialog here before proceeding
+
         $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
         $uid = $user->id();
         $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
