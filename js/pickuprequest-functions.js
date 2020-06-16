@@ -41,7 +41,7 @@
       // }, 0);
     });
 
-    $('#edit-item-table tr').click(function() {
+    $('#edit-item-table tbody tr').click(function() {
       console.log('table click');
       var checkBox = $(this).find('input[type=checkbox]');
       var checkStatus = checkBox.prop('checked');
