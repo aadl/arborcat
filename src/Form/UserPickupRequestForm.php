@@ -364,6 +364,16 @@ class UserPickupRequestForm extends FormBase
         if (!valid_email_address($form_state->getValue('email'))) {
             $form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
         }
+
+        if ($form_state->getValue('notification_types')['email'] && !$form_state->getValue('email')) {
+            $form_state->setErrorByName('email', t('No email is set, but you requested an email notification.'));
+        } elseif (!valid_email_address($form_state->getValue('email'))) {
+            $form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
+        }
+
+        if (($form_state->getValue('notification_types')['sms'] || $form_state->getValue('notification_types')['phone'] ) && !$form_state->getValue('phone')) {
+            $form_state->setErrorByName('phone', t('No phone number is set, but you requested a text and/or phone call.'));
+        }
     }
 
     private function calculateLobbyPickupDates()
