@@ -112,7 +112,7 @@ class UserPickupRequestForm extends FormBase
         $titleString = (strlen($mode) > 0) ? 'Cancel hold/request for item' : 'Request Pickup for item';
         $titleString .= (count($eligible_holds) > 1) ? "s" : '';
         $form['item_table']=[
-            '#prefix' => '<h2>' . $titleString . ' at ' . $locationName . ' for card# ' . $patron_barcode . '</h2>
+            '#prefix' => '<h2>' . $titleString . ' at ' . $locationName . ' for ' . $patron_barcode . '</h2>
 									 Select items below to request for pickup:
 									 <div><div class="l-inline-b side-by-side-form">',
             '#type'=>'tableselect',
