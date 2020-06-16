@@ -182,8 +182,7 @@ class UserPickupRequestForm extends FormBase
             }
             if (true == $addLocation) {
                 $name = $locationObj->locationName;
-                $ikey = intval($i++);
-                $pickupOptions[$ikey] = $name;
+                $pickupOptions["$locationObj->locationId-$locationObj->timePeriod"] = $name;
             }
         }
 
@@ -284,7 +283,9 @@ class UserPickupRequestForm extends FormBase
         $patron_email = $form_state->getValue('email');
         $patron_phone = $form_state->getValue('phone');
         $branch = $form_state->getValue('branch');
-        $time_slot = $form_state->getValue('pickup_type');
+
+        // pickup point/location tied in with time slot
+        $pickup_timeslot = explode('-', $form_state->getValue('pickup_type'));
         $pickup_date = $form_state->getValue('pickup_date');
 
         $selected_titles = array_filter($table_values);
@@ -315,8 +316,8 @@ class UserPickupRequestForm extends FormBase
                       'patronId' => $pnum,
                       'holdId' => $hold['holdId'], // duplicate to requestId ???
                       'branch' => (int) $requestLocation,
-                      'timeSlot' => $time_slot,
-                      'pickupLocation' => 1000,
+                      'timeSlot' => $pickup_timeslot[1],
+                      'pickupLocation' => $pickup_timeslot[0],
                       'pickupDate' => $pickup_date,
                       'contactEmail' => ($notification_types['email'] ? $patron_email : null),
                       'contactSMS' => ($notification_types['sms'] ? $patron_phone : null),
