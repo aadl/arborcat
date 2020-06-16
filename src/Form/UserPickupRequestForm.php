@@ -192,13 +192,15 @@ class UserPickupRequestForm extends FormBase
           '#suffix' => '</span>'
         ];
 
-        $form['sms'] = [
-            '#type' => 'textfield',
-            '#title' => t('Notification by Text'),
-            '#default_value' => $patron_info['telephone'],
-            '#size' => 32,
-            '#maxlength' => 64,
-            '#description' => t('Enter a phone number if you would like to receive a text when your requests are ready to be picked up.'),
+        $form['notification_types'] = [
+            '#type' => 'checkboxes',
+            '#title' => t('Notification Options'),
+            '#options' => [
+                'email' => 'Email',
+                'sms' => 'Text',
+                'phone' => 'Phone Call'
+            ],
+            '#description' => t('Select which ways you would like to be notified when your request is ready for pickup')
         ];
 
         $form['phone'] = [
@@ -206,8 +208,7 @@ class UserPickupRequestForm extends FormBase
             '#title' => t('Notification by Phone Call'),
             '#default_value' => $patron_info['telephone'],
             '#size' => 32,
-            '#maxlength' => 64,
-            '#description' => t('Enter a phone number if you would like to receive a call when your requests are ready to be picked up.'),
+            '#maxlength' => 64
         ];
 
         $form['email'] = [
@@ -215,8 +216,7 @@ class UserPickupRequestForm extends FormBase
             '#title' => t('Notification by Email'),
             '#default_value' => $patron_info['email'],
             '#size' => 32,
-            '#maxlength' => 64,
-            '#description' => t('Enter an email if you would like to receive an email when your requests are ready to be picked up.'),
+            '#maxlength' => 64
         ];
 
         $form['branch'] = [
