@@ -62,10 +62,12 @@ class UserPickupRequestForm extends FormBase
             foreach ($patron_holds as $hold) {
                 if ($hold['status'] == 'Ready for Pickup') {
                     if (arborcat_eligible_for_locker($hold)) {
+                        dblog('== buildForm:: FOREACH eligible holdId =', $hold['id']);
                         $eligible_holds[$i] = [
                             'Title' => $hold['title'],
                             'Status' => $hold['status'],
-                            'PickupLoc' => $hold['pickup']
+                            'PickupLoc' => $hold['pickup'],
+                            'holdId' => $hold['id']
                         ];
                         $i++;
                     }
@@ -117,20 +119,42 @@ class UserPickupRequestForm extends FormBase
             '#empty' => "You have no holds ready for pickup.",
             '#suffix' => '</div>'
         ];
-        
+
         // $form['explanationcont']=[
         // 	'#markup'=>
         // 	"<div>" .
         // 	"Once your items are in a locker, please pick them up by 9 AM the next morning. Items still in the lockers when the library opens may be checked back in for the next patron. Requests placed within 30 minutes of closing may not be ready today. Thank you for using this service, and thank you for using your library!" .
         // 	"</div>"
         // ];
+
+        $possibleDates = $this->calculateLobbyPickupDates();
+        $pickupdates = [];
+        $i = 1;
+        foreach ($possibleDates as $dateStringsArray) {
+            $pickupdates[$i] = $dateStringsArray['formattedDate'];
+            $i++;
+        }
+
+        // Populate the possible pickup dates popup menu
+        $form['pickup_date'] = [
+          '#prefix' => '<div class="l-inline-b side-by-side-form">',
+          '#type' => 'select',
+          '#title' => t('Available Pickup Dates'),
+          '#options' => $pickupdates,
+          '#description' => t('Choose the date to pick up your requests.'),
+        ];
+
         $pickupLocationsForRequest = pickupLocations($requestLocation);
+        $selectedDate =
         $pickupOptions =  [];
         $i = 1;
-        foreach ($pickupLocationsForRequest as $loc) {
-            $name = $loc->locationName;
-            $ikey = intval($i++);
-            $pickupOptions[$ikey] = $name;
+        foreach ($pickupLocationsForRequest as $locationObj) {
+            dblog('++++ Calling pickupdates - ', $possibleDates[0], $locationObj->timePeriod);
+            if (true == lockerAvailableForDateAndTimeSlot($possibleDates[0]['date'], $locationObj)) {
+                $name = $locationObj->locationName;
+                $ikey = intval($i++);
+                $pickupOptions[$ikey] = $name;
+            }
         }
 
         // dblog('== buildForm::PickupRequestForm::After getting pickup locations -- pickupOptions:', $pickupOptions);
@@ -140,41 +164,8 @@ class UserPickupRequestForm extends FormBase
           '#type' => 'select',
           '#title' => t('Pickup Method'),
           '#options' => $pickupOptions,
-          '#description' => t('Select how you would like to pick up your requests.'),
+          '#description' => t('Select how you would like to pick up your requests. To use a locker, please choose an available timeslot'),
         ];
-
-        // Populate the possible pickup dates popup menu
-        $possibleDates = $this->calculateLobbyPickupDates();
-        $pickupdates = [];
-        $i = 1;
-        foreach ($possibleDates as $datestr) {
-            $pickupdates[$i] = $datestr;
-            $i++;
-        }
-
-
-        $form['pickup_date'] = [
-          '#prefix' => '<div class="l-inline-b side-by-side-form">',
-          '#type' => 'select',
-          '#title' => t('Available Pickup Dates'),
-          '#options' => $pickupdates,
-          '#description' => t('Choose the date to pick up your requests.'),
-        ];
-
-        // $form['pickup_date'] = [
-        //     '#type' => 'date',
-        //     '#title' => t('Pickup Date'),
-        //     '#size' => 32,
-        //     '#maxlength' => 64,
-        //     '#description' => t('Please select a date to pickup your requests. We are unable to fulfill same day requests.'),
-        //     '#datepicker_options' => array(
-        //         'minDate' => "1",
-        //         'maxDate' => "8")
-        //         // This needs to be in the same format as defined in #date_format.
-        //         //'minDate' => '06/13/2020',
-        //         // You can also use this format.
-        //         //'maxDate' => '06/20/2020')
-        //    ];
 
         // This is hidden using Jquery when the javascript is loaded
         $form['pickup_time'] = [
@@ -364,7 +355,7 @@ class UserPickupRequestForm extends FormBase
         $arrayOfDates = [];
         // get the current date
         $theDate = new DateTime('today');
-        dblog('Current Date:', $theDate->format('m-d-Y'));
+        dblog('calculateLobbyPickupDates: theDate:', $theDate);
         // add 1 day to the current date
         $startingDayOffset = 1; // Load these from ArborCat Settings?
         $numPickupDays = 7;     // Load these from ArborCat Settings?
@@ -373,17 +364,21 @@ class UserPickupRequestForm extends FormBase
         $theDate->modify('+1 day');
 
         // now loop for x days and create a date string for each day, preceded with the day name
+        // create a human friendly version - 'formattedDate' for display purposes in the UI
+        // and a basic verson 'date' for use in date db queries
         for ($x=0; $x < $numPickupDays; $x++) {
-            //dblog("\n", 'LOOP', $x, ' === date:', $theDate->format('m-d-Y'));
+            $theDate_mdY = $theDate->format('M-j-Y');
             $day_of_week = intval($theDate->format('w'));
-            //dblog('LOOP $x, daynum:', $day_of_week);
             $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
-            //dblog('LOOP $x, dayOfWeek:', $dayOfWeek);
-            $datestring = $dayOfWeek . ', ' . $theDate->format('m-d-Y');
-            array_push($arrayOfDates, $datestring);
+            $datestring = $dayOfWeek . ', ' . $theDate_mdY;
+
+            $datestr_Ymd = $theDate->format('Y-m-d');
+            $twoDates = array("date" => $datestr_Ymd, "formattedDate" => $datestring);
+
+            array_push($arrayOfDates, $twoDates);
             $theDate->modify('+1 day');
         }
-        dblog('calculatePickupDates: returning:', $arrayOfDates);
+        dblog('calculateLobbyPickupDates: returning array of arrays:', $arrayOfDates);
         return $arrayOfDates;
     }
 }
