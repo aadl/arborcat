@@ -42,11 +42,12 @@
     });
 
     // toggle checkbox status on row with click
-    $('#edit-item-table tbody tr').click(function() {
-      console.log('table click');
-      var checkBox = $(this).find('input[type=checkbox]');
-      var checkStatus = checkBox.prop('checked');
-      checkBox.prop('checked', !checkStatus);
+    $('#edit-item-table tbody tr').click(function(e) {
+      if (e.target.nodeName != 'INPUT') {
+        var checkBox = $(this).find('input[type=checkbox]');
+        var checkStatus = checkBox.prop('checked');
+        checkBox.prop('checked', !checkStatus);
+      }
     });
 
     // give confirmation before canceling requests
