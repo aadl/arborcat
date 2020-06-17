@@ -28,8 +28,6 @@ class UserPickupRequestForm extends FormBase
         $uid = $patron_info['evg_user']['card']['id'];
         $account = \Drupal\user\Entity\User::load($uid);
 
-        $api_key = $account->get('field_api_key')->value;
-
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
 
         $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
