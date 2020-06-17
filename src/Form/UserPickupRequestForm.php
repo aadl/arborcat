@@ -183,7 +183,7 @@ class UserPickupRequestForm extends FormBase
                 $starttimeObj = new dateTime($locationObj->timePeriodStart);
                 $st = date_format($starttimeObj, "h:ia");
                 $endtimeObj = new dateTime($locationObj->timePeriodEnd);
-                $timePeriodFormatted = ', ' . date_format($starttimeObj, "h:ia") . ' to ' . date_format($endtimeObj, "h:ia");
+                $timePeriodFormatted = ', ' . date_format($starttimeObj, "ga") . ' to ' . date_format($endtimeObj, "ga");
                 $namePlusTimePeriod = $locationObj->locationName . $timePeriodFormatted;
                 // concatenate the locationId and the timeslot into the key
                 $pickupOptions["$locationObj->locationId-$locationObj->timePeriod"] = $namePlusTimePeriod;
