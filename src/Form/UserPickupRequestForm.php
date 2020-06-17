@@ -34,7 +34,6 @@ class UserPickupRequestForm extends FormBase
 
         $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
         $selfCheckApi_key .= '-' .  $patron_barcode;
-
         $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), true);
 
         $eligible_holds = [];
@@ -169,7 +168,6 @@ class UserPickupRequestForm extends FormBase
         ];
 
         $pickupLocationsForRequest = arborcat_pickupLocations($requestLocation);
-
         $selectedDate = '';
         $pickupOptions =  [];
         $i = 1;
@@ -181,12 +179,16 @@ class UserPickupRequestForm extends FormBase
                 $addLocation = lockerAvailableForDateAndTimeSlot(reset($possibleDates)['date'], $locationObj);
             }
             if (true == $addLocation) {
-                $name = $locationObj->locationName;
+                // need to append the times in human readable form
+                $starttimeObj = new dateTime($locationObj->timePeriodStart);
+                $st = date_format($starttimeObj, "h:ia");
+                $endtimeObj = new dateTime($locationObj->timePeriodEnd);
+                $timePeriodFormatted = ', ' . date_format($starttimeObj, "h:ia") . ' to ' . date_format($endtimeObj, "h:ia");
+                $namePlusTimePeriod = $locationObj->locationName . $timePeriodFormatted;
                 // concatenate the locationId and the timeslot into the key
-                $pickupOptions["$locationObj->locationId-$locationObj->timePeriod"] = $name;
+                $pickupOptions["$locationObj->locationId-$locationObj->timePeriod"] = $namePlusTimePeriod;
             }
         }
-
         $form['pickup_type'] = [
           '#prefix' => '<div class="l-inline-b side-by-side-form">',
           '#type' => 'select',
@@ -285,7 +287,6 @@ class UserPickupRequestForm extends FormBase
         $selected_titles = array_filter($table_values);
 
         $holds = [];
-
         foreach ($selected_titles as $key=>$val) {
             array_push($holds, $locker_items[$val]);
         }

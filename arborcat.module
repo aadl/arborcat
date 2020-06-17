@@ -138,13 +138,14 @@ function arborcat_patron_fines_expired($fines, $patron)
   {
       $db = \Drupal::database();
       $query = $db->select('arborcat_pickup_location', 'apl');
-      $query->fields('apl', ['locationId', 'branchLocationId', 'timePeriod','maxLockers','locationName', 'locationDescription']);
+      $query->fields('apl', ['locationId', 'branchLocationId', 'timePeriod', 'timePeriodStart', 'timePeriodEnd', 'maxLockers', 'locationName', 'locationDescription']);
         
       // add in a condition if a location is supplied to filter on
-      if (3== strlen($destLocation)) {
+      if (3 == strlen($destLocation)) {
           $query->condition('apl.branchLocationId', (int) $destLocation, '=');
       }
       $result = $query->execute();
+      
       $pickupLocationRecords = $result->fetchAll();
       return $pickupLocationRecords;
   }

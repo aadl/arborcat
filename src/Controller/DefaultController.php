@@ -361,10 +361,10 @@ class DefaultController extends ControllerBase
             } else {
                 $location = '102';
             }
-        
+
 
             $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
-     
+    
             if (strlen($patronId) > 0) {
                 $barcode =  $this->barcodeFromPatronId($patronId);
             } else {
@@ -394,12 +394,11 @@ class DefaultController extends ControllerBase
     public function pickup_request($pnum, $encrypted_barcode, $loc)
     {
         $mode = \Drupal::request()->query->get('mode');
-
+        $requestPickup_html = '';
         if ($this->validateTransaction($pnum, $encrypted_barcode)) {
             $requestPickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
         } else {
             drupal_set_message('The Pickup Request could not be processed');
-            $requestPickup_html = '<h2>The Pickup Request could not be processed</h2>';
         }
         $render[] = [
                 '#theme' => 'pickup_request_form',
