@@ -134,7 +134,7 @@ function arborcat_patron_fines_expired($fines, $patron)
    * returns a list of request pickup locations.
    * If a branch location is passed in, that a filtered list of pickup locations is returned
    */
-  function arborcat_pickupLocations($destLocation = null)
+  function arborcat_pickup_locations($destLocation = null)
   {
       $db = \Drupal::database();
       $query = $db->select('arborcat_pickup_location', 'apl');
@@ -154,7 +154,7 @@ function arborcat_patron_fines_expired($fines, $patron)
    * Checks the availability of a locker fo the specified date and timePeriod.
    * If a branch location is passed in, that a filtered list of pickup locations is returned
    */
-  function lockerAvailableForDateAndTimeSlot($queryDate, $locationObject)
+  function arborcat_check_locker_availability($queryDate, $locationObject)
   {
       $availableLockers = 0;
       // Query current arborcat_patron_pickup_request records for the date and timePeriod to get inuse count
@@ -172,45 +172,3 @@ function arborcat_patron_fines_expired($fines, $patron)
       
       return ($availableLockers > 0);
   }
-
-function addPickupRequest($pickupLocation, $pickupDay, $timeSlot, $contactEmail, $contactPhone, $contactSMS)
-{
-    $result = [];
-    
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    if ($user->isAuthenticated()) {
-        $db = \Drupal::database();
-        $db->insert('arborcat_patron_pickup_request')
-        ->fields([
-            'uid' => $user->id(),
-            'pickupDay' => $pickupDay,
-            'timeSlot' => $timeSlot,
-            'pickupLocation' => $pickupLocation,
-            'contactEmail' => $contactEmail,
-            'contactPhone' => $contactPhone,
-            'contactSMS' => $contactSMS,
-            'timestamp' => time()
-        ])
-        ->execute();
-        $result['success'] = "Successfully added pickup request";
-    } else {
-        $result['error'] = 'You must be logged in to make a pickup request.';
-    }
-    return $result;
-}
-
-/*
-    * Debugging routine to log to the <root folder>/LWKLWK.log
-    */
-    function dblog(...$thingsToLog)
-    {
-        $lineToLog = '';
-        foreach ($thingsToLog as $item) {
-            $lineToLog = $lineToLog . ' ' . print_r($item, true);
-        }
-        // prepend date/time onto log line
-        $nowDateTime = new DrupalDateTime();
-        $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
-        $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
-        error_log($completeLine, 3, "LWKLWK.log");
-    }
