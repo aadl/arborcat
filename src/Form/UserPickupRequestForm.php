@@ -192,7 +192,7 @@ class UserPickupRequestForm extends FormBase
         $form['pickup_type'] = [
           '#prefix' => '<div class="l-inline-b side-by-side-form">',
           '#type' => 'select',
-          '#title' => t('Pickup Method'),
+          '#title' => t("Pickup Method for $locationName"),
           '#options' => $pickupOptions,
           '#description' => t('Select how you would like to pick up your requests. To use a locker, please choose an available timeslot'),
           '#required' => true
@@ -398,9 +398,6 @@ class UserPickupRequestForm extends FormBase
         ];
         for ($x=0; $x < $numPickupDays; $x++) {
             $theDate_mdY = $theDate->format('M. j');
-            if (in_array($theDate_mdY, $date_exclude)) {
-                continue;
-            }
             $day_of_week = intval($theDate->format('w'));
             $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
             $datestring = $dayOfWeek . ', ' . $theDate_mdY;
@@ -408,8 +405,9 @@ class UserPickupRequestForm extends FormBase
             $datestr_Ymd = $theDate->format('Y-m-d');
             $twoDates = array("date" => $datestr_Ymd, "formattedDate" => $datestring);
 
-            // array_push($arrayOfDates, $twoDates);
-            $arrayOfDates[$datestr_Ymd] = $twoDates;
+            if (!in_array($theDate_mdY, $date_exclude)) {
+                $arrayOfDates[$datestr_Ymd] = $twoDates;  
+            }
             $theDate->modify('+1 day');
         }
 
