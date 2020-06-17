@@ -176,7 +176,7 @@ class UserPickupRequestForm extends FormBase
             if ($locationObj->timePeriod == 0) {    // for lobby (loc=0), always add it as a location)
                 $addLocation = true;
             } else {
-                $addLocation = lockerAvailableForDateAndTimeSlot(reset($possibleDates)['date'], $locationObj);
+                $addLocation = arborcat_check_locker_availability(reset($possibleDates)['date'], $locationObj);
             }
             if (true == $addLocation) {
                 // need to append the times in human readable form

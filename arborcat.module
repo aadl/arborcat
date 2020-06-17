@@ -154,7 +154,7 @@ function arborcat_patron_fines_expired($fines, $patron)
    * Checks the availability of a locker fo the specified date and timePeriod.
    * If a branch location is passed in, that a filtered list of pickup locations is returned
    */
-  function lockerAvailableForDateAndTimeSlot($queryDate, $locationObject)
+  function arborcat_check_locker_availability($queryDate, $locationObject)
   {
       $availableLockers = 0;
       // Query current arborcat_patron_pickup_request records for the date and timePeriod to get inuse count
