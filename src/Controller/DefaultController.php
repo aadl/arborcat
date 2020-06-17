@@ -349,7 +349,6 @@ class DefaultController extends ControllerBase
         $location = \Drupal::request()->query->get('location');
         $seeddb = \Drupal::request()->query->get('seeddb');
         
-        // dblog('pickup_test: $barcode', $barcode, $patronId, $location);
         if (strlen($seeddb) > 0) {
             $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
             $this->addPickupRequest($patronId, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
@@ -492,23 +491,5 @@ class DefaultController extends ControllerBase
     '#title' => t("I agree with the website's terms and conditions."),
     '#required' => true,
   );
-    }
-
-
-
-    /*
-    * Debugging routine to log to the <root folder>/LWKLWK.log
-    */
-    public function dblog(...$thingsToLog)
-    {
-        $lineToLog = '';
-        foreach ($thingsToLog as $item) {
-            $lineToLog = $lineToLog . ' ' . print_r($item, true);
-        }
-        // prepend date/time onto log line
-        $nowDateTime = new DrupalDateTime();
-        $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
-        $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
-        error_log($completeLine, 3, "LWKLWK.log");
     }
 }
