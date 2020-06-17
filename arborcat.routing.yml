@@ -74,4 +74,4 @@ arborcat.locker_request_form:
     _form: '\Drupal\arborcat\Form\LockerRequestForm'
   requirements:
     _title: 'Locker Request'
-    _permission: 'access arborcat'
+    _permission: 'administer users'
