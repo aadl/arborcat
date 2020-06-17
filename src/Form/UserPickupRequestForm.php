@@ -312,12 +312,17 @@ class UserPickupRequestForm extends FormBase
                       'timeSlot' => $locationId_timeslot[1],
                       'pickupLocation' => $locationId_timeslot[0],
                       'pickupDate' => $pickup_date,
-                      'contactEmail' => ($notification_types['email'] ? $patron_email : null),
-                      'contactSMS' => ($notification_types['sms'] ? $patron_phone : null),
-                      'contactPhone' => ($notification_types['phone'] ? $patron_phone : null),
+                      'contactEmail' => ($notification_types['email'] ? $patron_email : NULL),
+                      'contactSMS' => ($notification_types['sms'] ? $patron_phone : NULL),
+                      'contactPhone' => ($notification_types['phone'] ? $patron_phone : NULL),
                     ])
                     ->execute();
             }
+            // Get the locations
+            $guzzle = \Drupal::httpClient();
+            $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
+
+            $messenger->addMessage('Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
         }
 
         // Need to add a c"confirm the request" modal dialog here before proceeding
