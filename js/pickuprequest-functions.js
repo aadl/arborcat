@@ -41,12 +41,24 @@
       // }, 0);
     });
 
+    // toggle checkbox status on row with click
     $('#edit-item-table tbody tr').click(function() {
       console.log('table click');
       var checkBox = $(this).find('input[type=checkbox]');
       var checkStatus = checkBox.prop('checked');
       checkBox.prop('checked', !checkStatus);
     });
+
+    // give confirmation before canceling requests
+    $('#edit-submit').click(function() {
+      if ($(this).val() == 'Cancel selected requests') {
+        var cancelHolds = confirm('Once the request is canceled, you will be removed from the waitlist');
+        if (!cancelHolds) {
+          return false;
+        }
+      }
+    });
+
   });
 
 })(jQuery, Drupal);
