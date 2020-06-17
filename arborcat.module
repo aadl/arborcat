@@ -134,7 +134,7 @@ function arborcat_patron_fines_expired($fines, $patron)
    * returns a list of request pickup locations.
    * If a branch location is passed in, that a filtered list of pickup locations is returned
    */
-  function arborcat_pickupLocations($destLocation = null)
+  function arborcat_pickup_locations($destLocation = null)
   {
       $db = \Drupal::database();
       $query = $db->select('arborcat_pickup_location', 'apl');
