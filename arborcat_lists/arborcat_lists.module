@@ -159,6 +159,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       }
 
       // Summer Game
+      /* SG2020 NO POINTS FOR CHECKOUTS =================================================
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
         if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
           $userData = \Drupal::service('user.data');
@@ -170,6 +171,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
           }
         }
       }
+      =================================================================================*/
 
       $timestamp = mktime(0, 0, 0); // Make checkout date midnight
       // add the bnums in checkouts not present in checkout history
