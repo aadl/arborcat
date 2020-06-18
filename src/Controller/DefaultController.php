@@ -342,35 +342,55 @@ class DefaultController extends ControllerBase
     // -----------------------------------------------------------
     public function pickup_locations_for_patron()
     {
-        $this->dblog('pickup_locations_for_patron: ENTERED');
-        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
         $search_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadySearchForm');
-        // if (isset($_GET['bcode'])) {
-        //     $bcode = $_GET['bcode'];
 
-        //     kint($bcode);
-        //     die();
-           
-        //     $guzzle = \Drupal::httpClient();
-        //     $json = $guzzle->get("$api_url/barcode-to-bib/$bcode")->getBody()->getContents();
-        //     $bib = json_decode($json);
-        //     if ($bib->error) {
-        //         drupal_set_message("No record was found for item with barcode: $bcode", 'error');
-        //     } else {
-        //         $json = $guzzle->get("$api_url/record/$bib/evg?dev=1")->getBody()->getContents();
-        //         $result = json_decode($json);
-        //         $result_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadyLocationsForm', $result);
-        //     }
-        // }
+        $barcode = \Drupal::request()->query->get('bcode');
+        if (14 == strlen($barcode)) {
+            $eligibleHolds = loadPatronEligibleHolds($barcode);
+            if (count($eligibleHolds) > 0) {
+                // Get the patron ID from the first hold object in $eligibleHolds. NOTE - this starts at offset [1]
+                $patronId = $eligibleHolds[1]['usr'];
+                $holdLocations = [];
+                // spin through the eligible holds and get the locations
+                foreach ($eligibleHolds as $holdobj) {
+                    array_push($holdLocations, $holdobj['pickup_lib']);
+                }
+                $holdLocations = array_unique($holdLocations);
+ 
+                $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+                $guzzle = \Drupal::httpClient();
+                $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
+                $locationURLs = [];
+                foreach ($holdLocations as $loc) {
+                    $locationName = ($loc < 110) ? $locations->{$loc} : 'melcat';
+                    $url = $this->createPickupURL($patronId, $barcode, $loc);
+                    array_push($locationURLs, ['url'=>$url, 'loc'=>$loc, 'locname'=>$locationName]);
+                }
 
-
-
-        $this->dblog('pickup_locations_for_patron: search_form =', $search_form);
+                return [
+                '#theme' => 'patron_requests_ready_locations_theme',
+                '#location_urls' => $locationURLs,
+                '#barcode' => $barcode
+                ];
+            } else {
+                // no eligible holds found for this patron
+            }
+        }
         return [
             '#theme' => 'patron_request_ready_locations_lookup_theme',
             '#search_form' => $search_form,
          ];
+    }
+
+    private function createPickupURL($patronId, $barcode, $location)
+    {
+        $html = '';
+        $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
+        $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+        $host = \Drupal::request()->getHost();
+        $link = 'https://'. $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+        return $link;
     }
 
     public function pickup_test()
@@ -381,6 +401,14 @@ class DefaultController extends ControllerBase
         $location = \Drupal::request()->query->get('location');
         $seeddb = \Drupal::request()->query->get('seeddb');
         
+        $barcode =  $this->barcodeFromPatronId($patronId);
+        $eligibleHolds = loadPatronEligibleHolds($barcode);
+        die();
+
+
+
+
+
         if (strlen($seeddb) > 0) {
             $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
             $this->addPickupRequest($patronId, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
@@ -394,7 +422,6 @@ class DefaultController extends ControllerBase
             }
 
 
-            $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
     
             if (strlen($patronId) > 0) {
                 $barcode =  $this->barcodeFromPatronId($patronId);
@@ -523,21 +550,5 @@ class DefaultController extends ControllerBase
             '#title' => t("I agree with the website's terms and conditions."),
             '#required' => true,
         );
-    }
-
-    /*
-    * Debugging routine to log to the <root folder>/LWKLWK.log
-    */
-    public function dblog(...$thingsToLog)
-    {
-        $lineToLog = '';
-        foreach ($thingsToLog as $item) {
-            $lineToLog = $lineToLog . ' ' . print_r($item, true);
-        }
-        // prepend date/time onto log line
-        $nowDateTime = new DrupalDateTime();
-        $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
-        $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
-        error_log($completeLine, 3, "LWKLWK.log");
     }
 }

@@ -10,6 +10,7 @@ namespace Drupal\arborcat\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Url;
 
 class ArborcatHoldsReadySearchForm extends FormBase
 {
@@ -25,7 +26,7 @@ class ArborcatHoldsReadySearchForm extends FormBase
         '#type' => 'textfield',
         '#maxlength' => 500,
         '#default_value' => ($_GET['bcode'] ?? ''),
-        '#attributes' => ['pattern' => '31621[0-9]{9}']
+        '#attributes' => ['pattern' => '21621[0-9]{9}']
       ];
         $form['bcode-submit'] = [
         '#type' => 'submit',
@@ -36,6 +37,12 @@ class ArborcatHoldsReadySearchForm extends FormBase
 
     public function submitForm(array &$form, FormStateInterface $form_state)
     {
-        $form_state->setRedirect('arborcat_patron_requests_ready_locations_form', [], ['query' => ['bcode' => $form_state->getValue('arborcat_holds_ready_search_form')]]);
+        $barcode = $form_state->getValue('arborcat_holds_ready_search_form');
+        $path = '/lookuppickuplocations';
+        $path_param = [
+          'bcode' => $barcode
+        ];
+        $url = Url::fromUserInput($path, ['query' => $path_param]);
+        $form_state->setRedirectUrl($url);
     }
 }

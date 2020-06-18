@@ -58,6 +58,13 @@ function arborcat_theme($existing, $type, $theme, $path)
         'branches' =>null
       ]
     ],
+   'patron_requests_ready_locations_theme' => [
+       'variables' => [
+        'location_urls' => null,
+        'barcode' => null
+
+      ]
+    ],
   ];
 }
 
@@ -179,4 +186,55 @@ function arborcat_patron_fines_expired($fines, $patron)
       $availableLockers = $locationObject->maxLockers - $lockersInUse;
       
       return ($availableLockers > 0);
+  }
+
+  function loadPatronEligibleHolds($patron_barcode, $requestLocation=null)
+  {
+      $guzzle = \Drupal::httpClient();
+      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+      $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+      $selfCheckApi_key .= '-' .  $patron_barcode;
+
+      $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), true);
+      $eligible_holds = [];
+
+      //start at 1 to avoid issue with eligible holds array not being zero-based
+      $i=1;
+
+      $mel_mappings = [
+            113 => 102,
+            114 => 103,
+            115 => 104,
+            116 => 105,
+            117 => 106
+        ];
+
+      $db = \Drupal::database();
+      if (count($patron_holds)) {
+          foreach ($patron_holds as $hold) {
+              if ($hold['status'] == 'Ready for Pickup') {
+                  // check if there is a requestLocation to filter on. If not, set $includeLocationBoolean to true, otherwise perform check for location match
+                  $includeLocationBoolean = ($requestLocation == null) ? true : ($hold['hold']['pickup_lib'] == $requestLocation);
+                  if ($includeLocationBoolean || isset($mel_mappings[$hold['hold']['pickup_lib']])) {
+                      // if pickup appt already set, don't display item
+                      $pickup_req_exists = $db->query("SELECT * from arborcat_patron_pickup_request WHERE requestId = :hid", [':hid' => $hold['id']])->fetch();
+                      if (isset($pickup_req_exists->id)) {
+                          continue;
+                      }
+                      if (arborcat_eligible_for_locker($hold)) {
+                          $eligible_holds[$i] = [
+                                'Title' => $hold['title'],
+                                'Status' => $hold['status'],
+                                'PickupLoc' => $hold['pickup'],
+                                'pickup_lib' => $hold['hold']['pickup_lib'],
+                                'holdId' => $hold['id'],
+                                'usr' => $hold['hold']['usr']
+                            ];
+                          $i++;
+                      }
+                  }
+              }
+          }
+      }
+      return $eligible_holds;
   }

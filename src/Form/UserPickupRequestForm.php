@@ -32,57 +32,8 @@ class UserPickupRequestForm extends FormBase
 
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
 
-        $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
-        $selfCheckApi_key .= '-' .  $patron_barcode;
-        $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), true);
-
-        $eligible_holds = [];
-
-        // Get the locations
-        $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
-        $locationName = $locations->$requestLocation;
-
-        // check the mode to see whether we need to display "Cancel Mode, rather than pickup request mode
-        if ('cancel' == $mode) {
-            // do cancel things
-        }
-        //start at 1 to avoid issue with eligible holds array not being zero-based
-        $i=1;
-
-        $mel_mappings = [
-            113 => 102,
-            114 => 103,
-            115 => 104,
-            116 => 105,
-            117 => 106
-        ];
-
-        $db = \Drupal::database();
-        if (count($patron_holds)) {
-            foreach ($patron_holds as $hold) {
-                if ($hold['status'] == 'Ready for Pickup') {
-                    if ($hold['hold']['pickup_lib'] == $requestLocation || isset($mel_mappings[$hold['hold']['pickup_lib']])) {
-                        // if pickup appt already set, don't display item
-                        $pickup_req_exists = $db->query("SELECT * from arborcat_patron_pickup_request WHERE requestId = :hid", [':hid' => $hold['id']])->fetch();
-                        if (isset($pickup_req_exists->id)) {
-                            continue;
-                        }
-                        if (arborcat_eligible_for_locker($hold)) {
-                            $eligible_holds[$i] = [
-                                'Title' => $hold['title'],
-                                'Status' => $hold['status'],
-                                'PickupLoc' => $hold['pickup'],
-                                'holdId' => $hold['id']
-                            ];
-                            $i++;
-                        }
-                    }
-                }
-                // if (!arborcat_lockers_available($hold['pickup'])) {
-                //     $msg = "There are currently no lockers available.";
-                // }
-            }
-        }
+        $eligible_holds = loadPatronEligibleHolds($patron_barcode, $requestLocation);
+        
 
         $form['#attributes'] = ['class' => 'form-width-exception'];
 
@@ -312,9 +263,9 @@ class UserPickupRequestForm extends FormBase
                       'timeSlot' => $locationId_timeslot[1],
                       'pickupLocation' => $locationId_timeslot[0],
                       'pickupDate' => $pickup_date,
-                      'contactEmail' => ($notification_types['email'] ? $patron_email : NULL),
-                      'contactSMS' => ($notification_types['sms'] ? $patron_phone : NULL),
-                      'contactPhone' => ($notification_types['phone'] ? $patron_phone : NULL),
+                      'contactEmail' => ($notification_types['email'] ? $patron_email : null),
+                      'contactSMS' => ($notification_types['sms'] ? $patron_phone : null),
+                      'contactPhone' => ($notification_types['phone'] ? $patron_phone : null),
                     ])
                     ->execute();
             }
