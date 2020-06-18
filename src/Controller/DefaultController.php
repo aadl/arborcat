@@ -340,6 +340,38 @@ class DefaultController extends ControllerBase
     // -----------------------------------------------------------
     // ---------------- Pickup Request-related methods -----------
     // -----------------------------------------------------------
+    public function pickup_locations_for_patron()
+    {
+        $this->dblog('pickup_locations_for_patron: ENTERED');
+        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+        $search_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadySearchForm');
+        // if (isset($_GET['bcode'])) {
+        //     $bcode = $_GET['bcode'];
+
+        //     kint($bcode);
+        //     die();
+           
+        //     $guzzle = \Drupal::httpClient();
+        //     $json = $guzzle->get("$api_url/barcode-to-bib/$bcode")->getBody()->getContents();
+        //     $bib = json_decode($json);
+        //     if ($bib->error) {
+        //         drupal_set_message("No record was found for item with barcode: $bcode", 'error');
+        //     } else {
+        //         $json = $guzzle->get("$api_url/record/$bib/evg?dev=1")->getBody()->getContents();
+        //         $result = json_decode($json);
+        //         $result_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadyLocationsForm', $result);
+        //     }
+        // }
+
+
+
+
+        $this->dblog('pickup_locations_for_patron: search_form =', $search_form);
+        return [
+            '#theme' => 'patron_request_ready_locations_lookup_theme',
+            '#search_form' => $search_form,
+         ];
+    }
 
     public function pickup_test()
     {
@@ -487,9 +519,25 @@ class DefaultController extends ControllerBase
 
         // Add a checkbox to registration form about agreeing to terms of use.
         $form['terms_of_use'] = array(
-    '#type' => 'checkbox',
-    '#title' => t("I agree with the website's terms and conditions."),
-    '#required' => true,
-  );
+            '#type' => 'checkbox',
+            '#title' => t("I agree with the website's terms and conditions."),
+            '#required' => true,
+        );
+    }
+
+    /*
+    * Debugging routine to log to the <root folder>/LWKLWK.log
+    */
+    public function dblog(...$thingsToLog)
+    {
+        $lineToLog = '';
+        foreach ($thingsToLog as $item) {
+            $lineToLog = $lineToLog . ' ' . print_r($item, true);
+        }
+        // prepend date/time onto log line
+        $nowDateTime = new DrupalDateTime();
+        $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
+        $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
+        error_log($completeLine, 3, "LWKLWK.log");
     }
 }

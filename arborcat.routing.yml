@@ -90,3 +90,12 @@ arborcat.pickup_request:
   requirements:
     _title: 'Request Pickup Options'
     _permission: 'access arborcat'
+
+arborcat.pickup_locations_lookup:
+  path: /lookuppickuplocations
+  defaults:
+    _title: 'Lookup locations of Hold Requests'
+    _controller: '\Drupal\arborcat\Controller\DefaultController::pickup_locations_for_patron'
+  requirements:
+    _permission: 'access arborcat'
+  

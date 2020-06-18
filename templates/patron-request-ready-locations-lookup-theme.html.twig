@@ -1,0 +1,19 @@
+<h1>Locations where hold/requests are Ready for Pickup for Patron</h1>
+{{ kint(search_form) }}
+
+{{ search_form }}
+
+
+
+{% if result_form %}
+  {% if item %}
+    <h3 class="base-margin-bottom-small">Bib Info</h3>
+    <p>
+      <a href="/catalog/record/{{ item.id }}" target="_blank">Record</a><br>
+      <span id="fixer-author">Author: {{ item.author ? item.author : 'None' }}</span><br>
+      <span id="fixer-series">Series: {{ item.series.0 ? item.series.0 : 'None' }}</span>
+    </p>
+  {% endif %}
+  {{ result_form }}
+{% endif %}
+{{ attach_library('requestsreadylookup-functions/requestsreadylookup-functions') }}
