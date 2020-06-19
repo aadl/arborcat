@@ -32,8 +32,19 @@ class UserPickupRequestForm extends FormBase
 
         $eligible_holds = loadPatronEligibleHolds($patron_barcode, $requestLocation);
 
-        $form['#attributes'] = ['class' => 'form-width-exception'];
+        // Get the locations
+        $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
+        $locationName = $locations->$requestLocation;
 
+        // check the mode to see whether we need to display "Cancel Mode, rather than pickup request mode
+        if ('cancel' == $mode) {
+            $cancel_holds = 1;
+            $submit_text = 'Cancel selected requests';
+        } else {
+            $submit_text = 'Check these items out to me and put them out for pickup';
+        }
+
+        $form['#attributes'] = ['class' => 'form-width-exception'];
         // hidden values up here
         $form['uid'] = [
             '#type'=> 'hidden',
@@ -194,7 +205,6 @@ class UserPickupRequestForm extends FormBase
             '#type' => 'submit',
             '#default_value' => t($submit_text),
         ];
-
         // $form['#attached']['library'][] = 'arborcat/pickuprequest-functions';
 
         return $form;
@@ -253,10 +263,10 @@ class UserPickupRequestForm extends FormBase
                     $cancel_time = date('Y-m-d');
                     $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?cancel_time=$cancel_time&cancel_cause=6")->getBody()->getContents();
                 } else {
-                // set the expire date for each selected hold
-                $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/updated_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
-                // create arborcat_patron_pickup_request records for each of the selected holds
-                $db->insert('arborcat_patron_pickup_request')
+                    // set the expire date for each selected hold
+                    $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/updated_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
+                    // create arborcat_patron_pickup_request records for each of the selected holds
+                    $db->insert('arborcat_patron_pickup_request')
                     ->fields([
                       'requestId' => $hold['holdId'],
                       'patronId' => $pnum,
@@ -269,6 +279,7 @@ class UserPickupRequestForm extends FormBase
                       'contactPhone' => ($notification_types['phone'] ? $patron_phone : null),
                     ])
                     ->execute();
+                }
             }
             // Get the locations
             $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
@@ -360,7 +371,7 @@ class UserPickupRequestForm extends FormBase
             $twoDates = array("date" => $datestr_Ymd, "formattedDate" => $datestring);
 
             if (!in_array($theDate_mdY, $date_exclude)) {
-                $arrayOfDates[$datestr_Ymd] = $twoDates;  
+                $arrayOfDates[$datestr_Ymd] = $twoDates;
             }
             $theDate->modify('+1 day');
         }
