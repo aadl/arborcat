@@ -343,6 +343,8 @@ class DefaultController extends ControllerBase
     // -----------------------------------------------------------
     public function pickup_locations_for_patron()
     {
+        $returnArray = [];
+
         $search_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadySearchForm');
 
         $current_uri = \Drupal::request()->getRequestUri();
@@ -350,7 +352,6 @@ class DefaultController extends ControllerBase
 
         $barcode = \Drupal::request()->get('bcode');
         $this->dblog('2', $barcode);
- 
         if (14 == strlen($barcode)) {
             $eligibleHolds = loadPatronEligibleHolds($barcode);
             if (count($eligibleHolds) > 0) {
@@ -362,7 +363,7 @@ class DefaultController extends ControllerBase
                     array_push($holdLocations, $holdobj['pickup_lib']);
                 }
                 $holdLocations = array_unique($holdLocations);
- 
+
                 $api_url = \Drupal::config('arborcat.settings')->get('api_url');
                 $guzzle = \Drupal::httpClient();
                 $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
@@ -373,20 +374,23 @@ class DefaultController extends ControllerBase
                     $url = $this->createPickupURL($patronId, $barcode, $loc);
                     array_push($locationURLs, ['url'=>$url, 'loc'=>$loc, 'locname'=>$locationName]);
                 }
-
-                return [
-                '#theme' => 'patron_requests_ready_locations_theme',
-                '#location_urls' => $locationURLs,
-                '#barcode' => $barcode
+                $returnArray = [
+                    '#theme' => 'patron_requests_ready_locations_theme',
+                    '#location_urls' => $locationURLs,
+                    '#barcode' => $barcode
                 ];
             } else {
-                // no eligible holds found for this patron
+                drupal_set_message("No 'Ready for Pickup' holds were found for " . $barcode);
             }
         }
-        return [
-            '#theme' => 'patron_request_ready_locations_lookup_theme',
-            '#search_form' => $search_form,
-         ];
+        else {
+            $returnArray = [
+                '#theme' => 'patron_request_ready_locations_lookup_theme',
+                '#search_form' => $search_form,
+            ];
+         }
+       
+        return $returnArray;
     }
 
     private function createPickupURL($patronId, $barcode, $location)
