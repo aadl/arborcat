@@ -97,5 +97,5 @@ arborcat.pickup_locations_lookup:
     _title: 'Lookup locations of Hold Requests'
     _controller: '\Drupal\arborcat\Controller\DefaultController::pickup_locations_for_patron'
   requirements:
-    _permission: 'access arborcat'
+    _permission: 'access accountfix'
   
