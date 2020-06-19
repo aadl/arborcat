@@ -10,15 +10,12 @@ use Drupal\arborcat\Controller;
 use DateTime;
 use DateTimeHelper;
 
-class UserPickupRequestForm extends FormBase
-{
-    public function getFormId()
-    {
+class UserPickupRequestForm extends FormBase {
+    public function getFormId() {
         return 'user_pickup_request_form';
     }
 
-    public function buildForm(array $form, FormStateInterface $form_state, string $patronId = null, string $requestLocation = null, string $mode = null)
-    {
+    public function buildForm(array $form, FormStateInterface $form_state, string $patronId = null, string $requestLocation = null, string $mode = null) {
         $guzzle = \Drupal::httpClient();
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
