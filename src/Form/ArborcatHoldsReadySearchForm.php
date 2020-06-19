@@ -22,7 +22,7 @@ class ArborcatHoldsReadySearchForm extends FormBase
     public function buildForm(array $form, FormStateInterface $form_state)
     {
         $form['arborcat_holds_ready_search_form'] = [
-        '#title' => "Search locations with Requests Ready using Patron's Barcode",
+        '#title' => "Enter a barcode to see all eligible pickup appointment locations",
         '#type' => 'textfield',
         '#maxlength' => 500,
         '#default_value' => ($_GET['bcode'] ?? ''),
