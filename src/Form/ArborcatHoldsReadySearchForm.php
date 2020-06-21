@@ -38,7 +38,7 @@ class ArborcatHoldsReadySearchForm extends FormBase
     public function submitForm(array &$form, FormStateInterface $form_state)
     {
         $barcode = $form_state->getValue('arborcat_holds_ready_search_form');
-        $path = '/lookuppickuplocations';
+        $path = '/pickuphelper';
         $path_param = [
           'bcode' => $barcode
         ];
