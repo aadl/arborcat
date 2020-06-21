@@ -21,6 +21,7 @@ class ArborcatHoldsReadySearchForm extends FormBase
 
     public function buildForm(array $form, FormStateInterface $form_state)
     {
+        $form['#attributes'] = ['class' => 'l-overflow-clear'];
         $form['arborcat_holds_ready_search_form'] = [
         '#title' => "Enter a barcode to see all eligible pickup appointment locations",
         '#type' => 'textfield',
