@@ -196,7 +196,12 @@ function arborcat_patron_fines_expired($fines, $patron)
       $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
       $selfCheckApi_key .= '-' .  $patron_barcode;
 
-      $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), true);
+      try {
+        $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), true);
+      } catch (Exception $e) {
+        $eligible_holds['error'] = 'Info not found';
+        return $eligible_holds;
+      }
       $eligible_holds = [];
 
       //start at 1 to avoid issue with eligible holds array not being zero-based
