@@ -10,15 +10,12 @@ use Drupal\arborcat\Controller;
 use DateTime;
 use DateTimeHelper;
 
-class UserPickupRequestForm extends FormBase
-{
-    public function getFormId()
-    {
+class UserPickupRequestForm extends FormBase {
+    public function getFormId() {
         return 'user_pickup_request_form';
     }
 
-    public function buildForm(array $form, FormStateInterface $form_state, string $patronId = null, string $requestLocation = null, string $mode = null)
-    {
+    public function buildForm(array $form, FormStateInterface $form_state, string $patronId = null, string $requestLocation = null, string $mode = null) {
         $guzzle = \Drupal::httpClient();
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -30,11 +27,7 @@ class UserPickupRequestForm extends FormBase
 
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
 
-        $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
-        $selfCheckApi_key .= '-' .  $patron_barcode;
-        $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), true);
-
-        $eligible_holds = [];
+        $eligible_holds = loadPatronEligibleHolds($patron_barcode, $requestLocation);
 
         // Get the locations
         $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
@@ -47,46 +40,8 @@ class UserPickupRequestForm extends FormBase
         } else {
             $submit_text = 'Check these items out to me and put them out for pickup';
         }
-        //start at 1 to avoid issue with eligible holds array not being zero-based
-        $i=1;
-
-        $mel_mappings = [
-            113 => 102,
-            114 => 103,
-            115 => 104,
-            116 => 105,
-            117 => 106
-        ];
-
-        $db = \Drupal::database();
-        if (count($patron_holds)) {
-            foreach ($patron_holds as $hold) {
-                if ($hold['status'] == 'Ready for Pickup') {
-                    if ($hold['hold']['pickup_lib'] == $requestLocation || isset($mel_mappings[$hold['hold']['pickup_lib']])) {
-                        // if pickup appt already set, don't display item
-                        $pickup_req_exists = $db->query("SELECT * from arborcat_patron_pickup_request WHERE requestId = :hid", [':hid' => $hold['id']])->fetch();
-                        if (isset($pickup_req_exists->id)) {
-                            continue;
-                        }
-                        if (arborcat_eligible_for_locker($hold)) {
-                            $eligible_holds[$i] = [
-                                'Title' => $hold['title'],
-                                'Status' => $hold['status'],
-                                'PickupLoc' => $hold['pickup'],
-                                'holdId' => $hold['id']
-                            ];
-                            $i++;
-                        }
-                    }
-                }
-                // if (!arborcat_lockers_available($hold['pickup'])) {
-                //     $msg = "There are currently no lockers available.";
-                // }
-            }
-        }
 
         $form['#attributes'] = ['class' => 'form-width-exception'];
-
         // hidden values up here
         $form['uid'] = [
             '#type'=> 'hidden',
@@ -247,7 +202,6 @@ class UserPickupRequestForm extends FormBase
             '#type' => 'submit',
             '#default_value' => t($submit_text),
         ];
-
         // $form['#attached']['library'][] = 'arborcat/pickuprequest-functions';
 
         return $form;
@@ -306,22 +260,22 @@ class UserPickupRequestForm extends FormBase
                     $cancel_time = date('Y-m-d');
                     $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?cancel_time=$cancel_time&cancel_cause=6")->getBody()->getContents();
                 } else {
-                // set the expire date for each selected hold
+                    // set the expire date for each selected hold
                     $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
                     // create arborcat_patron_pickup_request records for each of the selected holds
                     $db->insert('arborcat_patron_pickup_request')
-                        ->fields([
-                          'requestId' => $hold['holdId'],
-                          'patronId' => $pnum,
-                          'branch' => (int) $branch,
-                          'timeSlot' => $locationId_timeslot[1],
-                          'pickupLocation' => $locationId_timeslot[0],
-                          'pickupDate' => $pickup_date,
-                          'contactEmail' => ($notification_types['email'] ? $patron_email : NULL),
-                          'contactSMS' => ($notification_types['sms'] ? $patron_phone : NULL),
-                          'contactPhone' => ($notification_types['phone'] ? $patron_phone : NULL),
-                        ])
-                        ->execute();
+                    ->fields([
+                      'requestId' => $hold['holdId'],
+                      'patronId' => $pnum,
+                      'branch' => (int) $branch,
+                      'timeSlot' => $locationId_timeslot[1],
+                      'pickupLocation' => $locationId_timeslot[0],
+                      'pickupDate' => $pickup_date,
+                      'contactEmail' => ($notification_types['email'] ? $patron_email : null),
+                      'contactSMS' => ($notification_types['sms'] ? $patron_phone : null),
+                      'contactPhone' => ($notification_types['phone'] ? $patron_phone : null),
+                    ])
+                    ->execute();
                 }
             }
             // Get the locations
@@ -414,7 +368,7 @@ class UserPickupRequestForm extends FormBase
             $twoDates = array("date" => $datestr_Ymd, "formattedDate" => $datestring);
 
             if (!in_array($theDate_mdY, $date_exclude)) {
-                $arrayOfDates[$datestr_Ymd] = $twoDates;  
+                $arrayOfDates[$datestr_Ymd] = $twoDates;
             }
             $theDate->modify('+1 day');
         }

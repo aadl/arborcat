@@ -8,6 +8,7 @@ namespace Drupal\arborcat\Controller;
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\Core\Url;
 
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
@@ -340,6 +341,63 @@ class DefaultController extends ControllerBase
     // -----------------------------------------------------------
     // ---------------- Pickup Request-related methods -----------
     // -----------------------------------------------------------
+    public function pickup_locations_for_patron()
+    {
+        $returnArray = [];
+
+        $search_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadySearchForm');
+
+        $current_uri = \Drupal::request()->getRequestUri();
+        $this->dblog('1', json_encode($current_uri));
+
+        $barcode = \Drupal::request()->get('bcode');
+
+        $locationURLs = [];
+        if (isset($barcode)) {
+          $eligibleHolds = loadPatronEligibleHolds($barcode);
+          if (!isset($eligibleHolds['error'])) {
+            // Get the patron ID from the first hold object in $eligibleHolds. NOTE - this starts at offset [1]
+            $patronId = $eligibleHolds[1]['usr'];
+            $holdLocations = [];
+            // spin through the eligible holds and get the locations
+            foreach ($eligibleHolds as $holdobj) {
+                array_push($holdLocations, $holdobj['pickup_lib']);
+            }
+            $holdLocations = array_unique($holdLocations);
+
+            $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+            $guzzle = \Drupal::httpClient();
+            $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
+
+            
+            foreach ($holdLocations as $loc) {
+                $locationName = ($loc < 110) ? $locations->{$loc} : 'melcat';
+                $url = $this->createPickupURL($patronId, $barcode, $loc);
+                array_push($locationURLs, ['url'=>$url, 'loc'=>$loc, 'locname'=>$locationName]);
+            }
+          } else {
+            $locationURLs['error'] = 'Error looking up patron requests. Is this a valid barcode?';
+            kint($locationURLs);
+          }
+        }
+
+        return [
+            '#theme' => 'patron_requests_ready_locations_theme',
+            '#search_form' => $search_form,
+            '#location_urls' => $locationURLs,
+            '#barcode' => $barcode
+        ];
+    }
+
+    private function createPickupURL($patronId, $barcode, $location)
+    {
+        $html = '';
+        $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
+        $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+        $host = \Drupal::request()->getHost();
+        $link = 'https://'. $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+        return $link;
+    }
 
     public function pickup_test()
     {
@@ -349,6 +407,14 @@ class DefaultController extends ControllerBase
         $location = \Drupal::request()->query->get('location');
         $seeddb = \Drupal::request()->query->get('seeddb');
         
+        $barcode =  $this->barcodeFromPatronId($patronId);
+        $eligibleHolds = loadPatronEligibleHolds($barcode);
+        die();
+
+
+
+
+
         if (strlen($seeddb) > 0) {
             $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
             $this->addPickupRequest($patronId, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
@@ -362,7 +428,6 @@ class DefaultController extends ControllerBase
             }
 
 
-            $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
     
             if (strlen($patronId) > 0) {
                 $barcode =  $this->barcodeFromPatronId($patronId);
@@ -487,9 +552,25 @@ class DefaultController extends ControllerBase
 
         // Add a checkbox to registration form about agreeing to terms of use.
         $form['terms_of_use'] = array(
-    '#type' => 'checkbox',
-    '#title' => t("I agree with the website's terms and conditions."),
-    '#required' => true,
-  );
+            '#type' => 'checkbox',
+            '#title' => t("I agree with the website's terms and conditions."),
+            '#required' => true,
+        );
+    }
+
+    /*
+    * Debugging routine to log to the <root folder>/LWKLWK.log
+    */
+    public function dblog(...$thingsToLog)
+    {
+        $lineToLog = '';
+        foreach ($thingsToLog as $item) {
+            $lineToLog = $lineToLog . ' ' . print_r($item, true);
+        }
+        // prepend date/time onto log line
+        $nowDateTime = new DrupalDateTime();
+        $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
+        $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
+        error_log($completeLine, 3, "LWKLWK.log");
     }
 }
