@@ -59,7 +59,8 @@ function arborcat_theme($existing, $type, $theme, $path)
       ]
     ],
    'patron_requests_ready_locations_theme' => [
-       'variables' => [
+      'variables' => [
+        'search_form' => null,
         'location_urls' => null,
         'barcode' => null
 
@@ -207,7 +208,7 @@ function arborcat_patron_fines_expired($fines, $patron)
             115 => 104,
             116 => 105,
             117 => 106
-        ];
+      ];
 
       $db = \Drupal::database();
       if (count($patron_holds)) {
