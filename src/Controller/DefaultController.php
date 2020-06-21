@@ -377,7 +377,6 @@ class DefaultController extends ControllerBase
             }
           } else {
             $locationURLs['error'] = 'Error looking up patron requests. Is this a valid barcode?';
-            kint($locationURLs);
           }
         }
 
