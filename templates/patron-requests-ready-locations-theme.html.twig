@@ -1,10 +1,19 @@
-<h1 class="t-center ruled-heading "><span>Current Request Pickup Locations</span></h1>
-<div class="l-overflow-clear">
-<h3 class="t-center"><span>Barcode#: {{barcode}}</span></h3>
-</div>
+<h1 class="t-center ruled-heading "><span>Pickup Helper</span></h1>
+{{ search_form }}
 
-<div class="l-overflow-clear">
-  {% for item in location_urls %}
-   <p> <a href="{{ item.url }}" target="_blank">holds for {{ item.locname }} [{{ item.loc }}]</a></p>
-  {% endfor %}
-</div>
+{% if barcode %}
+  {% if location_urls and not location_urls.error %}
+    <h3>Requests ready for action at:</h3>
+    <div class="l-overflow-clear">
+      <ul>
+        {% for item in location_urls %}
+          <li><a href="{{ item.url }}" target="_blank">{{ item.locname }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% elseif location_urls.error %}
+    <p><b>{{ location_urls.error }}</b></p>
+  {% else %}
+    <p><b>No requests eligible for pickup appointments</b></p>
+  {% endif %}
+{% endif %}

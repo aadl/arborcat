@@ -351,46 +351,42 @@ class DefaultController extends ControllerBase
         $this->dblog('1', json_encode($current_uri));
 
         $barcode = \Drupal::request()->get('bcode');
-        $this->dblog('2', $barcode);
-        if (14 == strlen($barcode)) {
-            $eligibleHolds = loadPatronEligibleHolds($barcode);
-            if (count($eligibleHolds) > 0) {
-                // Get the patron ID from the first hold object in $eligibleHolds. NOTE - this starts at offset [1]
-                $patronId = $eligibleHolds[1]['usr'];
-                $holdLocations = [];
-                // spin through the eligible holds and get the locations
-                foreach ($eligibleHolds as $holdobj) {
-                    array_push($holdLocations, $holdobj['pickup_lib']);
-                }
-                $holdLocations = array_unique($holdLocations);
 
-                $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-                $guzzle = \Drupal::httpClient();
-                $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
-
-                $locationURLs = [];
-                foreach ($holdLocations as $loc) {
-                    $locationName = ($loc < 110) ? $locations->{$loc} : 'melcat';
-                    $url = $this->createPickupURL($patronId, $barcode, $loc);
-                    array_push($locationURLs, ['url'=>$url, 'loc'=>$loc, 'locname'=>$locationName]);
-                }
-                $returnArray = [
-                    '#theme' => 'patron_requests_ready_locations_theme',
-                    '#location_urls' => $locationURLs,
-                    '#barcode' => $barcode
-                ];
-            } else {
-                drupal_set_message("No 'Ready for Pickup' holds were found for " . $barcode);
+        $locationURLs = [];
+        if (isset($barcode)) {
+          $eligibleHolds = loadPatronEligibleHolds($barcode);
+          if (!isset($eligibleHolds['error'])) {
+            // Get the patron ID from the first hold object in $eligibleHolds. NOTE - this starts at offset [1]
+            $patronId = $eligibleHolds[1]['usr'];
+            $holdLocations = [];
+            // spin through the eligible holds and get the locations
+            foreach ($eligibleHolds as $holdobj) {
+                array_push($holdLocations, $holdobj['pickup_lib']);
             }
+            $holdLocations = array_unique($holdLocations);
+
+            $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+            $guzzle = \Drupal::httpClient();
+            $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
+
+            
+            foreach ($holdLocations as $loc) {
+                $locationName = ($loc < 110) ? $locations->{$loc} : 'melcat';
+                $url = $this->createPickupURL($patronId, $barcode, $loc);
+                array_push($locationURLs, ['url'=>$url, 'loc'=>$loc, 'locname'=>$locationName]);
+            }
+          } else {
+            $locationURLs['error'] = 'Error looking up patron requests. Is this a valid barcode?';
+            kint($locationURLs);
+          }
         }
-        else {
-            $returnArray = [
-                '#theme' => 'patron_request_ready_locations_lookup_theme',
-                '#search_form' => $search_form,
-            ];
-         }
-       
-        return $returnArray;
+
+        return [
+            '#theme' => 'patron_requests_ready_locations_theme',
+            '#search_form' => $search_form,
+            '#location_urls' => $locationURLs,
+            '#barcode' => $barcode
+        ];
     }
 
     private function createPickupURL($patronId, $barcode, $location)
