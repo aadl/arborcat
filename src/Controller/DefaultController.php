@@ -356,6 +356,8 @@ class DefaultController extends ControllerBase
         if (isset($barcode)) {
           $eligibleHolds = loadPatronEligibleHolds($barcode);
           if (!isset($eligibleHolds['error'])) {
+            // grab pickup appointments to display on form
+            $scheduled_pickups = arborcat_get_scheduled_pickups($barcode);
             // Get the patron ID from the first hold object in $eligibleHolds. NOTE - this starts at offset [1]
             $patronId = $eligibleHolds[1]['usr'];
             $holdLocations = [];
@@ -384,7 +386,8 @@ class DefaultController extends ControllerBase
             '#theme' => 'patron_requests_ready_locations_theme',
             '#search_form' => $search_form,
             '#location_urls' => $locationURLs,
-            '#barcode' => $barcode
+            '#barcode' => $barcode,
+            '#scheduled_pickups' => $scheduled_pickups ?? null
         ];
     }
 

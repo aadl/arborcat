@@ -62,8 +62,8 @@ function arborcat_theme($existing, $type, $theme, $path)
       'variables' => [
         'search_form' => null,
         'location_urls' => null,
-        'barcode' => null
-
+        'barcode' => null,
+        'scheduled_pickups' => null
       ]
     ],
   ];
@@ -243,4 +243,15 @@ function arborcat_patron_fines_expired($fines, $patron)
           }
       }
       return $eligible_holds;
+  }
+
+  function arborcat_get_scheduled_pickups($barcode) {
+    $guzzle = \Drupal::httpClient();
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+    $selfCheckApi_key .= '-' .  $barcode;
+
+    $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/scheduled-pickups")->getBody()->getContents(), true);
+
+    return $scheduled_pickups;
   }

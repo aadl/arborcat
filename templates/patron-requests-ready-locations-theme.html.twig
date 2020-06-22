@@ -16,4 +16,50 @@
   {% else %}
     <p><b>No requests eligible for pickup appointments</b></p>
   {% endif %}
+  {% if not location_urls.error %}
+    <div>
+      {# {{ kint(scheduled_pickups) }} #}
+      {% set scheduled_count = scheduled_pickups|length ? ' (' ~ scheduled_pickups|length ~ ')' : '' %}
+      <h2 id="scheduled-pickups" class="no-margin-bottom">Scheduled Pickup Appointments</h2>
+      {% if scheduled_pickups %}
+        <table id="scheduled-table">
+          <thead>
+            <tr>
+              <th role="columnheader">Title</th>
+              <th class="no-mobile-display" role="columnheader">Author</th>
+              <th class="no-mobile-display no-tab-display" role="columnheader">Format</th>
+              <th class="no-sort" role="columnheader">Status</th>
+              <th data-sort-default role="ascending">Pickup Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for scheduled in scheduled_pickups %}
+              <tr class="{{ scheduled.branchLocationId }}-scheduled" data-scheduled-id="{{ scheduled.requestId }}">
+                <td>
+                  {% if 'ILL' not in scheduled.material and 'MeLCat Book' not in scheduled.material %}
+                    <a href="/catalog/record/{{ scheduled.bnum }}">{{ scheduled.title }}</a>
+                  {% else %}
+                    {{ scheduled.title }}
+                  {% endif %}
+                </td>
+                <td class="no-mobile-display"><a href="/search/catalog/author:&quot;{{ scheduled.author }}&quot;">{{ scheduled.author }}</a></td>
+                <td class="no-mobile-display no-tab-display">{{ scheduled.material }}</td>
+                {% set pickup_text = scheduled.pickup ~ ' ' ~ scheduled.locationName|split(' ')[1] ~ ' from ' ~ scheduled.timePeriodStart|date('ga') ~ '-' ~ scheduled.timePeriodEnd|date('ga') %}
+                <td>
+                  {% if scheduled.completed %}
+                    <span class="success-text">Ready for pickup at {{ scheduled.timePeriodStart|date('ga') }}!</span>
+                  {% else %}
+                    Scheduled
+                  {% endif %}
+                </td>
+                <td>{{ scheduled.pickupDate|date('D, n/j') }} at {{ pickup_text }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p><em>No requests scheduled for pickup</em></p>
+      {% endif %}
+    </div>
+  {% endif %}
 {% endif %}
