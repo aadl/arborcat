@@ -101,7 +101,7 @@ class UserPickupRequestForm extends FormBase {
                 $selection[$key] = strval($key);
             }
         } 
-        dblog('$selection:', json_encode($selection));
+
         $titleString = (isset($cancel_holds)) ? 'Cancel hold/request for item' : 'Request Pickup for item';
         $titleString .= (count($eligible_holds) > 1) ? "s" : '';
         $directionString = 'Select item';
