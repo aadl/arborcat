@@ -104,10 +104,15 @@ class UserPickupRequestForm extends FormBase {
         dblog('$selection:', json_encode($selection));
         $titleString = (isset($cancel_holds)) ? 'Cancel hold/request for item' : 'Request Pickup for item';
         $titleString .= (count($eligible_holds) > 1) ? "s" : '';
+        $directionString = 'Select item';
+        $directionString .= (count($eligible_holds) > 1) ? "s" : '';
+        $directionString .= (isset($cancel_holds)) ? ' below to Cancel' : ' below to request for pickup';
+        
+        $prefixHTML = '<h2>' . $titleString . ' at ' . $locationName . ' for ' . $patron_barcode . '</h2><br />' .
+									 $directionString .
+									 '<div><div class="l-inline-b side-by-side-form">';
         $form['item_table']=[
-            '#prefix' => '<h2>' . $titleString . ' at ' . $locationName . ' for ' . $patron_barcode . '</h2>
-									 Select items below to request for pickup:
-									 <div><div class="l-inline-b side-by-side-form">',
+            '#prefix' => $prefixHTML,
             '#type'=>'tableselect',
             '#header' => $header,
             '#options' => $eligible_holds,
