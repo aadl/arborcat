@@ -28,12 +28,13 @@ class UserPickupRequestForm extends FormBase {
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
 
         $eligible_holds = loadPatronEligibleHolds($patron_barcode, $requestLocation);
-
+        
         // Get the locations
         $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
         $locationName = $locations->$requestLocation;
 
         // check the mode to see whether we need to display "Cancel Mode, rather than pickup request mode
+        $cancel_holds = NULL;
         if ('cancel' == $mode) {
             $cancel_holds = 1;
             $submit_text = 'Cancel selected requests';
@@ -91,7 +92,17 @@ class UserPickupRequestForm extends FormBase {
             'PickupLoc'=>t('Pickup Location')
         ];
 
-        $titleString = (strlen($mode) > 0) ? 'Cancel hold/request for item' : 'Request Pickup for item';
+        $keys = array_keys($eligible_holds);
+
+        // create assoc array of the eligible_hold keys in order to check all items in the tableselect if the form is not in cancel mode.
+        $selection = [];
+        if (!isset($cancel_holds)) {
+            foreach($eligible_holds as $key => $value) {
+                $selection[$key] = strval($key);
+            }
+        } 
+        dblog('$selection:', json_encode($selection));
+        $titleString = (isset($cancel_holds)) ? 'Cancel hold/request for item' : 'Request Pickup for item';
         $titleString .= (count($eligible_holds) > 1) ? "s" : '';
         $form['item_table']=[
             '#prefix' => '<h2>' . $titleString . ' at ' . $locationName . ' for ' . $patron_barcode . '</h2>
@@ -102,7 +113,8 @@ class UserPickupRequestForm extends FormBase {
             '#options' => $eligible_holds,
             '#multiple' => 'true',
             '#empty' => "You have no holds ready for pickup.",
-            '#suffix' => '</div>'
+            '#suffix' => '</div>',
+            '#default_value' => $selection
         ];
 
         $possibleDates = $this->calculateLobbyPickupDates();
