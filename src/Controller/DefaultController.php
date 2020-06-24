@@ -9,6 +9,9 @@ use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Url;
+use DateTime;
+use DateTimeZone;
+use DateTimeHelper;
 
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
@@ -473,6 +476,55 @@ class DefaultController extends ControllerBase
         return $render;
     }
 
+    public function cancel_pickup_request($pickup_request_id, $hold_shelf_expire_time) {
+       $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+        $db = \Drupal::database();
+        // lookup the pickup request record
+        $query = $db->select('arborcat_patron_pickup_request', 'appr');
+        $query-> fields('appr', ['id', 'patronId', 'pickupDate']);
+        $query-> condition('id', $pickup_request_id);
+        $result = $query->execute()->fetchObject();
+        // check date is for tomorrow or later
+        $today = (new DateTime("now", new DateTimeZone('UTC')));
+        $today->setTime(0,0,0);
+        $tomorrow = $today->modify('+1 day');
+
+        $pickupTime = (new DateTime($result->pickupDate, new DateTimeZone('UTC')));
+        
+        if ($pickupTime >= $tomorrow) {
+
+            // get currently logged in user
+            $loggedInUser = $user->get('uid')->value;
+            // $loggedInUser = 10008060;   // FOR DEBUGGING ONLY !!!!!!!!!!!!!!!! 
+            if ($loggedInUser == $result->patronId) {
+                // go ahead and cancel the record
+                $num_deleted = $db->delete('arborcat_patron_pickup_request')
+                ->fields([
+                    'completed' => -1,
+                    ])
+                ->condition('id', $pickup_request_id, '=')
+                ->execute();
+                
+                // Now update the hold_request expire_time in Evergreen
+
+
+                if (1 == $num_deleted) {
+                    $response['success'] = 'Pickup Request Canceled';
+                }  
+                else {
+                    $response['error'] = 'Error canceling Pickup Request';
+                }               
+            } else {
+                $response['error'] = "You are not authorized to cancel this request";
+            }
+        } else {
+            $response['error'] = "A Pickup Request scheduled for today cannot be canceled";
+        }
+ 
+
+        return new JsonResponse($response);
+    }
+
     private function barcodeFromPatronId($patronId)
     {
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
@@ -501,7 +553,6 @@ class DefaultController extends ControllerBase
             return "";
         }
     }
-
 
     private function validateTransaction($pnum, $encrypted_barcode)
     {
@@ -558,21 +609,5 @@ class DefaultController extends ControllerBase
             '#title' => t("I agree with the website's terms and conditions."),
             '#required' => true,
         );
-    }
-
-    /*
-    * Debugging routine to log to the <root folder>/LWKLWK.log
-    */
-    public function dblog(...$thingsToLog)
-    {
-        $lineToLog = '';
-        foreach ($thingsToLog as $item) {
-            $lineToLog = $lineToLog . ' ' . print_r($item, true);
-        }
-        // prepend date/time onto log line
-        $nowDateTime = new DrupalDateTime();
-        $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
-        $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
-        error_log($completeLine, 3, "LWKLWK.log");
     }
 }
