@@ -412,14 +412,11 @@ class DefaultController extends ControllerBase
         $location = \Drupal::request()->query->get('location');
         $seeddb = \Drupal::request()->query->get('seeddb');
         
-        $barcode =  $this->barcodeFromPatronId($patronId);
-        $eligibleHolds = loadPatronEligibleHolds($barcode);
-        die();
+        //$barcode =  $this->barcodeFromPatronId($patronId);
+        //$eligibleHolds = loadPatronEligibleHolds($barcode);
 
 
-
-
-
+        //dblog('eligibleHolds:',$eligibleHolds);
         if (strlen($seeddb) > 0) {
             $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
             $this->addPickupRequest($patronId, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
@@ -440,7 +437,8 @@ class DefaultController extends ControllerBase
                 $patronId = $this->patronIdFromBarcode($barcode);
             }
             if (14 === strlen($barcode)) {
-                $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+               $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
+               $encryptedBarcode = md5($pickup_requests_salt . $barcode);
                 $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
             
                 $host = 'https://pinkeye.aadl.org';
@@ -476,12 +474,19 @@ class DefaultController extends ControllerBase
         return $render;
     }
 
-    public function cancel_pickup_request($pickup_request_id, $hold_shelf_expire_time) {
-       $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    public function cancel_pickup_request($pickup_request_id, $hold_shelf_expire_date) {
+        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+        dblog('$user=', json_decode($user));
+        die();
+
         $db = \Drupal::database();
-        // lookup the pickup request record
+        $guzzle = \Drupal::httpClient();
+        $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+        $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+    // lookup the pickup request record
         $query = $db->select('arborcat_patron_pickup_request', 'appr');
-        $query-> fields('appr', ['id', 'patronId', 'pickupDate']);
+        $query-> fields('appr', ['id', 'requestId', 'patronId', 'pickupDate']);
         $query-> condition('id', $pickup_request_id);
         $result = $query->execute()->fetchObject();
         // check date is for tomorrow or later
@@ -499,14 +504,12 @@ class DefaultController extends ControllerBase
             if ($loggedInUser == $result->patronId) {
                 // go ahead and cancel the record
                 $num_deleted = $db->delete('arborcat_patron_pickup_request')
-                ->fields([
-                    'completed' => -1,
-                    ])
                 ->condition('id', $pickup_request_id, '=')
                 ->execute();
                 
                 // Now update the hold_request expire_time in Evergreen
-
+                $patron_barcode = 
+                $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $result->requestId . "?shelf_expire_time=$hold_shelf_expire_time 23:59:59")->getBody()->getContents();
 
                 if (1 == $num_deleted) {
                     $response['success'] = 'Pickup Request Canceled';
