@@ -176,11 +176,13 @@ function arborcat_patron_fines_expired($fines, $patron)
       // Query current arborcat_patron_pickup_request records for the date and timePeriod to get inuse count
       // fields pickupDate & timeSlot
       $db = \Drupal::database();
-      $timeperiod = $locationObject->timePeriod;
-      $query = $db->select('arborcat_patron_pickup_request', 'appr');
-      $query-> fields('appr', ['id']);
-      $query-> condition('pickupDate', $queryDate);
-      $query-> condition('timeSlot', $timeperiod, '=');
+      $pickup_point = $locationObject->locationId;
+
+      $query = $db->select('arborcat_patron_pickup_request', 'appr')
+        ->fields('appr', ['patronId'])
+        ->condition('pickupDate', $queryDate)
+        ->condition('pickupLocation', $pickup_point, '=')
+        ->groupBy('patronId');
       $results = $query->execute()->fetchAll();
 
       $lockersInUse = count($results);
