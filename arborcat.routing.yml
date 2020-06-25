@@ -19,6 +19,13 @@ arborcat.bibrecord:
     _controller: '\Drupal\arborcat\Controller\DefaultController::bibrecord_page'
   requirements:
     _permission: 'access arborcat'
+arborcat.bibrecord.download:
+  path: /catalog/record/{bnum}/download
+  defaults:
+    _title: 'Catalog Record Download'
+    _controller: '\Drupal\arborcat\Controller\DefaultController::bibrecord_download'
+  requirements:
+    _permission: 'access arborcat'
 arborcat.moderate_review:
   path: /staff/reviews/moderate
   defaults:

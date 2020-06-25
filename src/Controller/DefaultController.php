@@ -6,6 +6,7 @@
 namespace Drupal\arborcat\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Routing\TrustedRedirectResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
@@ -63,14 +64,11 @@ class DefaultController extends ControllerBase {
       //   $bib_record->download_urls[$format] = json_decode($download_url)->download_url;
       // }
       if ($bib_record->mat_code == 'zb' || $bib_record->mat_code == 'zp') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/pdf")->getBody()->getContents();
-        $bib_record->download_urls['pdf'] = json_decode($download_url)->download_url;
+        $bib_record->download_urls['pdf'] = '/catalog/record/' . $bib_record->_id . '/download';
       } elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/album/mp3")->getBody()->getContents();
-        $bib_record->download_urls['mp3'] = json_decode($download_url)->download_url;
+        $bib_record->download_urls['mp3'] = '/catalog/record/' . $bib_record->_id . '/download';
       } elseif ($bib_record->mat_code == 'zm') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/mp4")->getBody()->getContents();
-        $bib_record->download_urls['mp4'] = json_decode($download_url)->download_url;
+        $bib_record->download_urls['mp4'] = '/catalog/record/' . $bib_record->_id . '/download';
       }
     }
 
@@ -158,6 +156,71 @@ class DefaultController extends ControllerBase {
       '#review_form' => $review_form,
       '#ratings' => $ratings,
       '#cache' => [ 'max-age' => 0 ]
+    ];
+  }
+
+  public function bibrecord_download($bnum) {
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+
+    // Get Bib Record from API
+    $guzzle = \Drupal::httpClient();
+    try {
+      $json = json_decode($guzzle->get("$api_url/record/$bnum/harvest")->getBody()->getContents());
+      $bib_record = $json->bib;
+      // Copy from Elasticsearch record id to same format as CouchDB _id
+      $bib_record->_id = $bib_record->id;
+      //$bib_record->id = $bib_record->_id;
+    } catch (\Exception $e) {
+      $bib_record->_id = NULL;
+    }
+
+    if (!$bib_record->_id) {
+      $markup = "<p class=\"base-margin-top\">Sorry, the item you are looking for couldn't be found.</p>";
+      return [
+        '#title' => 'Record Not Found',
+        '#markup' => $markup
+      ];
+    }
+
+    $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
+    $mat_name = json_decode($mat_types);
+    $bib_record->mat_name = $mat_name->{$bib_record->mat_code};
+
+    $downloads = ['z','za','zb','zm','zp'];
+    if (in_array($bib_record->mat_code, $downloads)) {
+      if ($bib_record->mat_code == 'zb' || $bib_record->mat_code == 'zp') {
+        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/pdf")->getBody()->getContents();
+      } elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
+        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/album/mp3")->getBody()->getContents();
+      } elseif ($bib_record->mat_code == 'zm') {
+        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/mp4")->getBody()->getContents();
+      }
+
+      if (\Drupal::moduleHandler()->moduleExists('summergame')) {
+        if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+          if ($player = summergame_get_active_player()) {
+            // Check for duplicate
+            $db = \Drupal::database();
+            $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND type = 'File Download' AND metadata like :meta",
+                              [':pid' => $player['pid'], ':meta' => '%bnum:' . $bib_record->_id . '%'])->fetchObject();
+            if (!$row) {
+              $type = 'File Download';
+              $description = 'Downloaded ' . $bib_record->title . ' from our online catalog';
+              $metadata = 'bnum:' . $bib_record->_id;
+              $result = summergame_player_points($player['pid'], 100, $type, $description, $metadata);
+              drupal_set_message("You earned $result points for downloading $bib_record->title from the catalog");
+            }
+          }
+        }
+      }
+
+      return new TrustedRedirectResponse(json_decode($download_url)->download_url);
+    }
+
+    $markup = "<p class=\"base-margin-top\">Sorry, the item you are attempting to download isn't a download record.</p>";
+    return [
+      '#title' => 'Record Not Download',
+      '#markup' => $markup
     ];
   }
 
