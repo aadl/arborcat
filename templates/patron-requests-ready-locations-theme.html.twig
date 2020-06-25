@@ -18,7 +18,6 @@
   {% endif %}
   {% if not location_urls.error %}
     <div>
-      {# {{ kint(scheduled_pickups) }} #}
       {% set scheduled_count = scheduled_pickups|length ? ' (' ~ scheduled_pickups|length ~ ')' : '' %}
       <h2 id="scheduled-pickups" class="no-margin-bottom">Scheduled Pickup Appointments</h2>
       {% if scheduled_pickups %}
