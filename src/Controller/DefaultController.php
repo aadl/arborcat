@@ -72,6 +72,22 @@ class DefaultController extends ControllerBase {
         $download_url = $guzzle->get("$api_url/download/$bib_record->_id/mp4")->getBody()->getContents();
         $bib_record->download_urls['mp4'] = json_decode($download_url)->download_url;
       }
+
+      if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
+        if ($player = summergame_get_active_player()) {
+          // Check for duplicate
+          $db = \Drupal::database();
+          $row = $db->query("SELECT * FROM sg_ledger WHERE pid = :pid AND type = 'File Download' AND metadata like :meta",
+                            [':pid' => $player['pid'], ':meta' => '%bnum:' . $bib_record->_id . '%'])->fetchObject();
+          if (!$row) {
+            $type = 'File Download';
+            $description = 'Downloaded ' . $bib_record->title . ' from our online catalog';
+            $metadata = 'bnum:' . $bib_record->_id;
+            $result = summergame_player_points($player['pid'], 100, $type, $description, $metadata);
+            drupal_set_message("You earned $result points for downloading $bib_record->title from the catalog");
+          }
+        }
+      }
     }
 
     if (isset($bib_record->tracks)) {
