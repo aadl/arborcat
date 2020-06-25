@@ -412,6 +412,9 @@ class DefaultController extends ControllerBase
         $location = \Drupal::request()->query->get('location');
         $seeddb = \Drupal::request()->query->get('seeddb');
         
+        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+        dblog('$user=', json_encode($user));
+
         //$barcode =  $this->barcodeFromPatronId($patronId);
         //$eligibleHolds = loadPatronEligibleHolds($barcode);
 
@@ -477,7 +480,6 @@ class DefaultController extends ControllerBase
     public function cancel_pickup_request($pickup_request_id, $hold_shelf_expire_date) {
         $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
         dblog('$user=', json_decode($user));
-        die();
 
         $db = \Drupal::database();
         $guzzle = \Drupal::httpClient();
