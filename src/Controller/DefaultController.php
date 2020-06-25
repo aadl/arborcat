@@ -351,7 +351,6 @@ class DefaultController extends ControllerBase
         $search_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadySearchForm');
 
         $current_uri = \Drupal::request()->getRequestUri();
-        $this->dblog('1', json_encode($current_uri));
 
         $barcode = \Drupal::request()->get('bcode');
 
@@ -412,14 +411,6 @@ class DefaultController extends ControllerBase
         $location = \Drupal::request()->query->get('location');
         $seeddb = \Drupal::request()->query->get('seeddb');
         
-        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-        dblog('$user=', json_encode($user));
-
-        //$barcode =  $this->barcodeFromPatronId($patronId);
-        //$eligibleHolds = loadPatronEligibleHolds($barcode);
-
-
-        //dblog('eligibleHolds:',$eligibleHolds);
         if (strlen($seeddb) > 0) {
             $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
             $this->addPickupRequest($patronId, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
@@ -479,53 +470,53 @@ class DefaultController extends ControllerBase
 
     public function cancel_pickup_request($pickup_request_id, $hold_shelf_expire_date) {
         $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-        dblog('$user=', json_decode($user));
+        $patron_id = $user->field_patron_id->value;
+        $patron_barcode = $user->field_barcode->value;
 
         $db = \Drupal::database();
         $guzzle = \Drupal::httpClient();
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
         $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
-    // lookup the pickup request record
+        
+        // lookup the pickup request record
         $query = $db->select('arborcat_patron_pickup_request', 'appr');
         $query-> fields('appr', ['id', 'requestId', 'patronId', 'pickupDate']);
         $query-> condition('id', $pickup_request_id);
         $result = $query->execute()->fetchObject();
-        // check date is for tomorrow or later
-        $today = (new DateTime("now", new DateTimeZone('UTC')));
-        $today->setTime(0,0,0);
-        $tomorrow = $today->modify('+1 day');
+        if ($result != null) {
 
-        $pickupTime = (new DateTime($result->pickupDate, new DateTimeZone('UTC')));
-        
-        if ($pickupTime >= $tomorrow) {
+            // check date is for tomorrow or later
+            $today = (new DateTime("now", new DateTimeZone('UTC')));
+            $today->setTime(0,0,0);
+            $tomorrow = $today->modify('+1 day');
 
-            // get currently logged in user
-            $loggedInUser = $user->get('uid')->value;
-            // $loggedInUser = 10008060;   // FOR DEBUGGING ONLY !!!!!!!!!!!!!!!! 
-            if ($loggedInUser == $result->patronId || $user->hasRole('staff' || $user->hasRole('administrator') {
-                // go ahead and cancel the record
-                $num_deleted = $db->delete('arborcat_patron_pickup_request')
-                ->condition('id', $pickup_request_id, '=')
-                ->execute();
-                
-                // Now update the hold_request expire_time in Evergreen
-                $patron_barcode = 
-                $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $result->requestId . "?shelf_expire_time=$hold_shelf_expire_time 23:59:59")->getBody()->getContents();
-
-                if (1 == $num_deleted) {
-                    $response['success'] = 'Pickup Request Canceled';
-                }  
-                else {
-                    $response['error'] = 'Error canceling Pickup Request';
-                }               
+            $pickupTime = (new DateTime($result->pickupDate, new DateTimeZone('UTC')));
+            
+            if ($pickupTime >= $tomorrow) {
+                if ($patron_id == $result->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
+                    // go ahead and cancel the record
+                    $num_deleted = $db->delete('arborcat_patron_pickup_request')
+                        ->condition('id', $pickup_request_id, '=')
+                        ->execute();
+                    if (1 == $num_deleted) {
+                        // Now update the hold_request expire_time in Evergreen
+                        $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $result->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
+                        $updated_hold = $guzzle->get($url)->getBody()->getContents();
+                        $response['success'] = 'Pickup Request Canceled';
+                    } else {
+                        $response['error'] = 'Error canceling Pickup Request';
+                    }               
+                } else {
+                    $response['error'] = "You are not authorized to cancel this request";
+                }
             } else {
-                $response['error'] = "You are not authorized to cancel this request";
+                $response['error'] = "A Pickup Request scheduled for today cannot be canceled";
             }
         } else {
-            $response['error'] = "A Pickup Request scheduled for today cannot be canceled";
+            $response['error'] = "The Pickup Request could not be located";
         }
- 
+
 
         return new JsonResponse($response);
     }
