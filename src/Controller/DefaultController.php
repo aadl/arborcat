@@ -503,7 +503,7 @@ class DefaultController extends ControllerBase
             // get currently logged in user
             $loggedInUser = $user->get('uid')->value;
             // $loggedInUser = 10008060;   // FOR DEBUGGING ONLY !!!!!!!!!!!!!!!! 
-            if ($loggedInUser == $result->patronId) {
+            if ($loggedInUser == $result->patronId || $user->hasRole('staff' || $user->hasRole('administrator') {
                 // go ahead and cancel the record
                 $num_deleted = $db->delete('arborcat_patron_pickup_request')
                 ->condition('id', $pickup_request_id, '=')
