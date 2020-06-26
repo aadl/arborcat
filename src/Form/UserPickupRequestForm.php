@@ -144,10 +144,10 @@ class UserPickupRequestForm extends FormBase {
             $pickupOptions =  [];
             $i = 1;
             foreach ($pickupLocationsForRequest as $locationObj) {
-                $addLocation = false;
-                if ($locationObj->timePeriod == 0) {    // for lobby (loc=0), always add it as a location)
-                    $addLocation = true;
-                }
+                $addLocation = true;
+                // if ($locationObj->timePeriod == 0) {    // for lobby (loc=0), always add it as a location)
+                //     $addLocation = true;
+                // }
                 // } else {
                 //     $addLocation = arborcat_check_locker_availability(reset($possibleDates)['date'], $locationObj);
                 // }
@@ -342,7 +342,7 @@ class UserPickupRequestForm extends FormBase {
             // check to see if locker pickup
             $lockers = [1003,1004,1005,1007,1008,1009];
             $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
-            if (in_array($lockers, $pickup_point)) {
+            if (in_array($pickup_point, $lockers)) {
                 $db = \Drupal::database();
                 $pickup_date =  $form_state->getValue('pickup_date');
                 // grab location object to pass to avail check
