@@ -83,7 +83,7 @@ class DefaultController extends ControllerBase {
             $type = 'File Download';
             $description = 'Downloaded ' . $bib_record->title . ' from our online catalog';
             $metadata = 'bnum:' . $bib_record->_id;
-            $result = summergame_player_points($player['pid'], 100, $type, $description, $metadata);
+            $result = summergame_player_points($player['pid'], 50, $type, $description, $metadata);
             drupal_set_message("You earned $result points for downloading $bib_record->title from the catalog");
           }
         }
