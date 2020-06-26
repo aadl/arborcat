@@ -30,6 +30,7 @@
               <th class="no-mobile-display no-tab-display" role="columnheader">Format</th>
               <th class="no-sort" role="columnheader">Status</th>
               <th data-sort-default role="ascending">Pickup Date</th>
+              <th>Notification Type(s)</th>
             </tr>
           </thead>
           <tbody>
@@ -53,6 +54,17 @@
                   {% endif %}
                 </td>
                 <td>{{ scheduled.pickupDate|date('D, n/j') }} at {{ pickup_text }}</td>
+                <td style="word-wrap: break-word;">
+                  {% if scheduled.contactEmail %}
+                    <b>Email:</b> {{ scheduled.contactEmail }}
+                  {% endif %}
+                  {% if scheduled.contactSMS %}
+                    <b>Text:</b> {{ scheduled.contactSMS }}
+                  {% endif %}
+                  {% if scheduled.contactPhone %}
+                    <b>Phone:</b> {{ scheduled.contactPhone }}
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>
