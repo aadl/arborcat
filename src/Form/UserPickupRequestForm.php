@@ -144,9 +144,10 @@ class UserPickupRequestForm extends FormBase {
             $pickupOptions =  [];
             $i = 1;
             foreach ($pickupLocationsForRequest as $locationObj) {
-                $addLocation = true;
-                // if ($locationObj->timePeriod == 0) {    // for lobby (loc=0), always add it as a location)
-                //     $addLocation = true;
+                $addLocation = false;
+                if ($locationObj->timePeriod == 0) {    // for lobby (loc=0), always add it as a location)
+                    $addLocation = true;
+                }
                 // } else {
                 //     $addLocation = arborcat_check_locker_availability(reset($possibleDates)['date'], $locationObj);
                 // }
