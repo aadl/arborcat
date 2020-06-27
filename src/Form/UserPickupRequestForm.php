@@ -292,6 +292,8 @@ class UserPickupRequestForm extends FormBase {
                       'contactEmail' => ($notification_types['email'] ? $patron_email : null),
                       'contactSMS' => ($notification_types['sms'] ? $patron_phone : null),
                       'contactPhone' => ($notification_types['phone'] ? $patron_phone : null),
+                      'created' => time(),
+                      'locker_code' => $patron_phone ?? null
                     ])
                     ->execute();
                 }
@@ -343,6 +345,9 @@ class UserPickupRequestForm extends FormBase {
             $lockers = [1003,1004,1005,1007,1008,1009];
             $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
             if (in_array($pickup_point, $lockers)) {
+                if (!$form_state->getValue('phone')) {
+                    $form_state->setErrorByName('phone', t('A phone number is required for lockers so we can generate your locker code'));
+                }
                 $db = \Drupal::database();
                 $pickup_date =  $form_state->getValue('pickup_date');
                 // grab location object to pass to avail check
