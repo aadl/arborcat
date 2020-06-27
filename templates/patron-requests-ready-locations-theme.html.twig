@@ -47,8 +47,10 @@
                 <td class="no-mobile-display no-tab-display">{{ scheduled.material }}</td>
                 {% set pickup_text = scheduled.pickup ~ ' ' ~ scheduled.locationName|split(' ')[1] ~ ' from ' ~ scheduled.timePeriodStart|date('ga') ~ '-' ~ scheduled.timePeriodEnd|date('ga') %}
                 <td>
-                  {% if scheduled.completed %}
+                  {% if scheduled.completed == 1 %}
                     <span class="success-text">Ready for pickup at {{ scheduled.timePeriodStart|date('ga') }}!</span>
+                  {% elseif scheduled.completed == 2 %}
+                    <span class="error-text">Unable to find item</span>
                   {% else %}
                     Scheduled
                   {% endif %}
