@@ -345,11 +345,14 @@ class UserPickupRequestForm extends FormBase {
             $lockers = [1003,1004,1005,1007,1008,1009];
             $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
             if (in_array($pickup_point, $lockers)) {
+                $pickup_date =  $form_state->getValue('pickup_date');
+                if (($pickup_point == 1005 || $pickup_point == 1009) && $pickup_date == '2020-07-03') {
+                    $form_state->setErrorByName('pickup_type', t('No lockers are available during the selected time. Please try another time option or day'));
+                }
                 if (!$form_state->getValue('phone')) {
                     $form_state->setErrorByName('phone', t('A phone number is required for lockers so we can generate your locker code'));
                 }
                 $db = \Drupal::database();
-                $pickup_date =  $form_state->getValue('pickup_date');
                 // grab location object to pass to avail check
                 $query = $db->select('arborcat_pickup_location', 'apl')
                     ->fields('apl', ['locationId', 'timePeriod', 'maxLockers'])
