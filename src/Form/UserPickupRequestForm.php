@@ -165,7 +165,7 @@ class UserPickupRequestForm extends FormBase {
             $form['pickup_type'] = [
               '#prefix' => '<div class="l-inline-b side-by-side-form">',
               '#type' => 'select',
-              '#title' => t("Pickup Method for $locationName"),
+              '#title' => t("Contactless Pickup Method for $locationName"),
               '#options' => $pickupOptions,
               '#description' => t('Select how you would like to pick up your requests. To use a locker, please choose an available timeslot'),
               '#required' => true
