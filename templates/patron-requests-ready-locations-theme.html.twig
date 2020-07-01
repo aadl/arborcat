@@ -29,6 +29,7 @@
               <th class="no-mobile-display no-tab-display" role="columnheader">Format</th>
               <th class="no-sort" role="columnheader">Status</th>
               <th data-sort-default role="ascending">Pickup Date</th>
+              <th>Notification Type(s)</th>
             </tr>
           </thead>
           <tbody>
@@ -45,13 +46,30 @@
                 <td class="no-mobile-display no-tab-display">{{ scheduled.material }}</td>
                 {% set pickup_text = scheduled.pickup ~ ' ' ~ scheduled.locationName|split(' ')[1] ~ ' from ' ~ scheduled.timePeriodStart|date('ga') ~ '-' ~ scheduled.timePeriodEnd|date('ga') %}
                 <td>
-                  {% if scheduled.completed %}
-                    <span class="success-text">Ready for pickup at {{ scheduled.timePeriodStart|date('ga') }}!</span>
+                  {% if scheduled.completed == 1 %}
+                    <span class="success-text">Ready for pickup at {{ scheduled.timePeriodStart|date('ga') }}!
+                      {% if 'locker' in scheduled.locationName|split(' ')[1]|lower %}
+                        Use code <b>{{ scheduled.locker_code|slice(-7, 7) }}</b>
+                      {% endif %}
+                    </span>
+                  {% elseif scheduled.completed == 2 %}
+                    <span class="error-text">Unable to find item</span>
                   {% else %}
                     Scheduled
                   {% endif %}
                 </td>
                 <td>{{ scheduled.pickupDate|date('D, n/j') }} at {{ pickup_text }}</td>
+                <td style="word-wrap: break-word;">
+                  {% if scheduled.contactEmail %}
+                    <b>Email:</b> {{ scheduled.contactEmail }}
+                  {% endif %}
+                  {% if scheduled.contactSMS %}
+                    <b>Text:</b> {{ scheduled.contactSMS }}
+                  {% endif %}
+                  {% if scheduled.contactPhone %}
+                    <b>Phone:</b> {{ scheduled.contactPhone }}
+                  {% endif %}
+                </td>
               </tr>
             {% endfor %}
           </tbody>

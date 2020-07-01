@@ -147,6 +147,7 @@ class UserPickupRequestForm extends FormBase {
                 $addLocation = true;
                 // if ($locationObj->timePeriod == 0) {    // for lobby (loc=0), always add it as a location)
                 //     $addLocation = true;
+                // }
                 // } else {
                 //     $addLocation = arborcat_check_locker_availability(reset($possibleDates)['date'], $locationObj);
                 // }
@@ -164,7 +165,7 @@ class UserPickupRequestForm extends FormBase {
             $form['pickup_type'] = [
               '#prefix' => '<div class="l-inline-b side-by-side-form">',
               '#type' => 'select',
-              '#title' => t("Pickup Method for $locationName"),
+              '#title' => t("Contactless Pickup Method for $locationName"),
               '#options' => $pickupOptions,
               '#description' => t('Select how you would like to pick up your requests. To use a locker, please choose an available timeslot'),
               '#required' => true
@@ -280,7 +281,6 @@ class UserPickupRequestForm extends FormBase {
                     // set the expire date for each selected hold
                     $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
                     // create arborcat_patron_pickup_request records for each of the selected holds
-                    $timestamp = (new DateTime("now"));
                     $db->insert('arborcat_patron_pickup_request')
                     ->fields([
                       'requestId' => $hold['holdId'],
@@ -292,7 +292,8 @@ class UserPickupRequestForm extends FormBase {
                       'contactEmail' => ($notification_types['email'] ? $patron_email : null),
                       'contactSMS' => ($notification_types['sms'] ? $patron_phone : null),
                       'contactPhone' => ($notification_types['phone'] ? $patron_phone : null),
-                      'timestamp' => $timestamp->format("Y-m-d H:i:s")
+                      'created' => time(),
+                      'locker_code' => $patron_phone ?? null
                     ])
                     ->execute();
                 }
@@ -343,9 +344,15 @@ class UserPickupRequestForm extends FormBase {
             // check to see if locker pickup
             $lockers = [1003,1004,1005,1007,1008,1009];
             $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
-            if (in_array($lockers, $pickup_point)) {
-                $db = \Drupal::database();
+            if (in_array($pickup_point, $lockers)) {
                 $pickup_date =  $form_state->getValue('pickup_date');
+                if (($pickup_point == 1005 || $pickup_point == 1009) && $pickup_date == '2020-07-03') {
+                    $form_state->setErrorByName('pickup_type', t('No lockers are available during the selected time. Please try another time option or day'));
+                }
+                if (!$form_state->getValue('phone')) {
+                    $form_state->setErrorByName('phone', t('A phone number is required for lockers so we can generate your locker code'));
+                }
+                $db = \Drupal::database();
                 // grab location object to pass to avail check
                 $query = $db->select('arborcat_pickup_location', 'apl')
                     ->fields('apl', ['locationId', 'timePeriod', 'maxLockers'])
