@@ -102,7 +102,7 @@ class UserPickupRequestForm extends FormBase {
             }
         } 
 
-        $titleString = (isset($cancel_holds)) ? 'Cancel requests for item' : 'Request Pickup for item';
+        $titleString = (isset($cancel_holds)) ? 'Cancel requests for item' : 'Request Contactless Pickup for item';
         $titleString .= (count($eligible_holds) > 1) ? "s" : '';
         $directionString = 'Select item';
         $directionString .= (count($eligible_holds) > 1) ? "s" : '';
