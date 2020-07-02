@@ -468,7 +468,7 @@ class DefaultController extends ControllerBase
         $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
         $patron_id = $user->field_patron_id->value;
         $patron_barcode = $user->field_barcode->value;
-        $row_id = $this->validate_row_id($patron_id, $patron_barcode, $encrypted_request_id);
+        $row_id = $this->validate_hold_id($patron_id, $patron_barcode, $encrypted_request_id);
         if ($row_id >= 0) {
             $db = \Drupal::database();
             $guzzle = \Drupal::httpClient();
@@ -562,7 +562,7 @@ class DefaultController extends ControllerBase
         return $returnval;
     }
 
-    private function validate_row_id($patronId, $barcode, $encrypted_rowId) {
+    private function validate_hold_id($patronId, $barcode, $encrypted_holdId) {
         $returnval = -1;
         // get all the pickupRequest records for the patron
         $today = (new DateTime("now"));
@@ -576,10 +576,10 @@ class DefaultController extends ControllerBase
         $results = $query->execute()->fetchAll();
         if (count($results) > 0) {
             $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
-           // loop through the array results, created hashes of each id and compare with $encrypted_rowId
+           // loop through the array results, created hashes of each id and compare with $encrypted_holdId
             foreach($results as $record) {
                 $hashed_request_id = md5($pickup_requests_salt . $record->requestId);
-                if ($hashed_request_id == $encrypted_rowId) {
+                if ($hashed_request_id == $encrypted_holdId) {
                     $returnval =  $record->id;
                     break;
                 }  
