@@ -60,6 +60,32 @@
       }
     });
 
+    $('#edit-pickup-date').change(function() {
+      var slots = $('#edit-pickup-type');
+      slots.val('');
+      if ($(this).val() >= '2020-07-08') {
+        var options = {
+          '- Select -' : '',
+          'PTS Lobby, 12pm to 8pm' : '1002-0',
+          'PTS Locker, 6pm to 2pm' : '1012-4'
+        };
+
+      } else {
+        var options = {
+          '- Select -' : '',
+          'PTS Lobby, 12pm to 8pm' : '1002-0',
+          'PTS Locker, 9am to 1pm' : '1003-1',
+          'PTS Locker, 2pm to 7pm' : '1004-2',
+          'PTS Locker, 8pm to 8am' : '1005-3'
+        };
+      }
+        slots.empty();
+        $.each(options, function(key,value) {
+        slots.append($("<option></option>")
+           .attr("value", value).text(key));
+      });
+    });
+
   });
 
 })(jQuery, Drupal);
