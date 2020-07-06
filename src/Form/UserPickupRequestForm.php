@@ -102,7 +102,7 @@ class UserPickupRequestForm extends FormBase {
             }
         } 
 
-        $titleString = (isset($cancel_holds)) ? 'Cancel requests for item' : 'Request Pickup for item';
+        $titleString = (isset($cancel_holds)) ? 'Cancel requests for item' : 'Request Contactless Pickup for item';
         $titleString .= (count($eligible_holds) > 1) ? "s" : '';
         $directionString = 'Select item';
         $directionString .= (count($eligible_holds) > 1) ? "s" : '';
@@ -145,12 +145,6 @@ class UserPickupRequestForm extends FormBase {
             $i = 1;
             foreach ($pickupLocationsForRequest as $locationObj) {
                 $addLocation = true;
-                // if ($locationObj->timePeriod == 0) {    // for lobby (loc=0), always add it as a location)
-                //     $addLocation = true;
-                // }
-                // } else {
-                //     $addLocation = arborcat_check_locker_availability(reset($possibleDates)['date'], $locationObj);
-                // }
                 if (true == $addLocation) {
                     // need to append the times in human readable form
                     $starttimeObj = new dateTime($locationObj->timePeriodStart);
@@ -342,11 +336,11 @@ class UserPickupRequestForm extends FormBase {
     {
         if (!$form_state->getValue('cancel_holds')) {
             // check to see if locker pickup
-            $lockers = [1003,1004,1005,1007,1008,1009];
+            $lockers = [1003,1004,1005,1007,1008,1009,1012];
             $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
             if (in_array($pickup_point, $lockers)) {
                 $pickup_date =  $form_state->getValue('pickup_date');
-                if (($pickup_point == 1005 || $pickup_point == 1009) && $pickup_date == '2020-07-03') {
+                if (($pickup_point == 1003 || $pickup_point == 1004 || $pickup_point == 1005) && $pickup_date >= '2020-07-08') {
                     $form_state->setErrorByName('pickup_type', t('No lockers are available during the selected time. Please try another time option or day'));
                 }
                 if (!$form_state->getValue('phone')) {
