@@ -229,7 +229,8 @@ function arborcat_patron_fines_expired($fines, $patron)
                       if (isset($pickup_req_exists->id)) {
                           continue;
                       }
-                      if (arborcat_eligible_for_locker($hold)) {
+                      $shelf_expire = date('Y-m-d', strtotime($hold['hold']['shelf_expire_time']));
+                      if (arborcat_eligible_for_locker($hold) && $shelf_expire >= date('Y-m-d')) {
                           $eligible_holds[$i] = [
                                 'Title' => $hold['title'],
                                 'Status' => $hold['status'],
