@@ -219,8 +219,49 @@ class UserPickupRequestForm extends FormBase {
         return $form;
     }
 
-    public function submitForm(array &$form, FormStateInterface $form_state)
-    {
+    public function validateForm(array &$form, FormStateInterface $form_state) {
+        if (!$form_state->getValue('cancel_holds')) {
+            // check to see if locker pickup
+            $lockers = [1003,1004,1005,1007,1008,1009,1012];
+            $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
+            if (in_array($pickup_point, $lockers)) {
+                $pickup_date =  $form_state->getValue('pickup_date');
+                if (($pickup_point == 1003 || $pickup_point == 1004 || $pickup_point == 1005) && $pickup_date >= '2020-07-08') {
+                    $form_state->setErrorByName('pickup_type', t('No lockers are available during the selected time. Please try another time option or day'));
+                }
+                if (!$form_state->getValue('phone')) {
+                    $form_state->setErrorByName('phone', t('A phone number is required for lockers so we can generate your locker code'));
+                }
+                $db = \Drupal::database();
+                // grab location object to pass to avail check
+                $query = $db->select('arborcat_pickup_location', 'apl')
+                    ->fields('apl', ['locationId', 'timePeriod', 'maxLockers'])
+                    ->condition('locationId', $pickup_point, '=')
+                    ->execute();
+                $pickup_location = $query->fetch();
+
+                $avail = arborcat_check_locker_availability($pickup_date, $pickup_location);
+
+                // if no avail lockers, set form error
+                if (!$avail) {
+                    $form_state->setErrorByName('pickup_type', t('All lockers are full during the selected time. Please try another time option or day'));
+                }
+            }
+            if ($form_state->getValue('notification_types')['email']) {
+                if (!$form_state->getValue('email')) {
+                    $form_state->setErrorByName('email', t('No email is set, but you requested an email notification.'));
+                } elseif (!valid_email_address($form_state->getValue('email'))) {
+                    $form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
+                }
+            }
+
+            if (($form_state->getValue('notification_types')['sms'] || $form_state->getValue('notification_types')['phone']) && !$form_state->getValue('phone')) {
+                $form_state->setErrorByName('phone', t('No phone number is set, but you requested a text and/or phone call.'));
+            }
+        }
+    }
+
+    public function submitForm(array &$form, FormStateInterface $form_state) {
         $pickup_date =  $form_state->getValue('pickup_date');
 
         $messenger = \Drupal::messenger();
@@ -308,8 +349,7 @@ class UserPickupRequestForm extends FormBase {
         return $form_state->setRedirectUrl($url);
     }
 
-    public function arborcat_mail($key, $email_to, $patron, $code, $holds)
-    {
+    public function arborcat_mail($key, $email_to, $patron, $code, $holds) {
         if ($key == 'locker_requests') {
             if ($email_to == 'mcblockers@aadl.org') {
                 $location = 'malletts';
@@ -329,49 +369,6 @@ class UserPickupRequestForm extends FormBase {
             }
             $mailManager = \Drupal::service('plugin.manager.mail');
             mail($email_to, $email_subject, $email_message, $email_headers);
-        }
-    }
-
-    public function validateForm(array &$form, FormStateInterface $form_state)
-    {
-        if (!$form_state->getValue('cancel_holds')) {
-            // check to see if locker pickup
-            $lockers = [1003,1004,1005,1007,1008,1009,1012];
-            $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
-            if (in_array($pickup_point, $lockers)) {
-                $pickup_date =  $form_state->getValue('pickup_date');
-                if (($pickup_point == 1003 || $pickup_point == 1004 || $pickup_point == 1005) && $pickup_date >= '2020-07-08') {
-                    $form_state->setErrorByName('pickup_type', t('No lockers are available during the selected time. Please try another time option or day'));
-                }
-                if (!$form_state->getValue('phone')) {
-                    $form_state->setErrorByName('phone', t('A phone number is required for lockers so we can generate your locker code'));
-                }
-                $db = \Drupal::database();
-                // grab location object to pass to avail check
-                $query = $db->select('arborcat_pickup_location', 'apl')
-                    ->fields('apl', ['locationId', 'timePeriod', 'maxLockers'])
-                    ->condition('locationId', $pickup_point, '=')
-                    ->execute();
-                $pickup_location = $query->fetch();
-
-                $avail = arborcat_check_locker_availability($pickup_date, $pickup_location);
-
-                // if no avail lockers, set form error
-                if (!$avail) {
-                    $form_state->setErrorByName('pickup_type', t('All lockers are full during the selected time. Please try another time option or day'));
-                }
-            }
-            if ($form_state->getValue('notification_types')['email']) {
-                if (!$form_state->getValue('email')) {
-                    $form_state->setErrorByName('email', t('No email is set, but you requested an email notification.'));
-                } elseif (!valid_email_address($form_state->getValue('email'))) {
-                    $form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
-                }
-            }
-
-            if (($form_state->getValue('notification_types')['sms'] || $form_state->getValue('notification_types')['phone']) && !$form_state->getValue('phone')) {
-                $form_state->setErrorByName('phone', t('No phone number is set, but you requested a text and/or phone call.'));
-            }
         }
     }
 
