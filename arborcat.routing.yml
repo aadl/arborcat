@@ -91,7 +91,7 @@ arborcat.pickup_request:
     _title: 'Request Pickup Options'
     _permission: 'access arborcat'
 
-arborcat.pickup_request:
+arborcat.cancel_pickup_request:
   path: /cancelpickuprequest/{encrypted_request_id}/{hold_shelf_expire_date}
   defaults:
     _controller: '\Drupal\arborcat\Controller\DefaultController::cancel_pickup_request'
