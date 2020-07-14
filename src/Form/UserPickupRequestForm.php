@@ -151,6 +151,10 @@ class UserPickupRequestForm extends FormBase {
                     $st = date_format($starttimeObj, "h:ia");
                     $endtimeObj = new dateTime($locationObj->timePeriodEnd);
                     $timePeriodFormatted = ', ' . date_format($starttimeObj, "ga") . ' to ' . date_format($endtimeObj, "ga");
+                    // check if this is an overnight time period
+                    if ($endtimeObj < $starttimeObj) {
+                        $timePeriodFormatted .= ' (overnight)';
+                    }
                     $namePlusTimePeriod = $locationObj->locationName . $timePeriodFormatted;
                     // concatenate the locationId and the timeslot into the key
                     $pickupOptions["$locationObj->locationId-$locationObj->timePeriod"] = $namePlusTimePeriod;
@@ -223,7 +227,7 @@ class UserPickupRequestForm extends FormBase {
     {
         if (!$form_state->getValue('cancel_holds')) {
             // check to see if locker pickup
-            $lockers = [1003,1004,1005,1007,1008,1009,1012];
+            $lockers = arborcat_lockerPickupLocations();                                        // [1003,1004,1005,1007,1008,1009,1012];
             $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
             if (in_array($pickup_point, $lockers)) {
                 $pickup_date =  $form_state->getValue('pickup_date');

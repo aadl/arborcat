@@ -153,9 +153,10 @@ function arborcat_patron_fines_expired($fines, $patron)
   function arborcat_pickup_locations($destLocation = null)
   {
       $db = \Drupal::database();
-      $query = $db->select('arborcat_pickup_location', 'apl');
-      $query->fields('apl', ['locationId', 'branchLocationId', 'timePeriod', 'timePeriodStart', 'timePeriodEnd', 'maxLockers', 'locationName', 'locationDescription']);
-        
+      $query = $db->select('arborcat_pickup_location', 'apl')
+        ->fields('apl', ['locationId', 'branchLocationId', 'timePeriod', 'timePeriodStart', 'timePeriodEnd', 'maxLockers', 'locationName', 'locationDescription'])
+        ->condition('active', 1, "=");
+
       // add in a condition if a location is supplied to filter on
       if (3 == strlen($destLocation)) {
           $query->condition('apl.branchLocationId', (int) $destLocation, '=');
@@ -165,6 +166,22 @@ function arborcat_patron_fines_expired($fines, $patron)
       $pickupLocationRecords = $result->fetchAll();
       return $pickupLocationRecords;
   }
+
+  /*
+   * returns an array of active locker pickup locations.
+   */
+  function arborcat_lockerPickupLocations() {
+    $locations = [];
+    $db = \Drupal::database();
+    $query = $db->select('arborcat_pickup_location', 'apl')
+        ->fields('apl', ['locationId'])
+        ->condition('maxLockers', 0, '>')
+        ->condition('active', 1, '=')
+        ->execute();
+    $locations = array_values($query->fetchCol());
+    return $locations;
+  }
+
 
    /*
    * Checks the availability of a locker fo the specified date and timePeriod.
@@ -257,4 +274,19 @@ function arborcat_patron_fines_expired($fines, $patron)
     $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/scheduled-pickups")->getBody()->getContents(), true);
 
     return $scheduled_pickups;
+  }
+
+  /*
+    * Debugging routine to log to the <root folder>/LWKLWK.log
+    */
+  function dblog(...$thingsToLog) {
+      $lineToLog = '';
+      foreach ($thingsToLog as $item) {
+          $lineToLog = $lineToLog . ' ' . print_r($item, true);
+      }
+      // prepend date/time onto log line
+      $nowDateTime = new DrupalDateTime();
+      $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
+      $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
+      error_log($completeLine, 3, "LWKLWK.log");
   }

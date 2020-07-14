@@ -355,7 +355,6 @@ class DefaultController extends ControllerBase
         $search_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadySearchForm');
 
         $current_uri = \Drupal::request()->getRequestUri();
-        $this->dblog('1', json_encode($current_uri));
 
         $barcode = \Drupal::request()->get('bcode');
 
@@ -565,21 +564,5 @@ class DefaultController extends ControllerBase
             '#title' => t("I agree with the website's terms and conditions."),
             '#required' => true,
         );
-    }
-
-    /*
-    * Debugging routine to log to the <root folder>/LWKLWK.log
-    */
-    public function dblog(...$thingsToLog)
-    {
-        $lineToLog = '';
-        foreach ($thingsToLog as $item) {
-            $lineToLog = $lineToLog . ' ' . print_r($item, true);
-        }
-        // prepend date/time onto log line
-        $nowDateTime = new DrupalDateTime();
-        $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
-        $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
-        error_log($completeLine, 3, "LWKLWK.log");
     }
 }
