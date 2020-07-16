@@ -415,13 +415,8 @@ class DefaultController extends ControllerBase
         $location = \Drupal::request()->query->get('location');
         $seeddb = \Drupal::request()->query->get('seeddb');
         
-        $barcode =  $this->barcodeFromPatronId($patronId);
-        $eligibleHolds = loadPatronEligibleHolds($barcode);
-        die();
-
-
-
-
+        $barcode =  '21621034452183';   $this->barcodeFromPatronId($patronId);
+        $eligibleHolds = loadPatronEligibleHolds('21621034452183');
 
         if (strlen($seeddb) > 0) {
             $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
@@ -434,8 +429,6 @@ class DefaultController extends ControllerBase
             } else {
                 $location = '102';
             }
-
-
     
             if (strlen($patronId) > 0) {
                 $barcode =  $this->barcodeFromPatronId($patronId);

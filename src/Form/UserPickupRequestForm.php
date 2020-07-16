@@ -19,16 +19,11 @@ class UserPickupRequestForm extends FormBase {
         $guzzle = \Drupal::httpClient();
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-
         $patron_info = json_decode((string) $guzzle->get("$api_url/patron?apikey=$api_key&pnum=$patronId")->getBody()->getContents(), true);
-
         $uid = $patron_info['evg_user']['card']['id'];
         $account = \Drupal\user\Entity\User::load($uid);
-
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
-
         $eligible_holds = loadPatronEligibleHolds($patron_barcode, $requestLocation);
-        
         // Get the locations
         $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
         $locationName = $locations->$requestLocation;
@@ -169,22 +164,6 @@ class UserPickupRequestForm extends FormBase {
               '#required' => true
             ];
 
-            // This is hidden using Jquery when the javascript is loaded
-            $form['pickup_time'] = [
-              //'#prefix' => '<span class="no-display">',
-              '#type' => 'select',
-              '#title' => t('Pickup Time'),
-              '#options' => [
-                '0' => '',
-                '1' => '12pm - 2pm',
-                '2' => '2pm - 4pm',
-                '3' => '4pm - 6pm',
-                '4' => '6pm - 8pm'
-              ],
-              '#description' => t('Select time period for when you would like to pick up your requests from a locker.'),
-              '#suffix' => '</span>'
-            ];
-
             $form['notification_types'] = [
                 '#type' => 'checkboxes',
                 '#title' => t('Notification Options'),
@@ -227,13 +206,11 @@ class UserPickupRequestForm extends FormBase {
     {
         if (!$form_state->getValue('cancel_holds')) {
             // check to see if locker pickup
-            $lockers = arborcat_lockerPickupLocations();                                        // [1003,1004,1005,1007,1008,1009,1012];
+            $lockers = arborcat_lockerPickupLocations();
             $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
-            if (in_array($pickup_point, $lockers)) {
+            if (in_array($pickup_point, $lockers)) {                                        // check if it's a locker pickup request
                 $pickup_date =  $form_state->getValue('pickup_date');
-                if (($pickup_point == 1003 || $pickup_point == 1004 || $pickup_point == 1005) && $pickup_date >= '2020-07-08') {
-                    $form_state->setErrorByName('pickup_type', t('No lockers are available during the selected time. Please try another time option or day'));
-                }
+                
                 if (!$form_state->getValue('phone')) {
                     $form_state->setErrorByName('phone', t('A phone number is required for lockers so we can generate your locker code'));
                 }
@@ -309,17 +286,30 @@ class UserPickupRequestForm extends FormBase {
         if (count($holds) == 0) {
             $messenger->addError(t("There are no request items selected."));
         } else {  // got at least one hold to be processed
-            $db = \Drupal::database();
+            // Check for the number of items and whether they will fit in the selected locker
+            $lockerItemMaxCount = 6;
+ 
+             $db = \Drupal::database();
             $guzzle = \Drupal::httpClient();
             $api_key = \Drupal::config('arborcat.settings')->get('api_key');
             $api_url = \Drupal::config('arborcat.settings')->get('api_url');
             $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+ 
+           // Get the locations
+            $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
+
+            if ($locationId_timeslot[1] > 0 && count($holds) > $lockerItemMaxCount) {
+                $submit_message = 'You selected more than ' . $lockerItemMaxCount . ' items for locker pickup on ' . date('F j', strtotime($pickup_date)) . ' at the ' . $locations->{$branch} . '. ';
+                $submit_message .= 'If all the items do not fit in the locker, the remaining items will be placed in the ' . $locations->{$branch} . ' lobby';
+                $messenger->addWarning($submit_message);
+            }
+
             foreach ($holds as $hold) {
                 if ($cancel_holds) {
                     $cancel_time = date('Y-m-d');
                     $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?cancel_time=$cancel_time&cancel_cause=6")->getBody()->getContents();
                 } else {
-                    // set the expire date for each selected hold
+                    set the expire date for each selected hold
                     $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
                     // create arborcat_patron_pickup_request records for each of the selected holds
                     $db->insert('arborcat_patron_pickup_request')
@@ -339,14 +329,10 @@ class UserPickupRequestForm extends FormBase {
                     ->execute();
                 }
             }
-            // Get the locations
-            $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
-
+ 
             $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
             $messenger->addMessage($submit_message);
         }
-
-        // Need to add a c"confirm the request" modal dialog here before proceeding
 
         $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
         $uid = $user->id();
