@@ -285,9 +285,8 @@ class UserPickupRequestForm extends FormBase {
             $messenger->addError(t("There are no request items selected."));
         } else {  // got at least one hold to be processed
             // Check for the number of items and whether they will fit in the selected locker
-            $lockerItemMaxCount = 6;
- 
-             $db = \Drupal::database();
+            $lockerItemMaxCount = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
+            $db = \Drupal::database();
             $guzzle = \Drupal::httpClient();
             $api_key = \Drupal::config('arborcat.settings')->get('api_key');
             $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -307,7 +306,7 @@ class UserPickupRequestForm extends FormBase {
                     $cancel_time = date('Y-m-d');
                     $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?cancel_time=$cancel_time&cancel_cause=6")->getBody()->getContents();
                 } else {
-                    set the expire date for each selected hold
+                    // set the expire date for each selected hold
                     $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
                     // create arborcat_patron_pickup_request records for each of the selected holds
                     $db->insert('arborcat_patron_pickup_request')
