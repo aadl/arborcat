@@ -139,7 +139,7 @@ class DefaultController extends ControllerBase {
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
         if (\Drupal::config('summergame.settings')->get('summergame_show_gamecodes_in_catalog') ||
             $user->hasPermission('play test summergame')) {
-          $bib_record->sg_enabled = true;
+          $bib_record->sg_enabled = TRUE;
           $bib_record->sg_term = \Drupal::config('summergame.settings')->get('summergame_current_game_term');
 
           $gamecodes = [];
@@ -353,7 +353,7 @@ class DefaultController extends ControllerBase {
 
     $locationURLs = [];
     if (isset($barcode)) {
-      $eligibleHolds = loadPatronEligibleHolds($barcode);
+      $eligibleHolds = arborcat_load_patron_eligible_holds($barcode);
       if (!isset($eligibleHolds['error'])) {
         // grab pickup appointments to display on form
         $scheduled_pickups = arborcat_get_scheduled_pickups($barcode);
@@ -407,7 +407,7 @@ class DefaultController extends ControllerBase {
     $seeddb = \Drupal::request()->query->get('seeddb');
     
     $barcode =  '21621034452183';   $this->barcodeFromPatronId($patronId);
-    $eligibleHolds = loadPatronEligibleHolds('21621034452183');
+    $eligibleHolds = arborcat_load_patron_eligible_holds('21621034452183');
 
     if (strlen($seeddb) > 0) {
         $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
@@ -492,7 +492,7 @@ class DefaultController extends ControllerBase {
 
 
   private function validateTransaction($pnum, $encrypted_barcode) {
-    $returnval = false;
+    $returnval = FALSE;
     
     $barcode =  $this->barcodeFromPatronId($pnum);
     if (14 == strlen($barcode)) {
@@ -500,7 +500,7 @@ class DefaultController extends ControllerBase {
         $hashedBarcode = md5($pickup_requests_salt . $barcode);
 
         if ($hashedBarcode == $encrypted_barcode) {
-            $returnval =  true;
+            $returnval =  TRUE;
         }
     }
     return $returnval;
@@ -541,7 +541,7 @@ class DefaultController extends ControllerBase {
     $form['terms_of_use'] = array(
         '#type' => 'checkbox',
         '#title' => t("I agree with the website's terms and conditions."),
-        '#required' => true,
+        '#required' => TRUE,
     );
   }
 }
