@@ -39,7 +39,7 @@ class UserPickupRequestForm extends FormBase {
             $cancel_holds = 1;
             $submit_text = 'Cancel selected requests';
         } else {
-            $submit_text = 'Check these items out to me and put them out for pickup';
+            $submit_text = 'Schedule Pickup';
         }
 
         $form['#attributes'] = ['class' => 'form-width-exception'];
@@ -190,7 +190,8 @@ class UserPickupRequestForm extends FormBase {
                     'phone' => 'Phone Call'
                 ],
                 '#description' => t('Select which ways you would like to be notified when your request is ready for pickup'),
-                '#required' => true
+                '#required' => true,
+                '#default_value' => ['email']
             ];
 
             $form['phone'] = [

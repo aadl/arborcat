@@ -58,7 +58,6 @@ class DefaultController extends ControllerBase
           }
         }
       }
-    }
 
       if (!$bib_record->_id) {
         $markup = "<p class=\"base-margin-top\">Sorry, the item you are looking for couldn't be found.</p>";
