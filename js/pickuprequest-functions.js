@@ -2,8 +2,8 @@
   Drupal.behaviors.pickupRequestBehavior = {
     attach: function (context, settings) {
 
-      var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check;
-
+    var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check;
+      console.log('max_locker_items_check = ' + max_locker_items_check);
     $(function () {
       // INITIALIZATION/SETUP
 

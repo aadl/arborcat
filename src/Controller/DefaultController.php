@@ -357,6 +357,8 @@ class DefaultController extends ControllerBase {
       if (!isset($eligibleHolds['error'])) {
         // grab pickup appointments to display on form
         $scheduled_pickups = arborcat_get_scheduled_pickups($barcode);
+        dblog('$pickup_locations_for_patron:: AFTER CALL TO arborcat_get_scheduled_pickups, scheduled_pickups = ' . json_encode($scheduled_pickups));
+
         // Get the patron ID from the first hold object in $eligibleHolds. NOTE - this starts at offset [1]
         $patronId = $eligibleHolds[1]['usr'];
         $holdLocations = [];
@@ -458,6 +460,7 @@ class DefaultController extends ControllerBase {
     $render[] = [
             '#theme' => 'pickup_request_form',
             '#formhtml' => $requestPickup_html,
+            '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check')
         ];
     return $render;
   }
