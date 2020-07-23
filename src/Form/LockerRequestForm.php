@@ -8,11 +8,11 @@ use Predis\Client;
 
 class LockerRequestForm extends FormBase{
 
-	public function getFormId(){
+	public function getFormId() {
 		return 'locker_form_contents';
 	}
 
-	public function buildForm(array $form,FormStateInterface $form_state,$uid=NULL){
+	public function buildForm(array $form,FormStateInterface $form_state,$uid=NULL) {
 		$branch = $_GET["branch"];
 		if($branch=="mcb"){
 			$branch = "Malletts Creek Branch";
@@ -107,7 +107,7 @@ class LockerRequestForm extends FormBase{
 		  return $form;
 	}
 
-	function submitForm(array &$form, FormStateInterface $form_state){
+	function submitForm(array &$form, FormStateInterface $form_state) {
 		$messenger = \Drupal::messenger();
 		//parse telephone number into seven digit locker code
 		$lockercode = $form_state->getValue('lockercode');
@@ -228,7 +228,7 @@ class LockerRequestForm extends FormBase{
   		if (!valid_email_address($form_state->getValue('email'))) {
     		$form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
   		}
-		}
+	}
 }
 
 ?>
