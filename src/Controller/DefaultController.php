@@ -390,7 +390,7 @@ class DefaultController extends ControllerBase {
         '#barcode' => $barcode,
         '#scheduled_pickups' => $scheduled_pickups ?? NULL
       ];
-      
+
     return $render;
   }
 
@@ -493,7 +493,6 @@ class DefaultController extends ControllerBase {
     }
   }
 
-
   private function validateTransaction($pnum, $encrypted_barcode) {
     $returnval = FALSE;
     $barcode =  $this->barcodeFromPatronId($pnum);
@@ -505,44 +504,5 @@ class DefaultController extends ControllerBase {
         }
     }
     return $returnval;
-  }
-
-  // this needed? insert can be done on form submit
-  private function addPickupRequest($pickupLocation, $pickupDay, $timeSlot, $contactEmail, $contactPhone, $contactSMS) {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    if ($user->isAuthenticated()) {
-        $db = \Drupal::database();
-
-        $db->insert('arborcat_patron_pickup_request')
-        ->fields([
-          'uid' => $user->id(),
-          'pickupDay' => $pickupDay,
-          'timeSlot' => $timeSlot,
-          'pickupLocation' => $pickupLocation,
-          'contactEmail' => $contactEmail,
-          'contactPhone' => $contactPhone,
-          'contactSMS' => $contactSMS,
-          'timestamp' => time()
-        ])
-        ->execute();
-        $result['success'] = "Successfully added pickup request";
-    } else {
-        $result['error'] = 'You must be logged in to make a pickup request.';
-    }
-
-    return new JsonResponse($result);
-  }
-
-  public function hook_form_FORM_ID_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-    // Modification for the form with the given form ID goes here. For example, if
-    // FORM_ID is "user_register_form" this code would run only on the user
-    // registration form.
-
-    // Add a checkbox to registration form about agreeing to terms of use.
-    $form['terms_of_use'] = array(
-        '#type' => 'checkbox',
-        '#title' => t("I agree with the website's terms and conditions."),
-        '#required' => TRUE,
-    );
   }
 }

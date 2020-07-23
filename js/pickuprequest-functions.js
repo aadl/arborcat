@@ -30,6 +30,9 @@
         msgWrapper.append('<h2 class="visually-hidden">Warning Message</h2>')
           .append(statusMsg);
         $(msgWrapper).insertBefore('.outer-wrapper[role="main"]');
+        // make the view scroll so the warning is actually visible to the user
+        $('.status-messages')[0].scrollIntoView({ behavior: 'smooth' });
+
       }
 
       function selectedItemsCheck() {
