@@ -122,11 +122,13 @@ class UserPickupRequestForm extends FormBase {
             '#default_value' => $selection
         ];
 
-        $possibleDates = arborcat_calculateLobbyPickupDates();
+        $possibleDates = arborcat_calculateLobbyPickupDates($requestLocation);
+        dblog('buildform: possibleDates = ' . json_encode($possibleDates));
         $pickupdates = [];
         foreach ($possibleDates as $key => $dateStringsArray) {
             $pickupdates[$key] = $dateStringsArray['formattedDate'];
         }
+        dblog('buildform: pickupdates = ' . json_encode($pickupdates));
 
         if (!isset($cancel_holds)) {
             // Populate the possible pickup dates popup menu

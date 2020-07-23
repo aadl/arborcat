@@ -416,7 +416,7 @@ class DefaultController extends ControllerBase
         $location = \Drupal::request()->query->get('location');
         $seeddb = \Drupal::request()->query->get('seeddb');
         
-        $possibleDates = arborcat_calculateLobbyPickupDates();
+        $possibleDates = arborcat_calculateLobbyPickupDates($location);
         dblog('pickup_test: $possibleDates = ', json_encode($possibleDates));
 
         if (strlen($seeddb) > 0) {
