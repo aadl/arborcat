@@ -173,7 +173,7 @@ class UserPickupRequestForm extends FormBase {
                     'phone' => 'Phone Call'
                 ],
                 '#description' => t('Select which ways you would like to be notified when your request is ready for pickup'),
-                '#required' => TRUE
+                '#required' => TRUE,
                 '#default_value' => ['email']
             ];
 
