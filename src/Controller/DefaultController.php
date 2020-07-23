@@ -416,13 +416,8 @@ class DefaultController extends ControllerBase
         $location = \Drupal::request()->query->get('location');
         $seeddb = \Drupal::request()->query->get('seeddb');
         
-        $barcode =  $this->barcodeFromPatronId($patronId);
-        $eligibleHolds = loadPatronEligibleHolds($barcode);
-        die();
-
-
-
-
+        $possibleDates = arborcat_calculateLobbyPickupDates();
+        dblog('pickup_test: $possibleDates = ', json_encode($possibleDates));
 
         if (strlen($seeddb) > 0) {
             $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
@@ -444,6 +439,7 @@ class DefaultController extends ControllerBase
                 $patronId = $this->patronIdFromBarcode($barcode);
             }
             if (14 === strlen($barcode)) {
+                $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
                 $encryptedBarcode = md5($pickup_requests_salt . $barcode);
                 $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
             

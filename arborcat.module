@@ -258,3 +258,69 @@ function arborcat_get_scheduled_pickups($barcode) {
 
   return $scheduled_pickups;
 }
+
+//check if a hold is eligible for a locker based on material type
+function arborcat_calculateLobbyPickupDates()
+{
+  $arrayOfDates = [];
+  // get the current date
+  $theDate = new DateTime('today');
+  // add 1 day to the current date
+  $startingDayOffset = 1; // Load these from ArborCat Settings?
+  $numPickupDays = 7;     // Load these from ArborCat Settings?
+  $incrementorString = '+$startingDayOffset day';
+  $theDate->modify('+1 day');
+  $tomorrow = $theDate->format('Y-m-d');
+  $endingPickupDate = $theDate;
+  $endingPickupDate->modify('+7 day');
+  $tomorrowPlusSevenDays = $endingPickupDate->format('Y-m-d');
+  // now loop for x days and create a date string for each day, preceded with the day name
+  // create a human friendly version - 'formattedDate' for display purposes in the UI
+  // and a basic verson 'date' for use in date db queries
+
+  dblog(' $location_date_excludes = ', $tomorrow, $tomorrowPlusSevenDays);
+
+  // Next 7 days exclusion date/locations
+  $db = \Drupal::database();
+  $query = $db->select('arborcat_pickup_location_exclusion', 'aple')
+              ->fields('aple', ['locationId', 'exclusionDate',])
+              ->condition('exclusionDate', $tomorrow, '>=')
+              ->condition('exclusionDate', $tomorrowPlusSevenDays, '<=')
+              ->execute();
+  $location_date_excludes = $query->fetchAll();
+  dblog(' $location_date_excludes = ', json_encode($location_date_excludes));
+  $date_exclude =  [
+      'Jun. 20',
+      'Jun. 21',
+      'Jul. 4'
+  ];
+  for ($x=0; $x < $numPickupDays; $x++) {
+      $theDate_mdY = $theDate->format('M. j');
+      $day_of_week = intval($theDate->format('w'));
+      $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
+      $datestring = $dayOfWeek . ', ' . $theDate_mdY;
+
+      $datestr_Ymd = $theDate->format('Y-m-d');
+      $twoDates = array("date" => $datestr_Ymd, "formattedDate" => $datestring);
+
+      if (!in_array($theDate_mdY, $date_exclude)) {
+          $arrayOfDates[$datestr_Ymd] = $twoDates;
+      }
+      $theDate->modify('+1 day');
+  }
+
+  return $arrayOfDates;
+}
+
+function dblog(...$thingsToLog)
+{
+  $lineToLog = '';
+  foreach ($thingsToLog as $item) {
+      $lineToLog = $lineToLog . ' ' . print_r($item, true);
+  }
+  // prepend date/time onto log line
+  $nowDateTime = new DrupalDateTime();
+  $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
+  $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
+  error_log($completeLine, 3, "LWKLWK.log");
+}

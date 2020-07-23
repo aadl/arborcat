@@ -122,7 +122,7 @@ class UserPickupRequestForm extends FormBase {
             '#default_value' => $selection
         ];
 
-        $possibleDates = $this->calculateLobbyPickupDates();
+        $possibleDates = arborcat_calculateLobbyPickupDates();
         $pickupdates = [];
         foreach ($possibleDates as $key => $dateStringsArray) {
             $pickupdates[$key] = $dateStringsArray['formattedDate'];
@@ -374,44 +374,5 @@ class UserPickupRequestForm extends FormBase {
             $mailManager = \Drupal::service('plugin.manager.mail');
             mail($email_to, $email_subject, $email_message, $email_headers);
         }
-    }
-
-    private function calculateLobbyPickupDates()
-    {
-        $arrayOfDates = [];
-        // get the current date
-        $theDate = new DateTime('today');
-        // add 1 day to the current date
-        $startingDayOffset = 1; // Load these from ArborCat Settings?
-        $numPickupDays = 7;     // Load these from ArborCat Settings?
-        $incrementorString = '+$startingDayOffset day';
-        $theDate->modify('+1 day');
-
-        // now loop for x days and create a date string for each day, preceded with the day name
-        // create a human friendly version - 'formattedDate' for display purposes in the UI
-        // and a basic verson 'date' for use in date db queries
-
-        // this is not ideal whatsoever and just quick way to address unavailable / closure dates
-        $date_exclude = [
-            'Jun. 20',
-            'Jun. 21',
-            'Jul. 4'
-        ];
-        for ($x=0; $x < $numPickupDays; $x++) {
-            $theDate_mdY = $theDate->format('M. j');
-            $day_of_week = intval($theDate->format('w'));
-            $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
-            $datestring = $dayOfWeek . ', ' . $theDate_mdY;
-
-            $datestr_Ymd = $theDate->format('Y-m-d');
-            $twoDates = array("date" => $datestr_Ymd, "formattedDate" => $datestring);
-
-            if (!in_array($theDate_mdY, $date_exclude)) {
-                $arrayOfDates[$datestr_Ymd] = $twoDates;
-            }
-            $theDate->modify('+1 day');
-        }
-
-        return $arrayOfDates;
     }
 }
