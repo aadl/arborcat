@@ -330,13 +330,12 @@ class UserPickupRequestForm extends FormBase {
  
             $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
             $messenger->addMessage($submit_message);
-        }
-
-        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-        $uid = $user->id();
-        $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
-
-        return $form_state->setRedirectUrl($url);
+ 
+            $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+            $uid = $user->id();
+            $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
+            return $form_state->setRedirectUrl($url);
+       }
     }
 
     public function arborcat_mail($key, $email_to, $patron, $code, $holds) {
