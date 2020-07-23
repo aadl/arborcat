@@ -118,6 +118,13 @@ class ArborcatAdminForm extends ConfigFormBase
       '#maxlength' => 64,
       '#description' => t('self-check key for use with api requests pertaining to the patron data without the need to be signed in'),
     ];
-        return parent::buildForm($form, $form_state);
-    }
+ 
+         $form['max_locker_items_check'] = [
+      '#type' => 'number',
+      '#title' => t('Max Number of Items that should fit in a Locker'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
+      '#description' => t('If more items that this number are selected for locker pickup, a warning will be displayed to the patron'),
+    ];
+    return parent::buildForm($form, $form_state);
+  }
 }
