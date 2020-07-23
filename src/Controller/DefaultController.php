@@ -383,13 +383,15 @@ class DefaultController extends ControllerBase {
       }
     }
 
-    return [
+    $render = [
         '#theme' => 'patron_requests_ready_locations_theme',
         '#search_form' => $search_form,
         '#location_urls' => $locationURLs,
         '#barcode' => $barcode,
         '#scheduled_pickups' => $scheduled_pickups ?? NULL
-    ];
+      ];
+      
+    return $render;
   }
 
   private function createPickupURL($patronId, $barcode, $location) {
