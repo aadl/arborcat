@@ -383,30 +383,6 @@ class DefaultController extends ControllerBase {
       }
     }
 
-<<<<<<< HEAD
-    public function pickup_test()
-    {
-        $returnval = '';
-        $barcode = \Drupal::request()->query->get('barcode');
-        $patronId = \Drupal::request()->query->get('patronid');
-        $location = \Drupal::request()->query->get('location');
-        $seeddb = \Drupal::request()->query->get('seeddb');
-        
-        $possibleDates = arborcat_calculateLobbyPickupDates($location);
-        dblog('pickup_test: $possibleDates = ', json_encode($possibleDates));
-
-        if (strlen($seeddb) > 0) {
-            $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-            $this->addPickupRequest($patronId, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-            $this->addPickupRequest($patronId, '$9999903', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-            $this->addPickupRequest($patronId, '$9999904', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-        } else {
-            if (strlen($location) == 3) {
-                //$locations = pickupLocations($location);
-            } else {
-                $location = '102';
-            }
-=======
     $render = [
         '#theme' => 'patron_requests_ready_locations_theme',
         '#search_form' => $search_form,
@@ -417,33 +393,8 @@ class DefaultController extends ControllerBase {
 
     return $render;
   }
->>>>>>> pickup-requests-expandedLockerValidation
 
 
-<<<<<<< HEAD
-    
-            if (strlen($patronId) > 0) {
-                $barcode =  $this->barcodeFromPatronId($patronId);
-            } else {
-                $patronId = $this->patronIdFromBarcode($barcode);
-            }
-            if (14 === strlen($barcode)) {
-                $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
-                $encryptedBarcode = md5($pickup_requests_salt . $barcode);
-                $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
-            
-                $host = 'https://pinkeye.aadl.org';
-                $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
-                $html = '<a href="' . $link . '" target="_blank">' . $link  . '</a>';
- 
-                $host = 'http://nginx.docker.localhost:8000';
-                $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
-                $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
-
-                $returnval .= $html . $html2;
-            }
-        }
-=======
   public function pickup_test() {
     $returnval = '';
     $barcode = \Drupal::request()->query->get('barcode');
@@ -455,7 +406,6 @@ class DefaultController extends ControllerBase {
     } else {
         $location = '102';
     }
->>>>>>> pickup-requests-expandedLockerValidation
 
     if (strlen($patronId) > 0) {
         $barcode =  $this->barcodeFromPatronId($patronId);
