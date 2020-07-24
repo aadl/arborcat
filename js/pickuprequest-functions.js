@@ -3,7 +3,7 @@
     attach: function (context, settings) {
 
     var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check;
-      console.log('max_locker_items_check = ' + max_locker_items_check);
+
     $(function () {
       // INITIALIZATION/SETUP
 
@@ -30,13 +30,13 @@
         msgWrapper.append('<h2 class="visually-hidden">Warning Message</h2>')
           .append(statusMsg);
         $(msgWrapper).insertBefore('.outer-wrapper[role="main"]');
+        // make the view scroll so the warning is actually visible to the user
+        $('.status-messages')[0].scrollIntoView({ behavior: 'smooth' });
+
       }
 
-      // EVENT HANDLERS
-      // check for locker pickup method and greater than 6 items.
-      $('#edit-pickup-type').change(function () {
+      function selectedItemsCheck() {
         $('.status-messages').remove();
-
         selectedText = $("#edit-pickup-type :selected").text();
         var lowercaseSelected = selectedText.toLowerCase();
         var numItemsSelected = checkedItems();
@@ -44,15 +44,21 @@
           // show the warning banner
           displayBanner('Please note, the ' + numItemsSelected + ' checked items may not fit in the selected locker pickup method. Any items that do not fit in the locker will be placed in the lobby', 'warning');
         }
+      }
+
+      // EVENT HANDLERS 
+
+      $('#edit-pickup-type').change(function () {
+        selectedItemsCheck();
+       });
+
+
+       $('#edit-item-table thead tr').click(function (e) {
+        selectedItemsCheck();
       });
 
-      // toggle checkbox status on row with click
       $('#edit-item-table tbody tr').click(function(e) {
-        if (e.target.nodeName != 'INPUT') {
-          var checkBox = $(this).find('input[type=checkbox]');
-          var checkStatus = checkBox.prop('checked');
-          checkBox.prop('checked', !checkStatus);
-        }
+        selectedItemsCheck();
       });
 
       // give confirmation before canceling requests

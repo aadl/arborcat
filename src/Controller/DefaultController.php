@@ -383,6 +383,7 @@ class DefaultController extends ControllerBase {
       }
     }
 
+<<<<<<< HEAD
     public function pickup_test()
     {
         $returnval = '';
@@ -405,8 +406,21 @@ class DefaultController extends ControllerBase {
             } else {
                 $location = '102';
             }
+=======
+    $render = [
+        '#theme' => 'patron_requests_ready_locations_theme',
+        '#search_form' => $search_form,
+        '#location_urls' => $locationURLs,
+        '#barcode' => $barcode,
+        '#scheduled_pickups' => $scheduled_pickups ?? NULL
+      ];
+
+    return $render;
+  }
+>>>>>>> pickup-requests-expandedLockerValidation
 
 
+<<<<<<< HEAD
     
             if (strlen($patronId) > 0) {
                 $barcode =  $this->barcodeFromPatronId($patronId);
@@ -429,28 +443,41 @@ class DefaultController extends ControllerBase {
                 $returnval .= $html . $html2;
             }
         }
-
-        if (strlen($patronId) > 0) {
-            $barcode =  $this->barcodeFromPatronId($patronId);
-        } else {
-            $patronId = $this->patronIdFromBarcode($barcode);
-        }
-        if (14 === strlen($barcode)) {
-        		$pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
-            $encryptedBarcode = md5($pickup_requests_salt . $barcode);
-            $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
-        
-            $host = 'https://pinkeye.aadl.org';
-            $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
-            $html = '<a href="' . $link . '" target="_blank">' . $link  . '</a>';
-
-            $host = 'http://nginx.docker.localhost:8000';
-            $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
-            $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
-
-            $returnval .= $html . $html2;
-        }
+=======
+  public function pickup_test() {
+    $returnval = '';
+    $barcode = \Drupal::request()->query->get('barcode');
+    $patronId = \Drupal::request()->query->get('patronid');
+    $location = \Drupal::request()->query->get('location');
+    
+    if (strlen($location) == 3) {
+        //$locations = pickupLocations($location);
+    } else {
+        $location = '102';
     }
+>>>>>>> pickup-requests-expandedLockerValidation
+
+    if (strlen($patronId) > 0) {
+        $barcode =  $this->barcodeFromPatronId($patronId);
+    } else {
+        $patronId = $this->patronIdFromBarcode($barcode);
+    }
+    if (14 === strlen($barcode)) {
+        $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
+        $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+        $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
+    
+        $host = 'https://pinkeye.aadl.org';
+        $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+        $html = '<a href="' . $link . '" target="_blank">' . $link  . '</a>';
+
+        $host = 'http://nginx.docker.localhost:8000';
+        $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+        $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
+
+        $returnval .= $html . $html2;
+    }
+    
     return [
       '#title' => 'pickup request test',
       '#markup' => $returnval
@@ -501,7 +528,6 @@ class DefaultController extends ControllerBase {
     }
   }
 
-
   private function validateTransaction($pnum, $encrypted_barcode) {
     $returnval = FALSE;
     $barcode =  $this->barcodeFromPatronId($pnum);
@@ -513,44 +539,5 @@ class DefaultController extends ControllerBase {
         }
     }
     return $returnval;
-  }
-
-  // this needed? insert can be done on form submit
-  private function addPickupRequest($pickupLocation, $pickupDay, $timeSlot, $contactEmail, $contactPhone, $contactSMS) {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    if ($user->isAuthenticated()) {
-        $db = \Drupal::database();
-
-        $db->insert('arborcat_patron_pickup_request')
-        ->fields([
-          'uid' => $user->id(),
-          'pickupDay' => $pickupDay,
-          'timeSlot' => $timeSlot,
-          'pickupLocation' => $pickupLocation,
-          'contactEmail' => $contactEmail,
-          'contactPhone' => $contactPhone,
-          'contactSMS' => $contactSMS,
-          'timestamp' => time()
-        ])
-        ->execute();
-        $result['success'] = "Successfully added pickup request";
-    } else {
-        $result['error'] = 'You must be logged in to make a pickup request.';
-    }
-
-    return new JsonResponse($result);
-  }
-
-  public function hook_form_FORM_ID_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-    // Modification for the form with the given form ID goes here. For example, if
-    // FORM_ID is "user_register_form" this code would run only on the user
-    // registration form.
-
-    // Add a checkbox to registration form about agreeing to terms of use.
-    $form['terms_of_use'] = array(
-        '#type' => 'checkbox',
-        '#title' => t("I agree with the website's terms and conditions."),
-        '#required' => TRUE,
-    );
   }
 }
