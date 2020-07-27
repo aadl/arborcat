@@ -3,5 +3,21 @@
  * Pickup Requests Form
  */
 #}
+
+{# <div id="test" data-pickup-date-options = "{{ pr_pickup_date_options |json_encode }}"></div>
+<div id="test" data-pickup-locations = "{{ pr_locations |json_encode }}"></div>
+<div id="test" data-testvar = "{{ testvar |json_encode }}"></div>
+ #}
+
+<script>
+console.log ('----------------------------------------' + "\n");
+var testvar = {{ testvar }};
+console.log ('testvar = ' + testvar + "\n");
+console.log ('max_locker_items_check = ' +  {{ max_locker_items_check }} + "\n");
+
+
+console.log ('----------------------------------------' + "\n");
+</script>
+
 {{ formhtml }}
 {{ attach_library('arborcat/pickuprequest-functions') }}

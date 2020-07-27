@@ -435,6 +435,7 @@ class DefaultController extends ControllerBase {
   }
 
   public function pickup_request($pnum, $encrypted_barcode, $loc) {
+    dblog('+++++++++++++++ pickup_request +++++++++++++++');
     $mode = \Drupal::request()->query->get('mode');
     $requestPickup_html = '';
     if ($this->validateTransaction($pnum, $encrypted_barcode)) {
@@ -442,11 +443,22 @@ class DefaultController extends ControllerBase {
     } else {
         drupal_set_message('The Pickup Request could not be processed');
     }
+    // create render array to be passed to the theme twig template
+    $pr_pickup_date_options = arborcat_calculateLobbyPickupDates($loc);
+    $pr_locations = arborcat_pickup_locations($loc);
+    dblog('+++++++++++++++ pickup_request: pr_pickup_date_options = ', json_encode($pr_pickup_date_options));
+    dblog('+++++++++++++++ pickup_request: pr_locations = ', json_encode($pr_locations));
     $render[] = [
             '#theme' => 'pickup_request_form',
             '#formhtml' => $requestPickup_html,
-            '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check')
+            '#testvar' => 'testing testing 1 2 3 4',
+            '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
+            '#pr_pickup_date_options' => $pr_pickup_date_options,
+            '#pr_locations' => $pr_locations
         ];
+    dblog('+++++++++++++++ pickup_request: render = ', json_encode($render));
+    dblog('+++++++++++++++ pickup_request EXITING +++++++++++++++');
+    
     return $render;
   }
 

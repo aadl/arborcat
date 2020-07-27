@@ -72,9 +72,11 @@ function arborcat_theme($existing, $type, $theme, $path) {
  */
 function arborcat_preprocess_page(&$variables)
 {
-    // get the max locker item check  from ArborCat module settings
-    $max_locker_items = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
-    $variables['#attached']['drupalSettings']['arborcat']['max_locker_items_check'] = $max_locker_items;
+  // get the max locker item check  from ArborCat module settings
+  $max_locker_items = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
+  $variables['#attached']['drupalSettings']['arborcat']['max_locker_items_check'] = $max_locker_items;
+ // $variables['#attached']['drupalSettings']['arborcat']['pickup_date_options'] = arborcat_calculateLobbyPickupDates($requestLocation);
+//  $variables['#attached']['drupalSettings']['arborcat']['pickup_locations'] = arborcat_pickup_locations($requestLocation);
 }
 
 function arborcat_generate_api_key() {
@@ -389,6 +391,8 @@ function arborcat_calculateLobbyPickupDates($holdPickupLocation) {
   //     'Jun. 21',
   //     'Jul. 4'
   // ];
+
+
   for ($x=0; $x < $numPickupDays; $x++) {
       $theDate_mdY = $theDate->format('M. j');
       $day_of_week = intval($theDate->format('w'));
@@ -398,19 +402,19 @@ function arborcat_calculateLobbyPickupDates($holdPickupLocation) {
       // Loop through exclusions looking for dates matching and that the exclusion pickupLocation is in the list of locations for the 
       // hold request location
       $exclusionLocations = [];
+      dblog('arborcat_calculateLobbyPickupDates: === ' . $x . ' === location_date_excludes = ', json_encode($location_date_excludes));
       foreach($location_date_excludes as $oneLocDateExcude) {
         if ($oneLocDateExcude->exclusionDate == $datestr_Ymd && in_array($oneLocDateExcude->locationId, $activePickupLocations)) {
+          dblog('arborcat_calculateLobbyPickupDates: GOT EXCLUSION = ', $datestr_Ymd, $holdPickupLocation, $activePickupLocations);
           array_push($exclusionLocations, $oneLocDateExcude->locationId);
         }
       }
 
       $twoDatesPlusExclusions = array("date" => $datestr_Ymd, "formattedDate" => $datestring, "exclusions" => $exclusionLocations);
 
-      // if (!in_array($theDate_mdY, $date_exclude)) {
-      //     $arrayOfDates[$datestr_Ymd] = $twoDates;
-      // }
-
-      $arrayOfDates[$datestr_Ymd] = $twoDatesPlusExclusions;
+      if (count($exclusionLocations) == 0) {
+        $arrayOfDates[$datestr_Ymd] = $twoDatesPlusExclusions;
+      }
       $theDate->modify('+1 day');
   }
   dblog('arborcat_calculateLobbyPickupDates: RETURNING $arrayOfDates = ', json_encode($arrayOfDates));

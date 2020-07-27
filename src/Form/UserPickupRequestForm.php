@@ -16,6 +16,7 @@ class UserPickupRequestForm extends FormBase {
     }
 
     public function buildForm(array $form, FormStateInterface $form_state, string $patronId = NULL, string $requestLocation = NULL, string $mode = NULL) {
+        dblog('buildform: ENTERED ');
         $guzzle = \Drupal::httpClient();
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -157,6 +158,7 @@ class UserPickupRequestForm extends FormBase {
                     $pickupOptions["$locationObj->locationId-$locationObj->timePeriod"] = $namePlusTimePeriod;
                 }
             }
+
             $form['pickup_type'] = [
               '#prefix' => '<div class="l-inline-b side-by-side-form">',
               '#type' => 'select',

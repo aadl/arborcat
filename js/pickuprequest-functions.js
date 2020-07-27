@@ -2,7 +2,7 @@
   Drupal.behaviors.pickupRequestBehavior = {
     attach: function (context, settings) {
 
-    var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check;
+    var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check; 
 
     $(function () {
       // INITIALIZATION/SETUP
@@ -47,7 +47,13 @@
       }
 
       // EVENT HANDLERS 
-
+      $(document).ready(function () {
+        var pickupDateOptions = $('#test').data("pickupDateOptions");
+        var pickupLocations = $('#test').data("pickupLocations");
+        console.log('### pickupDateOptions: ' + pickupDateOptions + "\n");
+        console.log('### pickupLocations: ' + pickupLocations + "\n");
+      });
+      
       $('#edit-pickup-type').change(function () {
         selectedItemsCheck();
        });
