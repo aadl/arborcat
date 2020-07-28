@@ -16,7 +16,6 @@ class UserPickupRequestForm extends FormBase {
     }
 
     public function buildForm(array $form, FormStateInterface $form_state, string $patronId = NULL, string $requestLocation = NULL, string $mode = NULL) {
-        dblog('buildform: ENTERED ');
         $guzzle = \Drupal::httpClient();
         $api_key = \Drupal::config('arborcat.settings')->get('api_key');
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -119,13 +118,10 @@ class UserPickupRequestForm extends FormBase {
         ];
 
         $possibleDates = arborcat_calculateLobbyPickupDates($requestLocation);
-        dblog('buildform: possibleDates = ' . json_encode($possibleDates));
         $pickupdates = [];
         foreach ($possibleDates as $key => $dateStringsArray) {
             $pickupdates[$key] = $dateStringsArray['formattedDate'];
         }
-        dblog('buildform: pickupdates = ' . json_encode($pickupdates));
-
         if (!isset($cancel_holds)) {
             // Populate the possible pickup dates popup menu
             $form['pickup_date'] = [
