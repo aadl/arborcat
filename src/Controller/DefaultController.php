@@ -369,35 +369,7 @@ class DefaultController extends ControllerBase {
         foreach ($eligibleHolds as $holdobj) {
             array_push($holdLocations, $holdobj['pickup_lib']);
         }
-        return new JsonResponse('Request could not be processed');
-    }
-
-    // -----------------------------------------------------------
-    // ---------------- Pickup Request-related methods -----------
-    // -----------------------------------------------------------
-    public function pickup_locations_for_patron() {
-        $returnArray = [];
-
-        $search_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadySearchForm');
-
-        $current_uri = \Drupal::request()->getRequestUri();
-
-        $barcode = \Drupal::request()->get('bcode');
-
-        $locationURLs = [];
-        if (isset($barcode)) {
-          $eligibleHolds = loadPatronEligibleHolds($barcode);
-          if (!isset($eligibleHolds['error'])) {
-            // grab pickup appointments to display on form
-            $scheduled_pickups = arborcat_get_scheduled_pickups($barcode);
-            // Get the patron ID from the first hold object in $eligibleHolds. NOTE - this starts at offset [1]
-            $patronId = $eligibleHolds[1]['usr'];
-            $holdLocations = [];
-            // spin through the eligible holds and get the locations
-            foreach ($eligibleHolds as $holdobj) {
-                array_push($holdLocations, $holdobj['pickup_lib']);
-            }
-            $holdLocations = array_unique($holdLocations);
+        $holdLocations = array_unique($holdLocations);
 
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
         $guzzle = \Drupal::httpClient();
@@ -409,225 +381,209 @@ class DefaultController extends ControllerBase {
             $url = $this->createPickupURL($patronId, $barcode, $loc);
             array_push($locationURLs, ['url'=>$url, 'loc'=>$loc, 'locname'=>$locationName]);
         }
-
-        return [
-            '#theme' => 'patron_requests_ready_locations_theme',
-            '#search_form' => $search_form,
-            '#location_urls' => $locationURLs,
-            '#barcode' => $barcode,
-            '#scheduled_pickups' => $scheduled_pickups ?? NULL
-        ];
+      } else {
+        $locationURLs['error'] = 'Error looking up patron requests. Is this a valid barcode?';
+      }
     }
 
-    private function createPickupURL($patronId, $barcode, $location) {
-        $html = '';
+    $render = [
+        '#theme' => 'patron_requests_ready_locations_theme',
+        '#search_form' => $search_form,
+        '#location_urls' => $locationURLs,
+        '#barcode' => $barcode,
+        '#scheduled_pickups' => $scheduled_pickups ?? NULL
+      ];
+
+    return $render;
+  }
+
+  private function createPickupURL($patronId, $barcode, $location) {
+      $html = '';
+      $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
+      $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+      $host = \Drupal::request()->getHost();
+      $link = 'https://'. $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+      return $link;
+  }
+
+  public function pickup_test() {
+      $returnval = '';
+      $barcode = \Drupal::request()->query->get('barcode');
+      $patronId = \Drupal::request()->query->get('patronid');
+      $location = \Drupal::request()->query->get('location');
+      $seeddb = \Drupal::request()->query->get('seeddb');
+      $requestId = \Drupal::request()->query->get('requestid');
+      
+      if (strlen($seeddb) > 0) {
+          $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
+          $this->addPickupRequest($patronId, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
+          $this->addPickupRequest($patronId, '$9999903', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
+          $this->addPickupRequest($patronId, '$9999904', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
+      } else {
+          if (strlen($location) == 3) {
+              //$locations = pickupLocations($location);
+          } else {
+              $location = '102';
+          }
+          
+          $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
+
+          if (strlen($requestId) > 0) {
+              $encryptedRequestId = md5($pickup_requests_salt . $requestId);
+              $returnval = '<p> Encrypting RequestId: ' . $requestId . ' -> ' . $encryptedRequestId . '<br>';
+              $returnval .= 'pickup_requests_salt: ' . $pickup_requests_salt . '</p><br>';
+          }
+          else {
+              if (strlen($patronId) > 0) {
+                  $barcode =  $this->barcodeFromPatronId($patronId);
+              } else {
+                  $patronId = $this->patronIdFromBarcode($barcode);
+              }
+              if (14 === strlen($barcode)) {
+              if (strlen($row) > 0) {
+                      $barcode = $row;
+                  }
+              $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+                  $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
+              
+                  $host = 'http://nginx.docker.localhost:8000';
+                  $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+                  $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
+
+                  $returnval .= $html2;
+              }
+          } 
+      }
+      return [
+        '#title' => 'pickup request test',
+        '#markup' => $returnval
+      ];
+  }
+
+  public function pickup_request($pnum, $encrypted_barcode, $loc) {
+      $mode = \Drupal::request()->query->get('mode');
+      $requestPickup_html = '';
+      if ($this->validateTransaction($pnum, $encrypted_barcode)) {
+          $requestPickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
+      } else {
+          drupal_set_message('The Pickup Request could not be processed');
+      }
+      $render[] = [
+              '#theme' => 'pickup_request_form',
+              '#formhtml' => $requestPickup_html,
+          ];
+      return $render;
+  }
+
+  public function cancel_pickup_request($encrypted_request_id, $hold_shelf_expire_date) {
+      $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+      $patron_id = $user->field_patron_id->value;
+      $patron_barcode = $user->field_barcode->value;
+      $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
+
+      if (count($cancelRecord) > 0) {
+          $db = \Drupal::database();
+          $guzzle = \Drupal::httpClient();
+          $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+          $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+          $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+          
+          // check date is for tomorrow or later - NOTE this is overkill - the query inside 'findRecordToCancel' method checks for date > todays date.
+          $today = (new DateTime("now", new DateTimeZone('UTC')));
+          $today->setTime(0,0,0);
+          $tomorrow = $today->modify('+1 day');
+          $pickupTime = (new DateTime($cancelRecord->pickupDate, new DateTimeZone('UTC')));
+          if ($pickupTime >= $tomorrow) {
+              if ($patron_id == $cancelRecord->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
+                  // go ahead and cancel the record
+                  $num_deleted = $db->delete('arborcat_patron_pickup_request')
+                      ->condition('id', $cancelRecord->id, '=')
+                      ->execute();
+                  if (1 == $num_deleted) {
+                      // Now update the hold_request expire_time in Evergreen
+                      $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
+                      $updated_hold = $guzzle->get($url)->getBody()->getContents();
+                      $response['success'] = 'Pickup Request Canceled';
+                  } else {
+                      $response['error'] = 'Error canceling Pickup Request';
+                  }               
+              } else {
+                  $response['error'] = "You are not authorized to cancel this Pickup Request";
+              }
+          } else {
+              $response['error'] = "A Pickup Request scheduled for today cannot be canceled";
+          }
+      }
+      else {
+          $response['error'] = "The Pickup Request cancellation could not be completed";
+      }
+      return new JsonResponse($response);
+  }
+
+  private function barcodeFromPatronId($patronId) {
+      $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+      $guzzle = \Drupal::httpClient();
+      $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
+      $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+      if ($json) {
+          $barcode =  $json->evg_user->card->barcode;
+          return $barcode;
+      } else {
+          return "";
+      }
+  }
+
+  private function patronIdFromBarcode($barcode) {
+      $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+      $guzzle = \Drupal::httpClient();
+      $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
+      $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+      if ($json) {
+          $patronId =  $json->pid;
+          return $patronId;
+      } else {
+          return "";
+      }
+  }
+
+  private function validateTransaction($pnum, $encrypted_barcode) {
+    $returnval = FALSE;
+    $barcode =  $this->barcodeFromPatronId($pnum);
+    if (14 == strlen($barcode)) {
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
-        $encryptedBarcode = md5($pickup_requests_salt . $barcode);
-        $host = \Drupal::request()->getHost();
-        $link = 'https://'. $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
-        return $link;
-    }
-
-    public function pickup_test() {
-        $returnval = '';
-        $barcode = \Drupal::request()->query->get('barcode');
-        $patronId = \Drupal::request()->query->get('patronid');
-        $location = \Drupal::request()->query->get('location');
-        $seeddb = \Drupal::request()->query->get('seeddb');
-        $requestId = \Drupal::request()->query->get('requestid');
-        
-        if (strlen($seeddb) > 0) {
-            $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-            $this->addPickupRequest($patronId, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-            $this->addPickupRequest($patronId, '$9999903', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-            $this->addPickupRequest($patronId, '$9999904', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-        } else {
-            if (strlen($location) == 3) {
-                //$locations = pickupLocations($location);
-            } else {
-                $location = '102';
-            }
-            
-            $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
-
-            if (strlen($requestId) > 0) {
-               $encryptedRequestId = md5($pickup_requests_salt . $requestId);
-                $returnval = '<p> Encrypting RequestId: ' . $requestId . ' -> ' . $encryptedRequestId . '<br>';
-                $returnval .= 'pickup_requests_salt: ' . $pickup_requests_salt . '</p><br>';
-            }
-            else {
-                if (strlen($patronId) > 0) {
-                    $barcode =  $this->barcodeFromPatronId($patronId);
-                } else {
-                    $patronId = $this->patronIdFromBarcode($barcode);
-                }
-                if (14 === strlen($barcode)) {
-                if (strlen($row) > 0) {
-                        $barcode = $row;
-                    }
-                $encryptedBarcode = md5($pickup_requests_salt . $barcode);
-                    $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
-                
-                    $host = 'http://nginx.docker.localhost:8000';
-                    $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
-                    $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
-
-                    $returnval .= $html2;
-                }
-            } 
-        }
-        return [
-         '#title' => 'pickup request test',
-         '#markup' => $returnval
-        ];
-    }
-
-    public function pickup_request($pnum, $encrypted_barcode, $loc) {
-        $mode = \Drupal::request()->query->get('mode');
-        $requestPickup_html = '';
-        if ($this->validateTransaction($pnum, $encrypted_barcode)) {
-            $requestPickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
-        } else {
-            drupal_set_message('The Pickup Request could not be processed');
-        }
-        $render[] = [
-                '#theme' => 'pickup_request_form',
-                '#formhtml' => $requestPickup_html,
-            ];
-        return $render;
-    }
-
-    public function cancel_pickup_request($encrypted_request_id, $hold_shelf_expire_date) {
-        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-        $patron_id = $user->field_patron_id->value;
-        $patron_barcode = $user->field_barcode->value;
-        $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
-
-        if (count($cancelRecord) > 0) {
-            $db = \Drupal::database();
-            $guzzle = \Drupal::httpClient();
-            $api_key = \Drupal::config('arborcat.settings')->get('api_key');
-            $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-            $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
-            
-            // check date is for tomorrow or later - NOTE this is overkill - the query inside 'findRecordToCancel' method checks for date > todays date.
-            $today = (new DateTime("now", new DateTimeZone('UTC')));
-            $today->setTime(0,0,0);
-            $tomorrow = $today->modify('+1 day');
-            $pickupTime = (new DateTime($cancelRecord->pickupDate, new DateTimeZone('UTC')));
-            if ($pickupTime >= $tomorrow) {
-                if ($patron_id == $cancelRecord->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
-                    // go ahead and cancel the record
-                    $num_deleted = $db->delete('arborcat_patron_pickup_request')
-                        ->condition('id', $cancelRecord->id, '=')
-                        ->execute();
-                    if (1 == $num_deleted) {
-                        // Now update the hold_request expire_time in Evergreen
-                        $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
-                        $updated_hold = $guzzle->get($url)->getBody()->getContents();
-                        $response['success'] = 'Pickup Request Canceled';
-                    } else {
-                        $response['error'] = 'Error canceling Pickup Request';
-                    }               
-                } else {
-                    $response['error'] = "You are not authorized to cancel this Pickup Request";
-                }
-            } else {
-                $response['error'] = "A Pickup Request scheduled for today cannot be canceled";
-            }
-        }
-        else {
-            $response['error'] = "The Pickup Request cancellation could not be completed";
-        }
-        return new JsonResponse($response);
-    }
-
-    private function barcodeFromPatronId($patronId) {
-        $api_key = \Drupal::config('arborcat.settings')->get('api_key');
-        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-        $guzzle = \Drupal::httpClient();
-        $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
-        $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
-        if ($json) {
-            $barcode =  $json->evg_user->card->barcode;
-            return $barcode;
-        } else {
-            return "";
+        $hashedBarcode = md5($pickup_requests_salt . $barcode);
+        if ($hashedBarcode == $encrypted_barcode) {
+            $returnval =  TRUE;
         }
     }
-    private function patronIdFromBarcode($barcode) {
-        $api_key = \Drupal::config('arborcat.settings')->get('api_key');
-        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-        $guzzle = \Drupal::httpClient();
-        $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
-        $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
-        if ($json) {
-            $patronId =  $json->pid;
-            return $patronId;
-        } else {
-            return "";
-        }
-    }
-    if (14 === strlen($barcode)) {
-        $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
-        $encryptedBarcode = md5($pickup_requests_salt . $barcode);
-        $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
-    
-        $host = 'https://pinkeye.aadl.org';
-        $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
-        $html = '<a href="' . $link . '" target="_blank">' . $link  . '</a>';
+    return $returnval;
+  }
 
-    private function validateTransaction($pnum, $encrypted_barcode) {
-        $returnval = false;
-        
-        $barcode =  $this->barcodeFromPatronId($pnum);
-        if (14 == strlen($barcode)) {
-            $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
-            $hashedBarcode = md5($pickup_requests_salt . $barcode);
-
-            if ($hashedBarcode == $encrypted_barcode) {
-                $returnval =  true;
-            }
-        }
-        return $returnval;
-    }
-
-    private function findRecordToCancel($patronId, $encrypted_holdId) {
-        $returnRecord = [];
-        // get all the pickupRequest records for the patron
-        $today = (new DateTime("now"));
-        $todayDateString = $today->format("Y-m-d");
-        // lookup the pickup request record
-        $db = \Drupal::database();
-        $query = $db->select('arborcat_patron_pickup_request', 'appr');
-        $query-> fields('appr', ['id', 'patronId', 'requestId', 'pickupDate']);
-        $query-> condition('patronId', $patronId);
-        $query-> condition('pickupDate', $todayDateString, '>');
-        $results = $query->execute()->fetchAll();        
-        if (count($results) > 0) {
-            $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
-             // loop through the array results, created hashes of each id and compare with $encrypted_holdId
-            foreach($results as $record) {
-                $hashed_request_id = md5($pickup_requests_salt . $record->requestId);
-                if ($hashed_request_id == $encrypted_holdId) {
-                   $returnRecord =  $record;
-                    break;
-                }  
-            } 
-        }
-        return $returnRecord;
-    }
-
-    public function hook_form_FORM_ID_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-        // Modification for the form with the given form ID goes here. For example, if
-        // FORM_ID is "user_register_form" this code would run only on the user
-        // registration form.
-
-        // Add a checkbox to registration form about agreeing to terms of use.
-        $form['terms_of_use'] = array(
-            '#type' => 'checkbox',
-            '#title' => t("I agree with the website's terms and conditions."),
-            '#required' => true,
-        );
-    }
+  private function findRecordToCancel($patronId, $encrypted_holdId) {
+      $returnRecord = [];
+      // get all the pickupRequest records for the patron
+      $today = (new DateTime("now"));
+      $todayDateString = $today->format("Y-m-d");
+      // lookup the pickup request record
+      $db = \Drupal::database();
+      $query = $db->select('arborcat_patron_pickup_request', 'appr');
+      $query-> fields('appr', ['id', 'patronId', 'requestId', 'pickupDate']);
+      $query-> condition('patronId', $patronId);
+      $query-> condition('pickupDate', $todayDateString, '>');
+      $results = $query->execute()->fetchAll();        
+      if (count($results) > 0) {
+          $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
+            // loop through the array results, created hashes of each id and compare with $encrypted_holdId
+          foreach($results as $record) {
+              $hashed_request_id = md5($pickup_requests_salt . $record->requestId);
+              if ($hashed_request_id == $encrypted_holdId) {
+                  $returnRecord =  $record;
+                  break;
+              }  
+          } 
+      }
+      return $returnRecord;
+  }
 }
