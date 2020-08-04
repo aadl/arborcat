@@ -496,7 +496,7 @@ class DefaultController extends ControllerBase {
                   // go ahead and cancel the record
                   $num_deleted = $db->delete('arborcat_patron_pickup_request')
                       ->condition('id', $cancelRecord->id, '=')
-                      ->execute();
+		      ->execute();
                   if (1 == $num_deleted) {
                       // Now update the hold_request expire_time in Evergreen
                       $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
