@@ -221,8 +221,9 @@ class UserPickupRequestForm extends FormBase {
                     ->condition('locationId', $pickup_point, '=')
                     ->execute();
                 $pickup_location = $query->fetch();
-
-                $avail = arborcat_check_locker_availability($pickup_date, $pickup_location);
+                
+                $patronId = $form_state->getValue('pnum');
+                $avail = arborcat_check_locker_availability($pickup_date, $pickup_location, $patronId);
 
                 // if no avail lockers, set form error
                 if (!$avail) {
