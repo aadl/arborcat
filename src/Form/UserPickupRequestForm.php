@@ -24,6 +24,8 @@ class UserPickupRequestForm extends FormBase {
         $account = \Drupal\user\Entity\User::load($uid);
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
         $eligible_holds = arborcat_load_patron_eligible_holds($patron_barcode, $requestLocation);
+        dblog('buildForm: after arborcat_load_patron_eligible_holds:', json_encode($eligible_holds) );
+        
         // Get the locations
         $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
         $locationName = $locations->$requestLocation;
@@ -99,10 +101,12 @@ class UserPickupRequestForm extends FormBase {
 
         $titleString = (isset($cancel_holds)) ? 'Cancel requests for item' : 'Request Contactless Pickup for item';
         $titleString .= (count($eligible_holds) > 1) ? "s" : '';
-        $directionString = 'Select item';
-        $directionString .= (count($eligible_holds) > 1) ? "s" : '';
-        $directionString .= (isset($cancel_holds)) ? ' below to Cancel' : ' below to request for pickup';
-        
+        $directionString = '';
+        if(count($eligible_holds) > 0) {
+            $directionString = 'Select item';
+            $directionString .= (count($eligible_holds) > 1) ? "s" : '';
+            $directionString .= (isset($cancel_holds)) ? ' below to Cancel' : ' below to request for pickup';
+        }
         $prefixHTML = '<h2>' . $titleString . ' at ' . $locationName . ' for ' . $patron_barcode . '</h2><br />' .
 									 $directionString .
 									 '<div><div class="l-inline-b side-by-side-form">';
