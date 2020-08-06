@@ -24,7 +24,6 @@ class UserPickupRequestForm extends FormBase {
         $account = \Drupal\user\Entity\User::load($uid);
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
         $eligible_holds = arborcat_load_patron_eligible_holds($patron_barcode, $requestLocation);
-        dblog('buildForm: after arborcat_load_patron_eligible_holds:', json_encode($eligible_holds) );
         
         // Get the locations
         $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
