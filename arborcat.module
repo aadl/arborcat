@@ -202,20 +202,15 @@ function arborcat_patron_fines_expired($fines, $patron) {
       ->condition('pickupDate', $queryDate)
       ->condition('pickupLocation', $pickup_point, '=')
       ->groupBy('patronId');
-    $results = $query->execute()->fetchAll();
-    dblog('fetchAll: ' . json_encode($results));
-    dblog('fetchAll count results: ' . count($results));
     $results = $query->execute()->fetchCol();
-    dblog('fetchCol: ' . json_encode($results));
-    dblog('fetchCol count results: ' . count($results));
-
+ 
     $lockersInUse = count($results);
     $availableLockers = $locationObject->maxLockers - $lockersInUse;
     $returnval = FALSE;
+    // check whether this patron already has a pickup appointment already scheduled for this locker at this time. OR whether there are available lockers at this time
     if (in_array($patronId,$results) || $availableLockers > 0) {
-      $returnval= TRUE;
+      $returnval = TRUE;
     }
-    dblog('arborcat_check_locker_availability RETURNING: ' . returnval);
     return ($returnval);
   }
 
@@ -288,19 +283,4 @@ function arborcat_patron_fines_expired($fines, $patron) {
     $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/scheduled-pickups")->getBody()->getContents(), TRUE);
 
     return $scheduled_pickups;
-  }
-
-  /*
-   * Debugging routine to log to the <root folder>/LWKLWK.log
-   */
-  function dblog(...$thingsToLog) {
-      $lineToLog = '';
-      foreach ($thingsToLog as $item) {
-          $lineToLog = $lineToLog . ' ' . print_r($item, true);
-      }
-      // prepend date/time onto log line
-      $nowDateTime = new DrupalDateTime();
-      $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
-      $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
-      error_log($completeLine, 3, "LWKLWK.log");
   }
