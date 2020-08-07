@@ -345,7 +345,7 @@ class DefaultController extends ControllerBase {
   // -----------------------------------------------------------
   // ---------------- Pickup Request-related methods -----------
   // -----------------------------------------------------------
-  public function pickup_locations_for_patron() {
+  public function pickup_helper() {
     $returnArray = [];
 
     $search_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadySearchForm');
