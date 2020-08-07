@@ -24,6 +24,7 @@ class UserPickupRequestForm extends FormBase {
         $account = \Drupal\user\Entity\User::load($uid);
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
         $eligible_holds = arborcat_load_patron_eligible_holds($patron_barcode, $requestLocation);
+        
         // Get the locations
         $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
         $locationName = $locations->$requestLocation;
@@ -99,10 +100,12 @@ class UserPickupRequestForm extends FormBase {
 
         $titleString = (isset($cancel_holds)) ? 'Cancel requests for item' : 'Request Contactless Pickup for item';
         $titleString .= (count($eligible_holds) > 1) ? "s" : '';
-        $directionString = 'Select item';
-        $directionString .= (count($eligible_holds) > 1) ? "s" : '';
-        $directionString .= (isset($cancel_holds)) ? ' below to Cancel' : ' below to request for pickup';
-        
+        $directionString = '';
+        if(count($eligible_holds) > 0) {
+            $directionString = 'Select item';
+            $directionString .= (count($eligible_holds) > 1) ? "s" : '';
+            $directionString .= (isset($cancel_holds)) ? ' below to Cancel' : ' below to request for pickup';
+        }
         $prefixHTML = '<h2>' . $titleString . ' at ' . $locationName . ' for ' . $patron_barcode . '</h2><br />' .
 									 $directionString .
 									 '<div><div class="l-inline-b side-by-side-form">';
@@ -230,8 +233,9 @@ class UserPickupRequestForm extends FormBase {
                     ->condition('locationId', $pickup_point, '=')
                     ->execute();
                 $pickup_location = $query->fetch();
-
-                $avail = arborcat_check_locker_availability($pickup_date, $pickup_location);
+                
+                $patronId = $form_state->getValue('pnum');
+                $avail = arborcat_check_locker_availability($pickup_date, $pickup_location, $patronId);
 
                 // if no avail lockers, set form error
                 if (!$avail) {
