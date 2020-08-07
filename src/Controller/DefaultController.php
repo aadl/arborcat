@@ -348,7 +348,7 @@ class DefaultController extends ControllerBase {
   public function pickup_helper() {
     $returnArray = [];
 
-    $search_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatHoldsReadySearchForm');
+    $search_form = \Drupal::formBuilder()->getForm('\Drupal\arborcat\Form\ArborcatPickupHelperForm');
 
     $current_uri = \Drupal::request()->getRequestUri();
 
