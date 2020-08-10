@@ -360,6 +360,7 @@ class DefaultController extends ControllerBase {
       if (!isset($eligibleHolds['error'])) {
         // grab pickup appointments to display on form
         $scheduled_pickups = arborcat_get_scheduled_pickups($barcode);
+
         // Get the patron ID from the first hold object in $eligibleHolds. NOTE - this starts at offset [1]
         $patronId = $eligibleHolds[1]['usr'];
         $holdLocations = [];
