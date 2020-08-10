@@ -208,6 +208,15 @@ class UserPickupRequestForm extends FormBase {
 
     public function validateForm(array &$form, FormStateInterface $form_state) {
         if (!$form_state->getValue('cancel_holds')) {
+            // Exclusion date/location handling
+            $pickup_date =  $form_state->getValue('pickup_date');
+            $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
+            if ($pickup_point == 1000 && ($pickup_date >= '2020-07-31' && $pickup_date <= '2020-08-13')) {
+                $form_state->setErrorByName('pickup_date', t('The Downtown Library will be closed for two weeks. All items will be held and able to be scheduled once Downtown reopens.'));
+            }
+            if (($pickup_point == 1000 || $pickup_point == 1002 || $pickup_point == 1012) && $pickup_date == '2020-08-04') {
+              $form_state->setErrorByName('pickup_date', t('No appointments are available Downtown or at Pittsfield this day due to Election Day.'));
+            }
             // check to see if locker pickup
             $lockers = arborcat_locker_pickup_locations();
             $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
