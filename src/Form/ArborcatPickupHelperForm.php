@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\arborcat\Form\ArborcatHoldsReadySearchForm
+ * Contains \Drupal\arborcat\Form\ArborcatPickupHelperForm
  */
 
 namespace Drupal\arborcat\Form;
@@ -12,7 +12,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
 use Drupal\Core\Url;
 
-class ArborcatHoldsReadySearchForm extends FormBase
+class ArborcatPickupHelperForm extends FormBase
 {
     public function getFormId()
     {
@@ -22,7 +22,7 @@ class ArborcatHoldsReadySearchForm extends FormBase
     public function buildForm(array $form, FormStateInterface $form_state)
     {
         $form['#attributes'] = ['class' => 'l-overflow-clear'];
-        $form['arborcat_holds_ready_search_form'] = [
+        $form['text_entry'] = [
         '#title' => "Enter a barcode to see all eligible pickup appointment locations",
         '#type' => 'textfield',
         '#maxlength' => 500,
@@ -38,7 +38,7 @@ class ArborcatHoldsReadySearchForm extends FormBase
 
     public function submitForm(array &$form, FormStateInterface $form_state)
     {
-        $barcode = $form_state->getValue('arborcat_holds_ready_search_form');
+        $barcode = $form_state->getValue('text_entry');
         $path = '/pickuphelper';
         $path_param = [
           'bcode' => $barcode

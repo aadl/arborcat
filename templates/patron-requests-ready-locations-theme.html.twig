@@ -18,7 +18,6 @@
   {% endif %}
   {% if not location_urls.error %}
     <div>
-      {# {{ kint(scheduled_pickups) }} #}
       {% set scheduled_count = scheduled_pickups|length ? ' (' ~ scheduled_pickups|length ~ ')' : '' %}
       <h2 id="scheduled-pickups" class="no-margin-bottom">Scheduled Pickup Appointments</h2>
       {% if scheduled_pickups %}
@@ -31,6 +30,7 @@
               <th class="no-sort" role="columnheader">Status</th>
               <th data-sort-default role="ascending">Pickup Date</th>
               <th>Notification Type(s)</th>
+              <th>Cancel</th>
             </tr>
           </thead>
           <tbody>
@@ -70,6 +70,16 @@
                   {% if scheduled.contactPhone %}
                     <b>Phone:</b> {{ scheduled.contactPhone }}
                   {% endif %}
+                </td>
+                <td>
+                    {% set todaysDate = date() | date("m/d/Y") %}
+                    {% set scheduledDate = scheduled.pickupDate|date("m/d/Y") %}
+                    {# Only enable the cancel button on appointments that are tomorrow or later #}
+                    {% if scheduledDate > todaysDate %}
+                      <button class="pickup button" data-href="{{ base_path }}/cancelpickuprequest/" data-salt="{{ scheduled.hashed_id }}" data-cutoffdate="{{ scheduled.hold.shelf_time|date_modify('+7 days')|date('m-d-Y') }}">Cancel</button>
+                    {% else %}
+                      <button class="pickup button" data-href="{{ base_path }}/cancelpickuprequest/" data-salt="{{ scheduled.hashed_id }}" data-cutoffdate="{{ scheduled.hold.shelf_time|date_modify('+7 days')|date('m-d-Y') }}" disabled>Cancel</button>
+                    {% endif %}
                 </td>
               </tr>
             {% endfor %}
