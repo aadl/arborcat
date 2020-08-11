@@ -21,7 +21,7 @@
       {% set scheduled_count = scheduled_pickups|length ? ' (' ~ scheduled_pickups|length ~ ')' : '' %}
       <h2 id="scheduled-pickups" class="no-margin-bottom">Scheduled Pickup Appointments</h2>
       {% if scheduled_pickups %}
-        <table id="scheduled-table">
+        <table id="pickup-requests-table">
           <thead>
             <tr>
               <th role="columnheader">Title</th>
