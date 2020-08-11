@@ -355,10 +355,11 @@ class DefaultController extends ControllerBase {
     $barcode = \Drupal::request()->get('bcode');
 
     $locationURLs = [];
-    // grab pickup appointments to display on form
-    $scheduled_pickups = arborcat_get_scheduled_pickups($barcode);
+    $scheduled_pickups = [];
 
     if (isset($barcode)) {
+      // grab pickup appointments to display on form
+      $scheduled_pickups = arborcat_get_scheduled_pickups($barcode);
       $eligibleHolds = arborcat_load_patron_eligible_holds($barcode);
       if (!isset($eligibleHolds['error'])) {
         if (count($eligibleHolds) > 0) {
