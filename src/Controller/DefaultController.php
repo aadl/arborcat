@@ -479,10 +479,7 @@ class DefaultController extends ControllerBase {
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
       $patron_id = $this->patronIdFromBarcode($patron_barcode);
-      dblog('cancel_pickup_request: ', $patron_barcode, $patron_id);
       $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
-      dblog('cancel_pickup_request: ', $cancelRecord);
-
       if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
           $guzzle = \Drupal::httpClient();
