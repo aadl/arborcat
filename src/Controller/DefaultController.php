@@ -478,19 +478,10 @@ class DefaultController extends ControllerBase {
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
-      dblog('cancel_pickup_request: ENTERED ', $patron_barcode);
-      if ($patron_barcode == '999999') {
-        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-        $patron_id = $user->field_patron_id->value;
-        $patron_barcode = $user->field_barcode->value;
-     }
-      else {
-        // get the patronId from the barcode passed to this method in the parameter $patron_barcode
-        $patron_id = $this->patronIdFromBarcode($patron_barcode);
-      }
+      $patron_id = $this->patronIdFromBarcode($patron_barcode);
       dblog('cancel_pickup_request: ', $patron_barcode, $patron_id);
-
       $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
+      dblog('cancel_pickup_request: ', $cancelRecord);
 
       if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
