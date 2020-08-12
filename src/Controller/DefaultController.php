@@ -388,7 +388,7 @@ class DefaultController extends ControllerBase {
     }
 
     $render = [
-        '#theme' => 'patron_requests_ready_locations_theme',
+        '#theme' => 'pickup_helper_theme',
         '#search_form' => $search_form,
         '#location_urls' => $locationURLs,
         '#barcode' => $barcode,
