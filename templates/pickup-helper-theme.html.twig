@@ -19,7 +19,7 @@
   {% if not location_urls.error %}
     <div>
       {% set scheduled_count = scheduled_pickups|length ? ' (' ~ scheduled_pickups|length ~ ')' : '' %}
-      <h2 id="scheduled-pickups" class="no-margin-bottom">Scheduled Pickup Appointments</h2>
+      <h2 id="scheduled-pickups" class="no-margin-bottom">Scheduled Pickup Appointments for <span id="patron-barcode">{{ barcode }}</span></h2>
       {% if scheduled_pickups %}
         <table id="pickup-requests-table">
           <thead>

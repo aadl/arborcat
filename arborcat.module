@@ -48,15 +48,7 @@ function arborcat_theme($existing, $type, $theme, $path) {
           'formhtml' => NULL,
       ]
     ],
-    'patron_request_ready_locations_lookup_theme' => [
-       'variables' => [
-        'search_form' => NULL,
-        'result_form' => NULL,
-        'item' => NULL,
-        'branches' =>NULL
-      ]
-    ],
-   'patron_requests_ready_locations_theme' => [
+   'pickup_helper_theme' => [
       'variables' => [
         'search_form' => NULL,
         'location_urls' => NULL,

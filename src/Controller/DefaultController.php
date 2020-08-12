@@ -388,7 +388,7 @@ class DefaultController extends ControllerBase {
     }
 
     $render = [
-        '#theme' => 'patron_requests_ready_locations_theme',
+        '#theme' => 'pickup_helper_theme',
         '#search_form' => $search_form,
         '#location_urls' => $locationURLs,
         '#barcode' => $barcode,
@@ -477,12 +477,9 @@ class DefaultController extends ControllerBase {
       return $render;
   }
 
-  public function cancel_pickup_request($encrypted_request_id, $hold_shelf_expire_date) {
-      $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-      $patron_id = $user->field_patron_id->value;
-      $patron_barcode = $user->field_barcode->value;
+  public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
+      $patron_id = $this->patronIdFromBarcode($patron_barcode);
       $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
-
       if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
           $guzzle = \Drupal::httpClient();
@@ -544,9 +541,9 @@ class DefaultController extends ControllerBase {
       $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
       if ($json) {
           $patronId =  $json->pid;
-          return $patronId;
+         return $patronId;
       } else {
-          return "";
+         return "";
       }
   }
 
