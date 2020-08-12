@@ -16,7 +16,7 @@ class ArborcatPickupHelperForm extends FormBase
 {
     public function getFormId()
     {
-        return 'arborcat_locations_search_form';
+        return 'arborcat_pickup_Helper_form';
     }
 
     public function buildForm(array $form, FormStateInterface $form_state)

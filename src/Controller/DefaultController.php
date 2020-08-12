@@ -477,10 +477,19 @@ class DefaultController extends ControllerBase {
       return $render;
   }
 
-  public function cancel_pickup_request($encrypted_request_id, $hold_shelf_expire_date) {
-      $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-      $patron_id = $user->field_patron_id->value;
-      $patron_barcode = $user->field_barcode->value;
+  public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
+      dblog('cancel_pickup_request: ENTERED ', $patron_barcode);
+      if ($patron_barcode == '999999') {
+        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+        $patron_id = $user->field_patron_id->value;
+        $patron_barcode = $user->field_barcode->value;
+     }
+      else {
+        // get the patronId from the barcode passed to this method in the parameter $patron_barcode
+        $patron_id = $this->patronIdFromBarcode($patron_barcode);
+      }
+      dblog('cancel_pickup_request: ', $patron_barcode, $patron_id);
+
       $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
 
       if (count($cancelRecord) > 0) {
@@ -544,9 +553,9 @@ class DefaultController extends ControllerBase {
       $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
       if ($json) {
           $patronId =  $json->pid;
-          return $patronId;
+         return $patronId;
       } else {
-          return "";
+         return "";
       }
   }
 
