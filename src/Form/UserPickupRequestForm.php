@@ -392,7 +392,8 @@ class UserPickupRequestForm extends FormBase {
         $date_exclude = [
             'Jun. 20',
             'Jun. 21',
-            'Jul. 4'
+            'Jul. 4',
+            'Sep. 7'
         ];
         for ($x=0; $x < $numPickupDays; $x++) {
             $theDate_mdY = $theDate->format('M. j');
