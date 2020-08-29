@@ -28,7 +28,7 @@
               <th class="no-mobile-display" role="columnheader">Author</th>
               <th class="no-mobile-display no-tab-display" role="columnheader">Format</th>
               <th class="no-sort" role="columnheader">Status</th>
-              <th data-sort-default role="ascending">Pickup Date</th>
+              <th data-sort-default role="columnheader">Pickup Date</th>
               <th>Notification Type(s)</th>
               <th>Cancel</th>
             </tr>
@@ -59,7 +59,7 @@
                     Scheduled
                   {% endif %}
                 </td>
-                <td>{{ scheduled.pickupDate|date('D, n/j') }} at {{ pickup_text }}</td>
+                <td data-sort="{{ scheduled.pickupDate }}">{{ scheduled.pickupDate|date('D, n/j') }} at {{ pickup_text }}</td>
                 <td style="word-wrap: break-word;">
                   {% if scheduled.contactEmail %}
                     <b>Email:</b> {{ scheduled.contactEmail }}
@@ -85,9 +85,13 @@
             {% endfor %}
           </tbody>
         </table>
+        {% if scheduled_pickups|length > 50 %}
+          <a href="" data-target="#pickup-requests-table" data-state="hidden" class="show-table-rows l-block base-margin-bottom no-display" style="display: block;">View All</a>
+        {% endif %}
       {% else %}
         <p><em>No requests scheduled for pickup</em></p>
       {% endif %}
     </div>
   {% endif %}
 {% endif %}
+{{ attach_library('aadl/aadl-tablesort') }}
