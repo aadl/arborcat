@@ -274,7 +274,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
     $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
     $selfCheckApi_key .= '-' .  $barcode;
 
-    $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/scheduled-pickups")->getBody()->getContents(), TRUE);
+    $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/scheduled-pickups?range=7")->getBody()->getContents(), TRUE);
 
     return $scheduled_pickups;
   }
