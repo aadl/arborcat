@@ -477,6 +477,22 @@ class DefaultController extends ControllerBase {
       return $render;
   }
 
+  public function custom_pickup_request($request_type, $overload_parameter, $encrypted_barcode, $loc) {
+   if ($request_type == 'PRINT_JOB') {
+      $print_job_id = $overload_parameter;
+      dblog('custom_pickup_request:', $request_type, 'print_job_id=',$print_job_id);
+    } 
+    else if ($request_type == 'GRAB_BAG') {
+      $grab_bag_id = $overload_parameter;
+      dblog('custom_pickup_request:', $request_type, 'grab_bag_id=',$grab_bag_id);
+
+    } 
+    else if ($request_type == 'SG_ORDER') {
+      $sg_order_id = $overload_parameter;
+      dblog('custom_pickup_request:', $request_type, 'sg_order_id=',$sg_order_id);
+    } 
+  }
+
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
       $patron_id = $this->patronIdFromBarcode($patron_barcode);
       $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
