@@ -441,17 +441,17 @@ class DefaultController extends ControllerBase {
                   $patronId = $this->patronIdFromBarcode($barcode);
               }
               if (14 === strlen($barcode)) {
-              if (strlen($row) > 0) {
-                      $barcode = $row;
-                  }
-              $encryptedBarcode = md5($pickup_requests_salt . $barcode);
-                  $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
-              
-                  $host = 'http://nginx.docker.localhost:8000';
-                  $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
-                  $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
+                if (strlen($row) > 0) {
+                        $barcode = $row;
+                    }
+                $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+                $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
+            
+                $host = 'http://nginx.docker.localhost:8000';
+                $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+                $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
 
-                  $returnval .= $html2;
+                $returnval .= $html2;
               }
           } 
       }
@@ -475,22 +475,65 @@ class DefaultController extends ControllerBase {
               '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check')
           ];
       return $render;
-  }
+  } 
 
-  public function custom_pickup_request($request_type, $overload_parameter, $encrypted_barcode, $loc) {
-   if ($request_type == 'PRINT_JOB') {
+  public function custom_pickup_request($pickup_request_type, $overload_parameter) {
+    if ($pickup_request_type == 'PRINT_JOB') {
       $print_job_id = $overload_parameter;
-      dblog('custom_pickup_request:', $request_type, 'print_job_id=',$print_job_id);
-    } 
-    else if ($request_type == 'GRAB_BAG') {
-      $grab_bag_id = $overload_parameter;
-      dblog('custom_pickup_request:', $request_type, 'grab_bag_id=',$grab_bag_id);
+      dblog('custom_pickup_request:', $pickup_request_type, 'print_job_id=',$print_job_id);
+      //$patronId = 
+      // Extract fields from the printJob request form
+      /*
+        select * from webform_submission_data where webform_id = 'printing_process_form' and sid=169;
+      */
+
+      $db = \Drupal::database();
+      $query = $db->select('webform_submission_data', 'wsd');
+      $query->fields('wsd', ['name', 'value']);
+      $query->condition('webform_id', 'printing_process_form');
+      $query->condition('sid', $print_job_id, '=');
+
+      $results= $query->execute()->fetchAllKeyed(0,1); 
+        dblog('custom_pickup_request: fetchAllKeyed:', json_encode($results));
+
+      if (count($results) > 0) {     
+        $patron_phone = $results['patron_phone'];
+        $patron_email = $results['patron_email'];
+
+        dblog('custom_pickup_request: patron_phone : ', $patron_phone);
+        dblog('custom_pickup_request: patron_email : ', $patron_email);
+       
+        //$patron_email
+        //$notification_types
+      
+      
+      /*// create new arborcat_pickup_request_record
+      arborcat_create_pickup_request_record($pickup_request_type,            
+                                          print_job_id, 
+                                          $pnum, 
+                                          $loc, 
+                                          $locationId_timeslot[1], 
+                                          $locationId_timeslot[0], 
+                                          $pickup_date
+                                          ($notification_types['email'] ? $patron_email : NULL),
+                                          ($notification_types['sms'] ? $patron_phone : NULL),
+                                          ($notification_types['phone'] ? $patron_phone : NULL),
+                                          $patron_phone ?? NULL);
+      */
+      }
+
 
     } 
-    else if ($request_type == 'SG_ORDER') {
-      $sg_order_id = $overload_parameter;
-      dblog('custom_pickup_request:', $request_type, 'sg_order_id=',$sg_order_id);
+    else if ($pickup_request_type == 'GRAB_BAG') {
+      $grab_bag_id = $overload_parameter;
+      dblog('custom_pickup_request:', $pickup_request_type, 'grab_bag_id=',$grab_bag_id);
+
     } 
+    else if ($pickup_request_type == 'SG_ORDER') {
+      $sg_order_id = $overload_parameter;
+      dblog('custom_pickup_request:', $pickup_request_type, 'sg_order_id=',$sg_order_id);
+    } 
+    return new JsonResponse($results);
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {

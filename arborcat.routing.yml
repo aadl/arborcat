@@ -92,7 +92,7 @@ arborcat.pickup_request:
     _permission: 'access arborcat'
 
 arborcat.custom_pickup_request:
-  path: /custom_pickup_request/{overload_parameter}/{encrypted_barcode}/{loc}
+  path: /custompickuprequest/{pickup_request_type}/{overload_parameter}
   defaults:
     _controller: '\Drupal\arborcat\Controller\DefaultController::custom_pickup_request'
   requirements:
