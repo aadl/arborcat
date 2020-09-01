@@ -480,46 +480,73 @@ class DefaultController extends ControllerBase {
   public function custom_pickup_request($pickup_request_type, $overload_parameter) {
     if ($pickup_request_type == 'PRINT_JOB') {
       $print_job_id = $overload_parameter;
-      dblog('custom_pickup_request:', $pickup_request_type, 'print_job_id=',$print_job_id);
-      //$patronId = 
+      dblog('custom_pickup_request:', $pickup_request_type, 'print_job_id = ', $print_job_id);
       // Extract fields from the printJob request form
-      /*
-        select * from webform_submission_data where webform_id = 'printing_process_form' and sid=169;
-      */
-
       $db = \Drupal::database();
       $query = $db->select('webform_submission_data', 'wsd');
       $query->fields('wsd', ['name', 'value']);
-      $query->condition('webform_id', 'printing_process_form');
       $query->condition('sid', $print_job_id, '=');
 
-      $results= $query->execute()->fetchAllKeyed(0,1); 
-        dblog('custom_pickup_request: fetchAllKeyed:', json_encode($results));
+      $rawNameValueResults= $query->execute()->fetchAll();
+      $assocResults = [];
+      foreach($rawNameValueResults as $entry) {
+        $keyname = $entry->name;
+        if ("notification_options" == $keyname) {
+          if(!array_key_exists($keyname, $assocResults)) {
+            $assocResults[$keyname] = [];
+          }
+         array_push($assocResults[$keyname], $entry->value);
+       }
+        else {
+          $assocResults[$keyname] = $entry->value;
+        }
+      }
+      dblog('custom_pickup_request: assocResults:', json_encode($assocResults));
 
-      if (count($results) > 0) {     
-        $patron_phone = $results['patron_phone'];
-        $patron_email = $results['patron_email'];
+      // $results= $query->execute()->fetchAllKeyed(0,1); 
+      // dblog('custom_pickup_request: fetchAllKeyed:', json_encode($results));
 
-        dblog('custom_pickup_request: patron_phone : ', $patron_phone);
-        dblog('custom_pickup_request: patron_email : ', $patron_email);
-       
-        //$patron_email
-        //$notification_types
+      // $webform_submission = \Drupal\webform\entity\WebformSubmission::load($print_job_id);
+      // $data = $webform_submission->getData();
+      // dblog('custom_pickup_request: data:', json_encode($results));
+
+      if (count($assocResults) > 0) {     
+        $barcode = $assocResults['barcode'];
+        $patronId = $this->patronIdFromBarcode($barcode);
+
+        $branchNameArray = explode(" ",$assocResults['delivery_method']);
+        $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], TRUE);
+        $branch = $pickupLocations[0]->branchLocationId;
+        $pickupLocation = $pickupLocations[0]->locationId;
+
+        $timeslot = 0;
+        $pickupDate = $assocResults['pickup_date'];
+        $patron_phone = $assocResults['patron_phone'];
+        $patron_email = $assocResults['patron_email'];       
+        $notification_options = $assocResults['notification_options'];
       
       
-      /*// create new arborcat_pickup_request_record
-      arborcat_create_pickup_request_record($pickup_request_type,            
-                                          print_job_id, 
-                                          $pnum, 
-                                          $loc, 
-                                          $locationId_timeslot[1], 
-                                          $locationId_timeslot[0], 
-                                          $pickup_date
-                                          ($notification_types['email'] ? $patron_email : NULL),
-                                          ($notification_types['sms'] ? $patron_phone : NULL),
-                                          ($notification_types['phone'] ? $patron_phone : NULL),
-                                          $patron_phone ?? NULL);
-      */
+        dblog('      patronId = ', $patronId);
+        dblog('        branch = ', $branch);
+        dblog('pickupLocation = ', $pickupLocation);
+        dblog('    pickupDate = ', $pickupDate);
+        dblog('  patron_phone = ', $patron_phone);
+        dblog('  patron_email = ', $patron_email);
+        dblog('notification_options = ', json_encode($notification_options));
+
+        // create new arborcat_pickup_request_record
+      //   arborcat_create_pickup_request_record($pickup_request_type,            
+      //                                     $print_job_id, 
+      //                                     $patronId, 
+      //                                     $branch, 
+      //                                     $pickupLocation, 
+      //                                     $timeslot, 
+      //                                     $pickup_date,
+      //                                     ($notification_types['email'] ? $patron_email : NULL),
+      //                                     ($notification_types['sms'] ? $patron_phone : NULL),
+      //                                     ($notification_types['phone'] ? $patron_phone : NULL),
+      //                                     $patron_phone ?? NULL);
+      
       }
 
 
