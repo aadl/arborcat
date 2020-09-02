@@ -478,6 +478,7 @@ class DefaultController extends ControllerBase {
   } 
 
   public function custom_pickup_request($pickup_request_type, $overload_parameter) {
+    $resultMessage = '';
     if ($pickup_request_type == 'PRINT_JOB') {
       $print_job_id = $overload_parameter;
       dblog('custom_pickup_request:', $pickup_request_type, 'print_job_id = ', $print_job_id);
@@ -486,8 +487,10 @@ class DefaultController extends ControllerBase {
       $query = $db->select('webform_submission_data', 'wsd');
       $query->fields('wsd', ['name', 'value']);
       $query->condition('sid', $print_job_id, '=');
-
       $rawNameValueResults= $query->execute()->fetchAll();
+
+      // process the raw results and create an associative array of the results.
+      // NOTE notification_options can have multiple entries and this is handled by creating a regular array of the different result values
       $assocResults = [];
       foreach($rawNameValueResults as $entry) {
         $keyname = $entry->name;
@@ -501,14 +504,6 @@ class DefaultController extends ControllerBase {
           $assocResults[$keyname] = $entry->value;
         }
       }
-      dblog('custom_pickup_request: assocResults:', json_encode($assocResults));
-
-      // $results= $query->execute()->fetchAllKeyed(0,1); 
-      // dblog('custom_pickup_request: fetchAllKeyed:', json_encode($results));
-
-      // $webform_submission = \Drupal\webform\entity\WebformSubmission::load($print_job_id);
-      // $data = $webform_submission->getData();
-      // dblog('custom_pickup_request: data:', json_encode($results));
 
       if (count($assocResults) > 0) {     
         $barcode = $assocResults['barcode'];
@@ -521,35 +516,28 @@ class DefaultController extends ControllerBase {
 
         $timeslot = 0;
         $pickupDate = $assocResults['pickup_date'];
-        $patron_phone = $assocResults['patron_phone'];
-        $patron_email = $assocResults['patron_email'];       
+        $patronPhone = $assocResults['patron_phone'];
+        $patronEmail = $assocResults['patron_email'];       
         $notification_options = $assocResults['notification_options'];
       
-      
-        dblog('      patronId = ', $patronId);
-        dblog('        branch = ', $branch);
-        dblog('pickupLocation = ', $pickupLocation);
-        dblog('    pickupDate = ', $pickupDate);
-        dblog('  patron_phone = ', $patron_phone);
-        dblog('  patron_email = ', $patron_email);
-        dblog('notification_options = ', json_encode($notification_options));
+        $patronEmail = 'test@test.com';
+        $patronPhone = '987-654-3210';
 
         // create new arborcat_pickup_request_record
-      //   arborcat_create_pickup_request_record($pickup_request_type,            
-      //                                     $print_job_id, 
-      //                                     $patronId, 
-      //                                     $branch, 
-      //                                     $pickupLocation, 
-      //                                     $timeslot, 
-      //                                     $pickup_date,
-      //                                     ($notification_types['email'] ? $patron_email : NULL),
-      //                                     ($notification_types['sms'] ? $patron_phone : NULL),
-      //                                     ($notification_types['phone'] ? $patron_phone : NULL),
-      //                                     $patron_phone ?? NULL);
-      
+        arborcat_create_pickup_request_record($pickup_request_type,            
+                                          $print_job_id, 
+                                          $patronId, 
+                                          $branch, 
+                                          $timeslot, 
+                                          $pickupLocation,
+                                          $pickupDate,
+                                          $patronEmail,
+                                          (in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
+                                          (in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+                                          (in_array('phone', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+                                          $patronPhone ?? NULL);
+        $resultMessage = 'SUCCESS';
       }
-
-
     } 
     else if ($pickup_request_type == 'GRAB_BAG') {
       $grab_bag_id = $overload_parameter;
@@ -560,7 +548,7 @@ class DefaultController extends ControllerBase {
       $sg_order_id = $overload_parameter;
       dblog('custom_pickup_request:', $pickup_request_type, 'sg_order_id=',$sg_order_id);
     } 
-    return new JsonResponse($results);
+    return new JsonResponse($resultMessage);
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {

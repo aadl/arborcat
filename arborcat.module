@@ -156,39 +156,27 @@ function arborcat_patron_fines_expired($fines, $patron) {
 
     // if lookupName supplied, get lib locations and lookup the branch number. 
     // Then set the parameter $destlocation to the branch number. If set, the location filter will be applied  
-      dblog('arborcat_pickup_locations: destLocation = ', $destLocation);
     if (strlen($lookupName) > 0) {
       $guzzle = \Drupal::httpClient();
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
       foreach ($locations as $key => $value) {
-          dblog('arborcat_pickup_locations: LOCATIONS LOOP: ', $lookupName, $key, $value);
           if (strpos($value, $lookupName) !== false) {
               $destLocation = $key;
               break;
           }
       }      
     }
-    dblog('arborcat_pickup_locations: destLocation = ', $destLocation);
- 
-
-     // add in a condition if a location is supplied to filter on
+    // add in a condition if a location is supplied to filter on
     if (3 == strlen($destLocation)) {
         $query->condition('branchLocationId', (int) $destLocation, '=');
     }
-    
-
     // add in a condition if a lobbyOnly is supplied to filter on  
     if (NULL != $lobbyOnly) {
         $query->condition('maxLockers', 0, '=');
     }
-
     $result = $query->execute();
-    
-    $pickupLocationRecords = $result->fetchAll();
-
-    dblog('arborcat_pickup_locations: pickupLocationRecords = ', json_encode($pickupLocationRecords));
-   
+    $pickupLocationRecords = $result->fetchAll();   
     return $pickupLocationRecords;
   }
 
@@ -307,25 +295,23 @@ function arborcat_patron_fines_expired($fines, $patron) {
     return $scheduled_pickups;
   }
 
-
   function arborcat_create_pickup_request_record($pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode) {
-
-    dblog('ENTERED arborcat_create_pickup_request_record: ', $pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode);
-        // create arborcat_patron_pickup_request records for each of the selected holds
+    //dblog('ENTERED arborcat_create_pickup_request_record: ', $pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode);
+    // create arborcat_patron_pickup_request records for each of the selected holds
     $db = \Drupal::database();
     $db->insert('arborcat_patron_pickup_request')->fields([
-      'requestType' => pickup_request_type,
-      'requestId' => customId,
-      'patronId' => $patronId,
-      'branch' => (int) $branch,
-      'timeSlot' => timeSlot,
-      'pickupLocation' => pickupLocation,
-      'pickupDate' => $pickupDate,
-      'contactEmail' => contactEmail,
-      'contactSMS' => $contactSMS,
-      'contactPhone' => $contactPhone,
-      'created' => time(),
-      'locker_code' => lockerCode
+      'requestType'   => $pickup_request_type,
+      'requestId'     => $customId,
+      'patronId'      => $patronId,
+      'branch'        => (int) $branch,
+      'timeSlot'      => $timeSlot,
+      'pickupLocation' => $pickupLocation,
+      'pickupDate'    => $pickupDate,
+      'contactEmail'  => $contactEmail,
+      'contactSMS'    => $contactSMS,
+      'contactPhone'  => $contactPhone,
+      'created'       => time(),
+      'locker_code'   => $lockerCode
     ])
     ->execute();
 
