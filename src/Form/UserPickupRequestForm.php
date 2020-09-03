@@ -344,9 +344,16 @@ class UserPickupRequestForm extends FormBase {
             $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
             $messenger->addMessage($submit_message);
  
-            $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-            $uid = $user->id();
-            $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
+            // redirect to the user's account page (if user is logged in) or to the front page
+            $currentUserId = currentUser()->id();
+            if ($currentUserId > 0) {
+                $user = \Drupal\user\Entity\User::load($currentUserId);
+                $uid = $user->id();
+                $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
+            }
+            else {
+                $url = \Drupal\Core\Url::fromRoute('<front>', [], ['absolute' => TRUE]);
+            }
             return $form_state->setRedirectUrl($url);
        }
     }
