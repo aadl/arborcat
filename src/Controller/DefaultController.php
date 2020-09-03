@@ -436,9 +436,9 @@ class DefaultController extends ControllerBase {
           }
           else {
               if (strlen($patronId) > 0) {
-                  $barcode =  $this->barcodeFromPatronId($patronId);
+                  $barcode =  barcodeFromPatronId($patronId);
               } else {
-                  $patronId = $this->patronIdFromBarcode($barcode);
+                  $patronId = patronIdFromBarcode($barcode);
               }
               if (14 === strlen($barcode)) {
                 if (strlen($row) > 0) {
@@ -478,81 +478,12 @@ class DefaultController extends ControllerBase {
   } 
 
   public function custom_pickup_request($pickup_request_type, $overload_parameter) {
-    $resultMessage = '';
-    if ($pickup_request_type == 'PRINT_JOB') {
-      $print_job_id = $overload_parameter;
-      dblog('custom_pickup_request:', $pickup_request_type, 'print_job_id = ', $print_job_id);
-      // Extract fields from the printJob request form
-      $db = \Drupal::database();
-      $query = $db->select('webform_submission_data', 'wsd');
-      $query->fields('wsd', ['name', 'value']);
-      $query->condition('sid', $print_job_id, '=');
-      $rawNameValueResults= $query->execute()->fetchAll();
-
-      // process the raw results and create an associative array of the results.
-      // NOTE notification_options can have multiple entries and this is handled by creating a regular array of the different result values
-      $assocResults = [];
-      foreach($rawNameValueResults as $entry) {
-        $keyname = $entry->name;
-        if ("notification_options" == $keyname) {
-          if(!array_key_exists($keyname, $assocResults)) {
-            $assocResults[$keyname] = [];
-          }
-         array_push($assocResults[$keyname], $entry->value);
-       }
-        else {
-          $assocResults[$keyname] = $entry->value;
-        }
-      }
-
-      if (count($assocResults) > 0) {     
-        $barcode = $assocResults['barcode'];
-        $patronId = $this->patronIdFromBarcode($barcode);
-
-        $branchNameArray = explode(" ",$assocResults['delivery_method']);
-        $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], TRUE);
-        $branch = $pickupLocations[0]->branchLocationId;
-        $pickupLocation = $pickupLocations[0]->locationId;
-
-        $timeslot = 0;
-        $pickupDate = $assocResults['pickup_date'];
-        $patronPhone = $assocResults['patron_phone'];
-        $patronEmail = $assocResults['patron_email'];       
-        $notification_options = $assocResults['notification_options'];
-      
-        $patronEmail = 'test@test.com';
-        $patronPhone = '987-654-3210';
-
-        // create new arborcat_pickup_request_record
-        arborcat_create_pickup_request_record($pickup_request_type,            
-                                          $print_job_id, 
-                                          $patronId, 
-                                          $branch, 
-                                          $timeslot, 
-                                          $pickupLocation,
-                                          $pickupDate,
-                                          $patronEmail,
-                                          (in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
-                                          (in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
-                                          (in_array('phone', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
-                                          $patronPhone ?? NULL);
-        $resultMessage = 'SUCCESS';
-      }
-    } 
-    else if ($pickup_request_type == 'GRAB_BAG') {
-      $grab_bag_id = $overload_parameter;
-      dblog('custom_pickup_request:', $pickup_request_type, 'grab_bag_id=',$grab_bag_id);
-
-    } 
-    else if ($pickup_request_type == 'SG_ORDER') {
-      $sg_order_id = $overload_parameter;
-      dblog('custom_pickup_request:', $pickup_request_type, 'sg_order_id=',$sg_order_id);
-    } 
-    return new JsonResponse($resultMessage);
+     $resultMessage = \Drupal::service('CustomPickupRequests')->request($pickup_request_type, $overload_parameter);
+   return new JsonResponse($resultMessage);
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
-      $patron_id = $this->patronIdFromBarcode($patron_barcode);
+      $patron_id = patronIdFromBarcode($patron_barcode);
       $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
       if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
@@ -591,34 +522,6 @@ class DefaultController extends ControllerBase {
           $response['error'] = "The Pickup Request cancellation could not be completed";
       }
       return new JsonResponse($response);
-  }
-
-  private function barcodeFromPatronId($patronId) {
-      $api_key = \Drupal::config('arborcat.settings')->get('api_key');
-      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-      $guzzle = \Drupal::httpClient();
-      $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
-      $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
-      if ($json) {
-          $barcode =  $json->evg_user->card->barcode;
-          return $barcode;
-      } else {
-          return "";
-      }
-  }
-
-  private function patronIdFromBarcode($barcode) {
-      $api_key = \Drupal::config('arborcat.settings')->get('api_key');
-      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-      $guzzle = \Drupal::httpClient();
-      $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
-      $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
-      if ($json) {
-          $patronId =  $json->pid;
-         return $patronId;
-      } else {
-         return "";
-      }
   }
 
   private function validateTransaction($pnum, $encrypted_barcode) {

@@ -317,6 +317,33 @@ function arborcat_patron_fines_expired($fines, $patron) {
 
   }
 
+  function barcodeFromPatronId($patronId) {
+    $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $guzzle = \Drupal::httpClient();
+    $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
+    $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+    if ($json) {
+        $barcode =  $json->evg_user->card->barcode;
+        return $barcode;
+    } else {
+        return "";
+    }
+  }
+
+  function patronIdFromBarcode($barcode) {
+    $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $guzzle = \Drupal::httpClient();
+    $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
+    $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+    if ($json) {
+        $patronId =  $json->pid;
+        return $patronId;
+    } else {
+        return "";
+    }
+  }
   /*
    * Debugging routine to log to the <root folder>/LWKLWK.log
    */
