@@ -500,6 +500,14 @@ class DefaultController extends ControllerBase {
 		                  ->execute();
                   if (1 == $num_deleted) {
                       // Now update the hold_request expire_time in Evergreen
+                      // Check if the expire time > tomorrow, if not set it to tomorrow
+                      $hold_shelf_expire = (new DateTime("$hold_shelf_expire_date 23:59:59", new DateTimeZone('UTC')));
+                      if ($hold_shelf_expire < $tomorrow) {
+                              dblog("testDates:hold_shelf_expire > tomorrow");
+                              $hold_shelf_expire_date = date_format($tomorrow, 'Y-m-d');
+                      }
+
+                      $hold_shelf_expire = (new DateTime("$hold_shelf_expire_date 23:59:59"));
                       $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
                       $updated_hold = $guzzle->get($url)->getBody()->getContents();
                       $response['success'] = 'Pickup Request Canceled';
