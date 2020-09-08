@@ -491,7 +491,7 @@ class DefaultController extends ControllerBase {
           $today = (new DateTime("now", new DateTimeZone('UTC')));
           $today->setTime(0,0,0);
           $tomorrow = $today->modify('+1 day');
-          $pickupTime = (new DateTime($cancelRecord->pickupDate, new DateTimeZone('UTC')));
+          $pickupTime = new DateTime($cancelRecord->pickupDate, new DateTimeZone('UTC'));
           if ($pickupTime >= $tomorrow) {
               if ($patron_id == $cancelRecord->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
                   // go ahead and cancel the record
@@ -499,6 +499,11 @@ class DefaultController extends ControllerBase {
                       ->condition('id', $cancelRecord->id, '=')
 		                  ->execute();
                   if (1 == $num_deleted) {
+                      // Check if the expire time > tomorrow, if not set it to tomorrow
+                      $hold_shelf_expire = new DateTime("$hold_shelf_expire_date 23:59:59", new DateTimeZone('UTC'));
+                      if ($hold_shelf_expire < $tomorrow) {
+                          $hold_shelf_expire_date = date_format($tomorrow, 'Y-m-d');
+                      }
                       // Now update the hold_request expire_time in Evergreen
                       $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
                       $updated_hold = $guzzle->get($url)->getBody()->getContents();
