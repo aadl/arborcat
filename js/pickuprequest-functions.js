@@ -19,18 +19,28 @@
         return numchecked;
       }
       
-      function displayBanner(bannerText) {
+      function displayBanner(bannerText, bannerType) {
+        if (bannerType == 'warning') {
+          bannerAttr = 'Warning message';
+          bannerClass = bannerType;
+          messageWrapperTitle = bannerAttr;
+        }
+        else if (bannerType == 'information') {
+          bannerAttr = 'Information message';
+          bannerClass = bannerType;
+          messageWrapperTitle = bannerAttr;
+        }
         // build the banner 
         var msgWrapper = $(document.createElement('div'));
         msgWrapper.addClass('status-messages')
-          .attr({ 'role': 'contentinfo', 'aria-label': 'Warning message' });
+          .attr({ 'role': 'contentinfo', 'aria-label': bannerAttr });
         var statusMsg = $(document.createElement('div'));
-        statusMsg.addClass('warning')
+        statusMsg.addClass(bannerClass)
           .html(bannerText);
-        msgWrapper.append('<h2 class="visually-hidden">Warning Message</h2>')
+        msgWrapper.append('<h2 class="visually-hidden">' + messageWrapperTitle + '</h2>')
           .append(statusMsg);
         $(msgWrapper).insertBefore('.outer-wrapper[role="main"]');
-        // make the view scroll so the warning is actually visible to the user
+        // make the view scroll so the banner is actually visible to the user
         $('.status-messages')[0].scrollIntoView({ behavior: 'smooth' });
 
       }
@@ -63,10 +73,25 @@
 
       // give confirmation before canceling requests
       $('#edit-submit').click(function() {
-        if ($(this).val() == 'Cancel selected requests') {
+        thisvalue = $(this).val();
+        console.log("edit-submit CLICKED" + thisvalue);
+        if (thisvalue == 'Cancel selected requests') {
           var cancelHolds = confirm('Once the request is canceled, you will be removed from the waitlist');
           if (!cancelHolds) {
             return false;
+          }
+        }
+        if (thisvalue == 'Schedule Pickup') {
+          console.log("edit-submit INTO Schedule Pickup");
+          // check if the user is logged in to the drupal site
+          var cookie_value = Cookies.get("DRUPAL_UID");
+          console.log("edit-submit cookie_value = " + cookie_value);
+          if (cookie_value != 0) {
+            // Drupal user is logged in
+            displayBanner('See the Scheduled Pickup Appointments section in your account', 'information');
+         }
+          else {
+            displayBanner('Log in to see your scheduled pickup appointments', 'information');
           }
         }
       });

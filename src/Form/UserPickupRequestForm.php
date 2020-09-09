@@ -25,6 +25,15 @@ class UserPickupRequestForm extends FormBase {
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
         $eligible_holds = arborcat_load_patron_eligible_holds($patron_barcode, $requestLocation);
         
+        $eligible_holds[0] = [
+            'Title' => 'test Title',
+            'Status' => 'Ready For Pickup',
+            'PickupLoc' => 1005,
+            'pickup_lib' => 105,
+            'holdId' => 123456,
+            'usr' => 223456
+        ];
+       
         // Get the locations
         $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
         $locationName = $locations->$requestLocation;
