@@ -415,6 +415,23 @@ class DefaultController extends ControllerBase {
       $seeddb = \Drupal::request()->query->get('seeddb');
       $requestId = \Drupal::request()->query->get('requestid');
       
+      dblog("TESTING arborcat_create_pickup_request_record try/catch");
+      $result = arborcat_create_pickup_request_record('HOLD_REQUEST',
+                                                              2040330, 
+                                                              10019313, 
+                                                              102, 
+                                                              1000, 
+                                                              0, 
+                                                              '2020-06-18',
+                                                              "aaa@ccc.ddd",
+                                                              NULL,
+                                                              NULL,
+                                                              "333-444-5555");
+
+      dblog("TESTING arborcat_create_pickup_request_record try/catch", $result);
+      die();
+
+
       if (strlen($seeddb) > 0) {
           $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
           $this->addPickupRequest($patronId, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');

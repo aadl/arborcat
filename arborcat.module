@@ -299,22 +299,32 @@ function arborcat_patron_fines_expired($fines, $patron) {
     //dblog('ENTERED arborcat_create_pickup_request_record: ', $pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode);
     // create arborcat_patron_pickup_request records for each of the selected holds
     $db = \Drupal::database();
-    $db->insert('arborcat_patron_pickup_request')->fields([
-      'requestType'   => $pickup_request_type,
-      'requestId'     => $customId,
-      'patronId'      => $patronId,
-      'branch'        => (int) $branch,
-      'timeSlot'      => $timeSlot,
-      'pickupLocation' => $pickupLocation,
-      'pickupDate'    => $pickupDate,
-      'contactEmail'  => $contactEmail,
-      'contactSMS'    => $contactSMS,
-      'contactPhone'  => $contactPhone,
-      'created'       => time(),
-      'locker_code'   => $lockerCode
-    ])
-    ->execute();
+ 
+    $txn = $db->startTransaction();
+    try {
+      $id = $db->insert('arborcat_patron_pickup_request')->fields([
+        'requestType'   => $pickup_request_type,
+        'requestId'     => $customId,
+        'patronId'      => $patronId,
+        'branch'        => (int) $branch,
+        'timeSlot'      => $timeSlot,
+        'pickupLocation' => $pickupLocation,
+        'pickupDate'    => $pickupDate,
+        'contactEmail'  => $contactEmail,
+        'contactSMS'    => $contactSMS,
+        'contactPhone'  => $contactPhone,
+        'created'       => time(),
+        'locker_code'   => $lockerCode
+      ])->execute();
 
+      return $id;
+    }
+    catch (Exception $e) {
+      $txn->rollBack();
+      // Log the exception to watchdog.
+      \Drupal::logger('type')->error($e->getMessage());
+    }
+    return -1;
   }
 
   function barcodeFromPatronId($patronId) {
