@@ -25,6 +25,19 @@ class UserPickupRequestForm extends FormBase {
         $patron_barcode = $patron_info['evg_user']['card']['barcode'];
         $eligible_holds = arborcat_load_patron_eligible_holds($patron_barcode, $requestLocation);
         
+        // Test Data for form
+        // $eligible_holds[0] = ['Title' => 'test Title1','Status' => 'Ready For Pickup','PickupLoc' => 1005,'pickup_lib' => 105,'holdId' => 123456,'usr' => 10019313];
+        // $eligible_holds[1] = ['Title' => 'test Title2','Status' => 'Ready For Pickup','PickupLoc' => 1005,'pickup_lib' => 105,'holdId' => 123457,'usr' => 10019313];
+        // $eligible_holds[2] = ['Title' => 'test Title3','Status' => 'Ready For Pickup','PickupLoc' => 1005,'pickup_lib' => 105,'holdId' => 123458,'usr' => 10019313];
+        // $eligible_holds[3] = ['Title' => 'test Title4','Status' => 'Ready For Pickup','PickupLoc' => 1005,'pickup_lib' => 105,'holdId' => 123459,'usr' => 10019313];
+        // $eligible_holds[4] = ['Title' => 'test Title5','Status' => 'Ready For Pickup','PickupLoc' => 1005,'pickup_lib' => 105,'holdId' => 123460,'usr' => 10019313];
+        // $eligible_holds[5] = ['Title' => 'test Title6','Status' => 'Ready For Pickup','PickupLoc' => 1005,'pickup_lib' => 105,'holdId' => 123461,'usr' => 10019313];
+        // $eligible_holds[6] = ['Title' => 'test Title7','Status' => 'Ready For Pickup','PickupLoc' => 1005,'pickup_lib' => 105,'holdId' => 123462,'usr' => 10019313];
+        // $eligible_holds[7] = ['Title' => 'test Title8','Status' => 'Ready For Pickup','PickupLoc' => 1005,'pickup_lib' => 105,'holdId' => 123463,'usr' => 10019313];
+        // $eligible_holds[8] = ['Title' => 'test Title9','Status' => 'Ready For Pickup','PickupLoc' => 1005,'pickup_lib' => 105,'holdId' => 123464,'usr' => 10019313];
+
+        //dblog("buildForm: eligible_holds = ", json_encode($eligible_holds));
+       
         // Get the locations
         $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
         $locationName = $locations->$requestLocation;
@@ -315,14 +328,44 @@ class UserPickupRequestForm extends FormBase {
                 $messenger->addWarning($submit_message);
             }
 
+            $numHolds = count($holds);
+            $holdCounter = 0;
+            $holdsProcessed = 0;
+
             foreach ($holds as $hold) {
+                $holdCounter += 1; 
                 if ($cancel_holds) {
                     $cancel_time = date('Y-m-d');
-                    $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?cancel_time=$cancel_time&cancel_cause=6")->getBody()->getContents();
+                    $result = [];
+                    try {
+                        $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?cancel_time=$cancel_time&cancel_cause=6")->getBody()->getContents();
+                        $result = [
+                         'updated_hold' => $updated_hold,
+                        ];
+                   }
+                    catch (\Exception $e) {
+                        $result = [
+                        'error' => 'EVG CancelHold Failed',
+                        'message' => $e->getMessage(),
+                        ];
+                   }
                 } else {
                     // set the expire date for each selected hold
-                    $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
+                    $result = [];
+                    try {
+                        $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
+                        $result = [
+                         'updated_hold' => $updated_hold,
+                        ];
+                    }
+                    catch (\Exception $e) {
+                        $result = [
+                        'error' => 'EVG UpdateHold Failed',
+                        'message' => $e->getMessage(),
+                        ];
+                    }
                     // create arborcat_patron_pickup_request records for each of the selected holds
+<<<<<<< Updated upstream
                     $db->insert('arborcat_patron_pickup_request')
                     ->fields([
                       'requestId' => $hold['holdId'],
@@ -339,9 +382,31 @@ class UserPickupRequestForm extends FormBase {
                     ])
                     ->execute();
                 }
+=======
+                    $pickupRequestId = arborcat_create_pickup_request_record('HOLD_REQUEST',
+                                                        $hold['holdId'], 
+                                                        $pnum, 
+                                                        $branch, 
+                                                        $locationId_timeslot[1], 
+                                                        $locationId_timeslot[0], 
+                                                        $pickup_date,
+                                                        ($notification_types['email'] ? $patron_email : NULL),
+                                                        ($notification_types['sms'] ? $patron_phone : NULL),
+                                                        ($notification_types['phone'] ? $patron_phone : NULL),
+                                                        $patron_phone ?? NULL);
+                    if ($pickupRequestId > 0 && $result['updated_hold'] > 0) {
+                        $holdsProcessed += 1;
+                    }
+               }
+>>>>>>> Stashed changes
             }
- 
-            $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
+            if ($holdsProcessed == $numHolds) {
+             $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : $holdsProcessed . ' holds processed. Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
+           }
+           else {
+                $failedHoldsProcessed = $numHolds - $holdsProcessed;
+                $submit_message = "There was an issue processing $failedHoldsProcessed of your holds requests. Check your account page to review your outstanding requests and pickup appointments";
+           }
             $messenger->addMessage($submit_message);
  
             $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());

@@ -278,3 +278,48 @@ function arborcat_patron_fines_expired($fines, $patron) {
 
     return $scheduled_pickups;
   }
+
+  function arborcat_create_pickup_request_record($pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode) {
+    //dblog('ENTERED arborcat_create_pickup_request_record: ', $pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode);
+    // create arborcat_patron_pickup_request records for each of the selected holds
+    $db = \Drupal::database();
+ 
+    $txn = $db->startTransaction();
+    try {
+      $id = $db->insert('arborcat_patron_pickup_request')->fields([
+        'requestType'   => $pickup_request_type,
+        'requestId'     => $customId,
+        'patronId'      => $patronId,
+        'branch'        => (int) $branch,
+        'timeSlot'      => $timeSlot,
+        'pickupLocation' => $pickupLocation,
+        'pickupDate'    => $pickupDate,
+        'contactEmail'  => $contactEmail,
+        'contactSMS'    => $contactSMS,
+        'contactPhone'  => $contactPhone,
+        'created'       => time(),
+        'locker_code'   => $lockerCode
+      ])->execute();
+
+      return $id;
+    }
+    catch (Exception $e) {
+      $txn->rollBack();
+      return -999;
+    }
+  }
+
+  /*
+   * Debugging routine to log to the <root folder>/LWKLWK.log
+   */
+  function dblog(...$thingsToLog) {
+      $lineToLog = '';
+      foreach ($thingsToLog as $item) {
+          $lineToLog = $lineToLog . ' ' . print_r($item, true);
+      }
+      // prepend date/time onto log line
+      $nowDateTime = new DrupalDateTime();
+      $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
+      $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
+      error_log($completeLine, 3, "LWKLWK.log");
+  }
