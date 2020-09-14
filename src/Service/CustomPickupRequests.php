@@ -44,8 +44,7 @@ class CustomPickupRequests {
 
       if (count($assocResults) > 0) {     
         $barcode = $assocResults['barcode'];
-        $patronId = patronIdFromBarcode($barcode);
-
+        $patronId = (strlen($barcode) == 14) ? patronIdFromBarcode($barcode) : '';
         $branchNameArray = explode(" ",$assocResults['delivery_method']);
         $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], TRUE);
         $branch = $pickupLocations[0]->branchLocationId;
