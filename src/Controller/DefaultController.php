@@ -472,7 +472,8 @@ class DefaultController extends ControllerBase {
       $render[] = [
               '#theme' => 'pickup_request_form',
               '#formhtml' => $requestPickup_html,
-              '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check')
+              '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
+              '#user_logged_in' => \Drupal::config('arborcat.settings')->get('user_logged_in')
           ];
       return $render;
   }

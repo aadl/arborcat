@@ -3,6 +3,8 @@
     attach: function (context, settings) {
 
     var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check;
+    var user_logged_in = drupalSettings.arborcat.user_logged_in;
+    console.log('user_logged_in: ' + user_logged_in);
 
     $(function () {
       // INITIALIZATION/SETUP
@@ -84,14 +86,11 @@
         if (thisvalue == 'Schedule Pickup') {
           console.log("edit-submit INTO Schedule Pickup");
           // check if the user is logged in to the drupal site
-          var cookie_value = Cookies.get("DRUPAL_UID");
-          console.log("edit-submit cookie_value = " + cookie_value);
-          if (cookie_value != 0) {
-            // Drupal user is logged in
-            displayBanner('See the Scheduled Pickup Appointments section in your account', 'information');
-         }
-          else {
-            displayBanner('Log in to see your scheduled pickup appointments', 'information');
+          if (user_logged_in == false) {
+            var namePlusTimePeriod = $("#pickup_type :selected").text();
+            console.log("edit-submit INTO Schedule Pickup, namePlusTimePeriod = <" + namePlusTimePeriod + '>');
+            ;
+            displayBanner('Your appointment has been scheduled for ' + namePlusTimePeriod + '. Log in to see your scheduled pickup appointments.');
           }
         }
       });
