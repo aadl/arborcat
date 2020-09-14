@@ -73,7 +73,7 @@ class CustomPickupRequests {
                                           (in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
                                           (in_array('phone', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
                                           $patronPhone ?? NULL);
-        if (result > 0) {
+        if ($result > 0) {
           $resultMessage = 'SUCCESS';
         }
       }
