@@ -296,13 +296,12 @@ function arborcat_patron_fines_expired($fines, $patron) {
   }
 
   function arborcat_create_pickup_request_record($pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode) {
-    //dblog('ENTERED arborcat_create_pickup_request_record: ', $pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode);
     // create arborcat_patron_pickup_request records for each of the selected holds
     $db = \Drupal::database();
  
     $txn = $db->startTransaction();
     try {
-      $id = $db->insert('arborcat_patron_pickup_request')->fields([
+      $dbaction = $db->insert('arborcat_patron_pickup_request')->fields([
         'requestType'   => $pickup_request_type,
         'requestId'     => $customId,
         'patronId'      => $patronId,
@@ -315,14 +314,12 @@ function arborcat_patron_fines_expired($fines, $patron) {
         'contactPhone'  => $contactPhone,
         'created'       => time(),
         'locker_code'   => $lockerCode
-      ])->execute();
-
+			]);
+			$id = $dbaction->execute();
       return $id;
     }
     catch (Exception $e) {
       $txn->rollBack();
-      // Log the exception to watchdog.
-      \Drupal::logger('type')->error($e->getMessage());
     }
     return -1;
   }

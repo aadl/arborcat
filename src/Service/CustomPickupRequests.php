@@ -44,7 +44,7 @@ class CustomPickupRequests {
 
       if (count($assocResults) > 0) {     
         $barcode = $assocResults['barcode'];
-        $patronId = (strlen($barcode) == 14) ? patronIdFromBarcode($barcode) : '';
+        $patronId = (strlen($barcode) == 14) ? patronIdFromBarcode($barcode) : NULL;
         $branchNameArray = explode(" ",$assocResults['delivery_method']);
         $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], TRUE);
         $branch = $pickupLocations[0]->branchLocationId;
@@ -56,23 +56,21 @@ class CustomPickupRequests {
         $patronEmail = $assocResults['patron_email'];       
         $notification_options = $assocResults['notification_options'];
       
-        //FOR TESTING
-        //$patronEmail = 'test@test.com';
-        //$patronPhone = '987-654-3210';
-
         // create new arborcat_pickup_request_record
-        $result = arborcat_create_pickup_request_record($pickup_request_type,            
-                                          $customPickupRequestId, 
-                                          $patronId, 
-                                          $branch, 
-                                          $timeslot, 
-                                          $pickupLocation,
-                                          $pickupDate,
-                                          $patronEmail,
-                                          (in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
-                                          (in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
-                                          (in_array('phone', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
-                                          $patronPhone ?? NULL);
+        $result = arborcat_create_pickup_request_record(
+										$pickup_request_type,            
+										$customPickupRequestId, 
+										$patronId, 
+										$branch, 
+										$timeslot, 
+										$pickupLocation,
+										$pickupDate,
+										$patronEmail,
+										(in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
+										(in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+										(in_array('phone call', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+										$patronPhone ?? NULL);
+										
         if ($result > 0) {
           $resultMessage = 'SUCCESS';
         }
