@@ -478,7 +478,7 @@ class DefaultController extends ControllerBase {
   } 
 
   public function custom_pickup_request($pickup_request_type, $overload_parameter) {
-     $resultMessage = \Drupal::service('CustomPickupRequests')->request($pickup_request_type, $overload_parameter);
+     $resultMessage = arborcat_custom_pickup_request($pickup_request_type, $overload_parameter);
    return new JsonResponse($resultMessage);
   }
 

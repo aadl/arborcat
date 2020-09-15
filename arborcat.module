@@ -299,29 +299,46 @@ function arborcat_patron_fines_expired($fines, $patron) {
     // create arborcat_patron_pickup_request records for each of the selected holds
     $db = \Drupal::database();
  
-    $txn = $db->startTransaction();
+      // First check if the record already exists for this customId
+    $results = [];
     try {
-      $dbaction = $db->insert('arborcat_patron_pickup_request')->fields([
-        'requestType'   => $pickup_request_type,
-        'requestId'     => $customId,
-        'patronId'      => $patronId,
-        'branch'        => (int) $branch,
-        'timeSlot'      => $timeSlot,
-        'pickupLocation' => $pickupLocation,
-        'pickupDate'    => $pickupDate,
-        'contactEmail'  => $contactEmail,
-        'contactSMS'    => $contactSMS,
-        'contactPhone'  => $contactPhone,
-        'created'       => time(),
-        'locker_code'   => $lockerCode
-			]);
-			$id = $dbaction->execute();
-      return $id;
+      $query = $db->select('arborcat_patron_pickup_request', 'appr')
+        ->fields('appr', ['id'])
+        ->condition('requestId', $customId, '=');
+      $results = $query->execute()->fetchCol();
     }
     catch (Exception $e) {
-      $txn->rollBack();
+      return -1;
     }
-    return -1;
+    // If a record exists containing the $customId, just return the id of the record, otherwise insert a new record with the customId and return the $id of the new record
+    if (count($results) > 0) {
+      return $results[0];
+    }
+    else {
+      $txn = $db->startTransaction();
+      try {
+        $dbaction = $db->insert('arborcat_patron_pickup_request')->fields([
+          'requestType'   => $pickup_request_type,
+          'requestId'     => $customId,
+          'patronId'      => $patronId,
+          'branch'        => (int) $branch,
+          'timeSlot'      => $timeSlot,
+          'pickupLocation' => $pickupLocation,
+          'pickupDate'    => $pickupDate,
+          'contactEmail'  => $contactEmail,
+          'contactSMS'    => $contactSMS,
+          'contactPhone'  => $contactPhone,
+          'created'       => time(),
+          'locker_code'   => $lockerCode
+        ]);
+        $id = $dbaction->execute();
+        return $id;
+      }
+      catch (Exception $e) {
+        $txn->rollBack();
+        return -1;
+      }
+    }
   }
 
   function barcodeFromPatronId($patronId) {
@@ -351,17 +368,71 @@ function arborcat_patron_fines_expired($fines, $patron) {
         return "";
     }
   }
-  /*
-   * Debugging routine to log to the <root folder>/LWKLWK.log
-   */
-  function dblog(...$thingsToLog) {
-      $lineToLog = '';
-      foreach ($thingsToLog as $item) {
-          $lineToLog = $lineToLog . ' ' . print_r($item, true);
+  
+  function arborcat_custom_pickup_request($pickup_request_type, $customPickupRequestId) {
+    $resultMessage = '';
+    if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG') {
+      // Extract fields from the printJob request form
+      $db = \Drupal::database();
+      $query = $db->select('webform_submission_data', 'wsd');
+      $query->fields('wsd', ['name', 'value']);
+      $query->condition('sid', $customPickupRequestId, '=');
+      $rawNameValueResults= $query->execute()->fetchAll();
+
+      // process the raw results and create an associative array of the results.
+      // NOTE notification_options can have multiple entries and this is handled by creating a regular array of the different result values
+      $assocResults = [];
+      foreach($rawNameValueResults as $entry) {
+        $keyname = $entry->name;
+        if ("notification_options" == $keyname) {
+          if(!array_key_exists($keyname, $assocResults)) {
+            $assocResults[$keyname] = [];
+          }
+         array_push($assocResults[$keyname], $entry->value);
+       }
+        else {
+          $assocResults[$keyname] = $entry->value;
+        }
       }
-      // prepend date/time onto log line
-      $nowDateTime = new DrupalDateTime();
-      $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
-      $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
-      error_log($completeLine, 3, "LWKLWK.log");
+
+      if (count($assocResults) > 0) {     
+        $barcode = $assocResults['barcode'];
+        $patronId = (strlen($barcode) == 14) ? patronIdFromBarcode($barcode) : NULL;
+        $branchNameArray = explode(" ",$assocResults['delivery_method']);
+        $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], TRUE);
+        $branch = $pickupLocations[0]->branchLocationId;
+        $pickupLocation = $pickupLocations[0]->locationId;
+
+        $timeslot = 0;
+        $pickupDate = $assocResults['pickup_date'];
+        $patronPhone = $assocResults['patron_phone'];
+        $patronEmail = $assocResults['patron_email'];       
+        $notification_options = $assocResults['notification_options'];
+      
+        // create new arborcat_pickup_request_record (if one does not already exist)
+        $result = arborcat_create_pickup_request_record(
+										$pickup_request_type,            
+										$customPickupRequestId, 
+										$patronId, 
+										$branch, 
+										$timeslot, 
+										$pickupLocation,
+										$pickupDate,
+										$patronEmail,
+										(in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
+										(in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+										(in_array('phone call', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+										$patronPhone ?? NULL);
+										
+       if ($result > 0) {
+          $resultMessage = 'SUCCESS';
+        }
+        else {
+          $resultMessage = 'Failed to create Pickup Request Record';
+        }
+      }
+    } 
+    else if ($pickup_request_type == 'SG_ORDER') {
+    }
+    return $resultMessage;
   }
