@@ -1,3 +1,0 @@
-services:
-  CustomPickupRequests:
-    class: '\Drupal\arborcat\Service\CustomPickupRequests'
