@@ -91,6 +91,7 @@
             console.log("edit-submit INTO Schedule Pickup, namePlusTimePeriod = <" + namePlusTimePeriod + '>');
             ;
             displayBanner('Your appointment has been scheduled for ' + namePlusTimePeriod + '. Log in to see your scheduled pickup appointments.');
+            return false;
           }
         }
       });
