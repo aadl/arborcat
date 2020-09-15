@@ -322,17 +322,19 @@ class UserPickupRequestForm extends FormBase {
                     // set the expire date for each selected hold
                     $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
                     // create arborcat_patron_pickup_request records for each of the selected holds
-                    arborcat_create_pickup_request_record('HOLD_REQUEST',
-                                                        $hold['holdId'], 
-                                                        $pnum, 
-                                                        $branch, 
-                                                        $locationId_timeslot[1], 
-                                                        $locationId_timeslot[0], 
-                                                        $pickup_date
-                                                        ($notification_types['email'] ? $patron_email : NULL),
-                                                        ($notification_types['sms'] ? $patron_phone : NULL),
-                                                        ($notification_types['phone'] ? $patron_phone : NULL),
-                                                        $patron_phone ?? NULL);
+                    arborcat_create_pickup_request_record(
+                        'HOLD_REQUEST',
+                        $hold['holdId'], 
+                        $pnum, 
+                        $branch, 
+                        $locationId_timeslot[1], 
+                        $locationId_timeslot[0], 
+                        $pickup_date,
+                        ($notification_types['email'] ? $patron_email : NULL),
+                        ($notification_types['sms'] ? $patron_phone : NULL),
+                        ($notification_types['phone'] ? $patron_phone : NULL),
+                        $patron_phone ?? NULL
+                    );
                  }
             }
  
