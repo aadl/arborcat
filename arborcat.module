@@ -148,19 +148,35 @@ function arborcat_patron_fines_expired($fines, $patron) {
    * returns a list of request pickup locations.
    * If a branch location is passed in, that a filtered list of pickup locations is returned
    */
-  function arborcat_pickup_locations($destLocation = NULL){
+  function arborcat_pickup_locations($destLocation = NULL, $lookupName = NULL, $lobbyOnly = NULL){
     $db = \Drupal::database();
     $query = $db->select('arborcat_pickup_location', 'apl')
       ->fields('apl', ['locationId', 'branchLocationId', 'timePeriod', 'timePeriodStart', 'timePeriodEnd', 'maxLockers', 'locationName', 'locationDescription'])
       ->condition('active', 1, "=");
 
+    // if lookupName supplied, get lib locations and lookup the branch number. 
+    // Then set the parameter $destlocation to the branch number. If set, the location filter will be applied  
+    if (strlen($lookupName) > 0) {
+      $guzzle = \Drupal::httpClient();
+      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+      $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
+      foreach ($locations as $key => $value) {
+          if (strpos($value, $lookupName) !== false) {
+              $destLocation = $key;
+              break;
+          }
+      }      
+    }
     // add in a condition if a location is supplied to filter on
     if (3 == strlen($destLocation)) {
-        $query->condition('apl.branchLocationId', (int) $destLocation, '=');
+        $query->condition('branchLocationId', (int) $destLocation, '=');
+    }
+    // add in a condition if a lobbyOnly is supplied to filter on  
+    if (NULL != $lobbyOnly) {
+        $query->condition('maxLockers', 0, '=');
     }
     $result = $query->execute();
-    
-    $pickupLocationRecords = $result->fetchAll();
+    $pickupLocationRecords = $result->fetchAll();   
     return $pickupLocationRecords;
   }
 
@@ -277,4 +293,146 @@ function arborcat_patron_fines_expired($fines, $patron) {
     $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/scheduled-pickups?range=7")->getBody()->getContents(), TRUE);
 
     return $scheduled_pickups;
+  }
+
+  function arborcat_create_pickup_request_record($pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode) {
+    // create arborcat_patron_pickup_request records for each of the selected holds
+    $db = \Drupal::database();
+ 
+      // First check if the record already exists for this customId
+    $results = [];
+    try {
+      $query = $db->select('arborcat_patron_pickup_request', 'appr')
+        ->fields('appr', ['id'])
+        ->condition('requestId', $customId, '=');
+      $results = $query->execute()->fetchCol();
+    }
+    catch (Exception $e) {
+      return -1;
+    }
+    // If a record exists containing the $customId, just return the id of the record, otherwise insert a new record with the customId and return the $id of the new record
+    if (count($results) > 0) {
+      return $results[0];
+    }
+    else {
+      $txn = $db->startTransaction();
+      try {
+        $dbaction = $db->insert('arborcat_patron_pickup_request')->fields([
+          'requestType'   => $pickup_request_type,
+          'requestId'     => $customId,
+          'patronId'      => $patronId,
+          'branch'        => (int) $branch,
+          'timeSlot'      => $timeSlot,
+          'pickupLocation' => $pickupLocation,
+          'pickupDate'    => $pickupDate,
+          'contactEmail'  => $contactEmail,
+          'contactSMS'    => $contactSMS,
+          'contactPhone'  => $contactPhone,
+          'created'       => time(),
+          'locker_code'   => $lockerCode
+        ]);
+        $id = $dbaction->execute();
+        return $id;
+      }
+      catch (Exception $e) {
+        $txn->rollBack();
+        return -1;
+      }
+    }
+  }
+
+  function barcodeFromPatronId($patronId) {
+    $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $guzzle = \Drupal::httpClient();
+    $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
+    $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+    if ($json) {
+        $barcode =  $json->evg_user->card->barcode;
+        return $barcode;
+    } else {
+        return "";
+    }
+  }
+
+  function patronIdFromBarcode($barcode) {
+    $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $guzzle = \Drupal::httpClient();
+    $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
+    $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+    if ($json) {
+        $patronId =  $json->pid;
+        return $patronId;
+    } else {
+        return "";
+    }
+  }
+  
+  function arborcat_custom_pickup_request($pickup_request_type, $customPickupRequestId) {
+    $resultMessage = '';
+    if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG') {
+      // Extract fields from the printJob request form
+      $db = \Drupal::database();
+      $query = $db->select('webform_submission_data', 'wsd');
+      $query->fields('wsd', ['name', 'value']);
+      $query->condition('sid', $customPickupRequestId, '=');
+      $rawNameValueResults= $query->execute()->fetchAll();
+
+      // process the raw results and create an associative array of the results.
+      // NOTE notification_options can have multiple entries and this is handled by creating a regular array of the different result values
+      $assocResults = [];
+      foreach($rawNameValueResults as $entry) {
+        $keyname = $entry->name;
+        if ("notification_options" == $keyname) {
+          if(!array_key_exists($keyname, $assocResults)) {
+            $assocResults[$keyname] = [];
+          }
+         array_push($assocResults[$keyname], $entry->value);
+       }
+        else {
+          $assocResults[$keyname] = $entry->value;
+        }
+      }
+
+      if (count($assocResults) > 0) {     
+        $barcode = $assocResults['barcode'];
+        $patronId = (strlen($barcode) == 14) ? patronIdFromBarcode($barcode) : NULL;
+        $branchNameArray = explode(" ",$assocResults['delivery_method']);
+        $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], TRUE);
+        $branch = $pickupLocations[0]->branchLocationId;
+        $pickupLocation = $pickupLocations[0]->locationId;
+
+        $timeslot = 0;
+        $pickupDate = $assocResults['pickup_date'];
+        $patronPhone = $assocResults['patron_phone'];
+        $patronEmail = $assocResults['patron_email'];       
+        $notification_options = $assocResults['notification_options'];
+      
+        // create new arborcat_pickup_request_record (if one does not already exist)
+        $result = arborcat_create_pickup_request_record(
+										$pickup_request_type,            
+										$customPickupRequestId, 
+										$patronId, 
+										$branch, 
+										$timeslot, 
+										$pickupLocation,
+										$pickupDate,
+										$patronEmail,
+										(in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
+										(in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+										(in_array('phone call', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+										$patronPhone ?? NULL);
+										
+       if ($result > 0) {
+          $resultMessage = 'SUCCESS';
+        }
+        else {
+          $resultMessage = 'Failed to create Pickup Request Record';
+        }
+      }
+    } 
+    else if ($pickup_request_type == 'SG_ORDER') {
+    }
+    return $resultMessage;
   }

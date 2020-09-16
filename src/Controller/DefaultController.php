@@ -436,22 +436,22 @@ class DefaultController extends ControllerBase {
           }
           else {
               if (strlen($patronId) > 0) {
-                  $barcode =  $this->barcodeFromPatronId($patronId);
+                  $barcode =  barcodeFromPatronId($patronId);
               } else {
-                  $patronId = $this->patronIdFromBarcode($barcode);
+                  $patronId = patronIdFromBarcode($barcode);
               }
               if (14 === strlen($barcode)) {
-              if (strlen($row) > 0) {
-                      $barcode = $row;
-                  }
-              $encryptedBarcode = md5($pickup_requests_salt . $barcode);
-                  $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
-              
-                  $host = 'http://nginx.docker.localhost:8000';
-                  $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
-                  $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
+                if (strlen($row) > 0) {
+                        $barcode = $row;
+                    }
+                $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+                $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
+            
+                $host = 'http://nginx.docker.localhost:8000';
+                $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+                $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
 
-                  $returnval .= $html2;
+                $returnval .= $html2;
               }
           } 
       }
@@ -475,10 +475,15 @@ class DefaultController extends ControllerBase {
               '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check')
           ];
       return $render;
+  } 
+
+  public function custom_pickup_request($pickup_request_type, $overload_parameter) {
+     $resultMessage = arborcat_custom_pickup_request($pickup_request_type, $overload_parameter);
+   return new JsonResponse($resultMessage);
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
-      $patron_id = $this->patronIdFromBarcode($patron_barcode);
+      $patron_id = patronIdFromBarcode($patron_barcode);
       $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
       if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
@@ -524,37 +529,9 @@ class DefaultController extends ControllerBase {
       return new JsonResponse($response);
   }
 
-  private function barcodeFromPatronId($patronId) {
-      $api_key = \Drupal::config('arborcat.settings')->get('api_key');
-      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-      $guzzle = \Drupal::httpClient();
-      $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
-      $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
-      if ($json) {
-          $barcode =  $json->evg_user->card->barcode;
-          return $barcode;
-      } else {
-          return "";
-      }
-  }
-
-  private function patronIdFromBarcode($barcode) {
-      $api_key = \Drupal::config('arborcat.settings')->get('api_key');
-      $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-      $guzzle = \Drupal::httpClient();
-      $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
-      $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
-      if ($json) {
-          $patronId =  $json->pid;
-         return $patronId;
-      } else {
-         return "";
-      }
-  }
-
   private function validateTransaction($pnum, $encrypted_barcode) {
     $returnval = FALSE;
-    $barcode =  $this->barcodeFromPatronId($pnum);
+    $barcode =  barcodeFromPatronId($pnum);
     if (14 == strlen($barcode)) {
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
         $hashedBarcode = md5($pickup_requests_salt . $barcode);

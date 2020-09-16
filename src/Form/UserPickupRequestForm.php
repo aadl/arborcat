@@ -300,7 +300,6 @@ class UserPickupRequestForm extends FormBase {
         } else {  // got at least one hold to be processed
             // Check for the number of items and whether they will fit in the selected locker
             $lockerItemMaxCount = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
-            $db = \Drupal::database();
             $guzzle = \Drupal::httpClient();
             $api_key = \Drupal::config('arborcat.settings')->get('api_key');
             $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -323,22 +322,20 @@ class UserPickupRequestForm extends FormBase {
                     // set the expire date for each selected hold
                     $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
                     // create arborcat_patron_pickup_request records for each of the selected holds
-                    $db->insert('arborcat_patron_pickup_request')
-                    ->fields([
-                      'requestId' => $hold['holdId'],
-                      'patronId' => $pnum,
-                      'branch' => (int) $branch,
-                      'timeSlot' => $locationId_timeslot[1],
-                      'pickupLocation' => $locationId_timeslot[0],
-                      'pickupDate' => $pickup_date,
-                      'contactEmail' => ($notification_types['email'] ? $patron_email : NULL),
-                      'contactSMS' => ($notification_types['sms'] ? $patron_phone : NULL),
-                      'contactPhone' => ($notification_types['phone'] ? $patron_phone : NULL),
-                      'created' => time(),
-                      'locker_code' => $patron_phone ?? NULL
-                    ])
-                    ->execute();
-                }
+                    arborcat_create_pickup_request_record(
+                        'HOLD_REQUEST',
+                        $hold['holdId'], 
+                        $pnum, 
+                        $branch, 
+                        $locationId_timeslot[1], 
+                        $locationId_timeslot[0], 
+                        $pickup_date,
+                        ($notification_types['email'] ? $patron_email : NULL),
+                        ($notification_types['sms'] ? $patron_phone : NULL),
+                        ($notification_types['phone'] ? $patron_phone : NULL),
+                        $patron_phone ?? NULL
+                    );
+                 }
             }
  
             $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
