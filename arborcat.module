@@ -62,16 +62,16 @@ function arborcat_theme($existing, $type, $theme, $path) {
 /**
  * @param $variables
  */
-function arborcat_preprocess_page(&$variables)
-{
-    // get the max locker item check  from ArborCat module settings
-    $max_locker_items = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
-    $variables['#attached']['drupalSettings']['arborcat']['max_locker_items_check'] = $max_locker_items;
+function arborcat_preprocess_page(&$variables) {
+  // get the max locker item check  from ArborCat module settings
+  $max_locker_items = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
+  $variables['#attached']['drupalSettings']['arborcat']['max_locker_items_check'] = $max_locker_items;
 }
 
 function arborcat_generate_api_key() {
   // Use the UUID service to generate a Unique identifier
   $uuid_service = \Drupal::service('uuid');
+
   return $uuid_service->generate();
 }
 
@@ -96,9 +96,9 @@ function arborcat_patron_fines_expired($fines, $patron) {
 //check if a hold is eligible for a locker based on material type
   function arborcat_eligible_for_locker($hold) {
     if ($hold['material'] == "Tools" || $hold['material'] == "Oversize") {
-        return FALSE;
+      return FALSE;
     } else {
-        return TRUE;
+      return TRUE;
     }
   }
 
@@ -107,40 +107,41 @@ function arborcat_patron_fines_expired($fines, $patron) {
     $mess = \Drupal::messenger();
     $available=FALSE;
     if (stripos($branch, 'Malletts')!==FALSE) {
-        $locker_server = 'mcblockers';
+      $locker_server = 'mcblockers';
     } elseif (stripos($branch, 'Pittsfield')!==FALSE) {
-        $locker_server = 'ptslockers';
+      $locker_server = 'ptslockers';
     }
     if ($locker_server=='ptslockers') {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, \Drupal::config('arborcat.settings')->get('pts_lockers'));
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERPWD, \Drupal::config('arborcat.settings')->get('lockers_pass'));
-        $result = curl_exec($ch);
+      $ch = curl_init();
+      curl_setopt($ch, CURLOPT_URL, \Drupal::config('arborcat.settings')->get('pts_lockers'));
+      curl_setopt($ch, CURLOPT_HEADER, 0);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+      curl_setopt($ch, CURLOPT_USERPWD, \Drupal::config('arborcat.settings')->get('lockers_pass'));
+      $result = curl_exec($ch);
 
-        $simpleXML = simplexml_load_string($result);
-        $i=1;
-        $s = $simpleXML->doors->children();
-        if ($s->assign1==0&$s->assign2==0&$s->assign3==0&$s->assign4==0) {
-            $available = FALSE;
-        } elseif ($s->assign1!==0||$s->assign2!==0||$s->assign3!==0||$s->assign4!==0) {
-            $available = TRUE;
-        }
+      $simpleXML = simplexml_load_string($result);
+      $i=1;
+      $s = $simpleXML->doors->children();
+      if ($s->assign1==0&$s->assign2==0&$s->assign3==0&$s->assign4==0) {
+        $available = FALSE;
+      } elseif ($s->assign1!==0||$s->assign2!==0||$s->assign3!==0||$s->assign4!==0) {
+        $available = TRUE;
+      }
     } elseif ($locker_server=='mcblockers') {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, \Drupal::config('arborcat.settings')->get('mcb_lockers'));
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($ch, CURLOPT_USERPWD, \Drupal::config('arborcat.settings')->get('lockers_pass'));
-        $result = curl_exec($ch);
-        if ($result != NULL) {
-            preg_match_all('%name="web_patroninserted_door.*?value="([\d]+?)"%s', $result, $matches);
-            if ($matches[1][0]>0) {
-                $available = TRUE;
-            }
+      $ch = curl_init();
+      curl_setopt($ch, CURLOPT_URL, \Drupal::config('arborcat.settings')->get('mcb_lockers'));
+      curl_setopt($ch, CURLOPT_HEADER, 0);
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+      curl_setopt($ch, CURLOPT_USERPWD, \Drupal::config('arborcat.settings')->get('lockers_pass'));
+      $result = curl_exec($ch);
+      if ($result != NULL) {
+        preg_match_all('%name="web_patroninserted_door.*?value="([\d]+?)"%s', $result, $matches);
+        if ($matches[1][0]>0) {
+          $available = TRUE;
         }
+      }
     }
+
     return $available;
   }
 
@@ -148,35 +149,41 @@ function arborcat_patron_fines_expired($fines, $patron) {
    * returns a list of request pickup locations.
    * If a branch location is passed in, that a filtered list of pickup locations is returned
    */
-  function arborcat_pickup_locations($destLocation = NULL, $lookupName = NULL, $lobbyOnly = NULL){
+  function arborcat_pickup_locations($destLocation = NULL, $lookupName = NULL, $frontBack = NULL, $lobbyOnly = NULL) {
     $db = \Drupal::database();
     $query = $db->select('arborcat_pickup_location', 'apl')
       ->fields('apl', ['locationId', 'branchLocationId', 'timePeriod', 'timePeriodStart', 'timePeriodEnd', 'maxLockers', 'locationName', 'locationDescription'])
       ->condition('active', 1, "=");
 
-    // if lookupName supplied, get lib locations and lookup the branch number. 
-    // Then set the parameter $destlocation to the branch number. If set, the location filter will be applied  
+    // if lookupName supplied, get lib locations and lookup the branch number.
+    // Then set the parameter $destlocation to the branch number. If set, the location filter will be applied
     if (strlen($lookupName) > 0) {
       $guzzle = \Drupal::httpClient();
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
       foreach ($locations as $key => $value) {
-          if (strpos($value, $lookupName) !== false) {
-              $destLocation = $key;
-              break;
-          }
-      }      
+        if (strpos($value, $lookupName) !== FALSE) {
+          $destLocation = $key;
+
+          break;
+        }
+      }
     }
     // add in a condition if a location is supplied to filter on
     if (3 == strlen($destLocation)) {
-        $query->condition('branchLocationId', (int) $destLocation, '=');
+      $query->condition('branchLocationId', (int) $destLocation, '=');
     }
-    // add in a condition if a lobbyOnly is supplied to filter on  
+    // add in a condition if a lobbyOnly is supplied to filter on
     if (NULL != $lobbyOnly) {
-        $query->condition('maxLockers', 0, '=');
+      $query->condition('maxLockers', 0, '=');
+    }
+    // add in a condition for 'Front' versus 'Back' in the location Name
+    if (NULL != $frontBack) {
+      $query->condition('locationName', "%" . $db->escapeLike($frontBack) . "%", 'like');
     }
     $result = $query->execute();
-    $pickupLocationRecords = $result->fetchAll();   
+    $pickupLocationRecords = $result->fetchAll();
+
     return $pickupLocationRecords;
   }
 
@@ -192,6 +199,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
         ->condition('active', 1, '=')
         ->execute();
     $locations = array_values($query->fetchCol());
+
     return $locations;
   }
 
@@ -218,9 +226,10 @@ function arborcat_patron_fines_expired($fines, $patron) {
     $availableLockers = $locationObject->maxLockers - $lockersInUse;
     $returnval = FALSE;
     // check whether this patron already has a pickup appointment already scheduled for this locker at this time. OR whether there are available lockers at this time
-    if (in_array($patronId,$results) || $availableLockers > 0) {
+    if (in_array($patronId, $results) || $availableLockers > 0) {
       $returnval = TRUE;
     }
+
     return ($returnval);
   }
 
@@ -233,12 +242,12 @@ function arborcat_patron_fines_expired($fines, $patron) {
     try {
       $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), TRUE);
 
-      // For debugging LWK  
+      // For debugging LWK
       // $jsonData = file_get_contents('10005279_21621034452183_holds.txt');
       // $patron_holds = json_decode($jsonData, TRUE);
-
     } catch (Exception $e) {
       $eligible_holds['error'] = 'Info not found';
+
       return $eligible_holds;
     }
     $eligible_holds = [];
@@ -255,19 +264,19 @@ function arborcat_patron_fines_expired($fines, $patron) {
 
     $db = \Drupal::database();
     if (count($patron_holds)) {
-        foreach ($patron_holds as $hold) {
-            if ($hold['status'] == 'Ready for Pickup') {
-                // check if there is a requestLocation to filter on. If not, set $includeLocationBoolean to TRUE, otherwise perform check for location match
-                $includeLocationBoolean = ($requestLocation == NULL) ? TRUE : ($hold['hold']['pickup_lib'] == $requestLocation);
-                if ($includeLocationBoolean || isset($mel_mappings[$hold['hold']['pickup_lib']])) {
-                    // if pickup appt already set, don't display item
-                    $pickup_req_exists = $db->query("SELECT * from arborcat_patron_pickup_request WHERE requestId = :hid", [':hid' => $hold['id']])->fetch();
-                    if (isset($pickup_req_exists->id)) {
-                        continue;
-                    }
-                    $shelf_expire = date('Y-m-d', strtotime($hold['hold']['shelf_expire_time']));
-                    if (arborcat_eligible_for_locker($hold) && $shelf_expire >= date('Y-m-d')) {
-                        $eligible_holds[$i] = [
+      foreach ($patron_holds as $hold) {
+        if ($hold['status'] == 'Ready for Pickup') {
+          // check if there is a requestLocation to filter on. If not, set $includeLocationBoolean to TRUE, otherwise perform check for location match
+          $includeLocationBoolean = ($requestLocation == NULL) ? TRUE : ($hold['hold']['pickup_lib'] == $requestLocation);
+          if ($includeLocationBoolean || isset($mel_mappings[$hold['hold']['pickup_lib']])) {
+            // if pickup appt already set, don't display item
+            $pickup_req_exists = $db->query("SELECT * from arborcat_patron_pickup_request WHERE requestId = :hid", [':hid' => $hold['id']])->fetch();
+            if (isset($pickup_req_exists->id)) {
+              continue;
+            }
+            $shelf_expire = date('Y-m-d', strtotime($hold['hold']['shelf_expire_time']));
+            if (arborcat_eligible_for_locker($hold) && $shelf_expire >= date('Y-m-d')) {
+              $eligible_holds[$i] = [
                               'Title' => $hold['title'],
                               'Status' => $hold['status'],
                               'PickupLoc' => $hold['pickup'],
@@ -275,12 +284,13 @@ function arborcat_patron_fines_expired($fines, $patron) {
                               'holdId' => $hold['id'],
                               'usr' => $hold['hold']['usr']
                           ];
-                        $i++;
-                    }
-                }
+              $i++;
             }
+          }
         }
+      }
     }
+
     return $eligible_holds;
   }
 
@@ -299,22 +309,20 @@ function arborcat_patron_fines_expired($fines, $patron) {
     // create arborcat_patron_pickup_request records for each of the selected holds
     $db = \Drupal::database();
  
-      // First check if the record already exists for this customId
+    // First check if the record already exists for this customId
     $results = [];
     try {
       $query = $db->select('arborcat_patron_pickup_request', 'appr')
         ->fields('appr', ['id'])
         ->condition('requestId', $customId, '=');
       $results = $query->execute()->fetchCol();
-    }
-    catch (Exception $e) {
+    } catch (Exception $e) {
       return -1;
     }
     // If a record exists containing the $customId, just return the id of the record, otherwise insert a new record with the customId and return the $id of the new record
     if (count($results) > 0) {
       return $results[0];
-    }
-    else {
+    } else {
       $txn = $db->startTransaction();
       try {
         $dbaction = $db->insert('arborcat_patron_pickup_request')->fields([
@@ -332,10 +340,11 @@ function arborcat_patron_fines_expired($fines, $patron) {
           'locker_code'   => $lockerCode
         ]);
         $id = $dbaction->execute();
+
         return $id;
-      }
-      catch (Exception $e) {
+      } catch (Exception $e) {
         $txn->rollBack();
+
         return -1;
       }
     }
@@ -348,10 +357,11 @@ function arborcat_patron_fines_expired($fines, $patron) {
     $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
     $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
     if ($json) {
-        $barcode =  $json->evg_user->card->barcode;
-        return $barcode;
+      $barcode =  $json->evg_user->card->barcode;
+
+      return $barcode;
     } else {
-        return "";
+      return "";
     }
   }
 
@@ -362,10 +372,11 @@ function arborcat_patron_fines_expired($fines, $patron) {
     $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
     $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
     if ($json) {
-        $patronId =  $json->pid;
-        return $patronId;
+      $patronId =  $json->pid;
+
+      return $patronId;
     } else {
-        return "";
+      return "";
     }
   }
   
@@ -382,57 +393,56 @@ function arborcat_patron_fines_expired($fines, $patron) {
       // process the raw results and create an associative array of the results.
       // NOTE notification_options can have multiple entries and this is handled by creating a regular array of the different result values
       $assocResults = [];
-      foreach($rawNameValueResults as $entry) {
+      foreach ($rawNameValueResults as $entry) {
         $keyname = $entry->name;
         if ("notification_options" == $keyname) {
-          if(!array_key_exists($keyname, $assocResults)) {
+          if (!array_key_exists($keyname, $assocResults)) {
             $assocResults[$keyname] = [];
           }
-         array_push($assocResults[$keyname], $entry->value);
-       }
-        else {
+          array_push($assocResults[$keyname], $entry->value);
+        } else {
           $assocResults[$keyname] = $entry->value;
         }
       }
 
-      if (count($assocResults) > 0) {     
+      if (count($assocResults) > 0) {
         $barcode = $assocResults['barcode'];
         $patronId = (strlen($barcode) == 14) ? patronIdFromBarcode($barcode) : NULL;
-        $branchNameArray = explode(" ",$assocResults['delivery_method']);
-        $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], TRUE);
+        $branchNameArray = explode(" ", $assocResults['delivery_method']);
+        $frontBack = ($branchNameArray[1] == 'Back' || $branchNameArray[1] == 'Front') ? $branchNameArray[1] : NULL;
+        $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], $frontBack, TRUE);
         $branch = $pickupLocations[0]->branchLocationId;
         $pickupLocation = $pickupLocations[0]->locationId;
 
         $timeslot = 0;
         $pickupDate = $assocResults['pickup_date'];
         $patronPhone = $assocResults['patron_phone'];
-        $patronEmail = $assocResults['patron_email'];       
+        $patronEmail = $assocResults['patron_email'];
         $notification_options = $assocResults['notification_options'];
-      
         // create new arborcat_pickup_request_record (if one does not already exist)
         $result = arborcat_create_pickup_request_record(
-										$pickup_request_type,            
-										$customPickupRequestId, 
-										$patronId, 
-										$branch, 
-										$timeslot, 
-										$pickupLocation,
-										$pickupDate,
-										$patronEmail,
-										(in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
-										(in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
-										(in_array('phone call', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
-										$patronPhone ?? NULL);
-										
-       if ($result > 0) {
+          $pickup_request_type,
+          $customPickupRequestId,
+          $patronId,
+          $branch,
+          $timeslot,
+          $pickupLocation,
+          $pickupDate,
+          $patronEmail,
+          (in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
+          (in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+          (in_array('phone call', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+          $patronPhone ?? NULL
+        );
+                                        
+        if ($result > 0) {
           $resultMessage = 'SUCCESS';
-        }
-        else {
+        } else {
           $resultMessage = 'Failed to create Pickup Request Record';
         }
       }
-    } 
-    else if ($pickup_request_type == 'SG_ORDER') {
+    } elseif ($pickup_request_type == 'SG_ORDER') {
     }
+
     return $resultMessage;
   }
