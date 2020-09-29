@@ -37,15 +37,27 @@
             {% for scheduled in scheduled_pickups %}
               <tr class="{{ scheduled.branchLocationId }}-scheduled" data-scheduled-id="{{ scheduled.requestId }}">
                 <td>
-                  {% if 'ILL' not in scheduled.material and 'MeLCat Book' not in scheduled.material %}
+                  {% if scheduled.requestType == 'GRAB_BAG' %}
+                    Shelf Service Request
+                  {% elseif scheduled.requestType == 'PRINT_JOB' %}
+                    Print Service Request
+                  {% elseif 'ILL' not in scheduled.material and 'MeLCat Book' not in scheduled.material %}
                     <a href="/catalog/record/{{ scheduled.bnum }}">{{ scheduled.title }}</a>
                   {% else %}
                     {{ scheduled.title }}
                   {% endif %}
                 </td>
-                <td class="no-mobile-display"><a href="/search/catalog/author:&quot;{{ scheduled.author }}&quot;">{{ scheduled.author }}</a></td>
-                <td class="no-mobile-display no-tab-display">{{ scheduled.material }}</td>
-                {% set pickup_text = scheduled.pickup ~ ' ' ~ scheduled.locationName|split(' ')[1] ~ ' from ' ~ scheduled.timePeriodStart|date('ga') ~ '-' ~ scheduled.timePeriodEnd|date('ga') %}
+                <td class="no-mobile-display">
+                  {% if scheduled.requestType == 'HOLD_REQUEST' %}
+                    <a href="/search/catalog/author:&quot;{{ scheduled.author }}&quot;">{{ scheduled.author }}</a>
+                  {% endif %}
+                </td>
+                <td class="no-mobile-display no-tab-display">
+                  {% if scheduled.requestType == 'HOLD_REQUEST' %}
+                    {{ scheduled.material }}
+                  {% endif %}
+                </td>
+                {% set pickup_text = scheduled.locationDescription ~ ' from ' ~ scheduled.timePeriodStart|date('ga') ~ '-' ~ scheduled.timePeriodEnd|date('ga') ~ (scheduled.pickupLocation == 1012 or scheduled.pickupLocation == 1013 ? ' next day' : '') %}
                 <td>
                   {% if scheduled.completed == 1 %}
                     <span class="success-text">Ready for pickup at {{ scheduled.timePeriodStart|date('ga') }}!
