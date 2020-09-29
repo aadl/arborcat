@@ -18,7 +18,33 @@
         }
         return numchecked;
       }
-      
+
+      function artPrintChecked() {
+        var numitems = $("#edit-item-table tbody tr").length;
+
+        var artPrintChecked = false;
+
+        for (var i = numitems; i > 0; i--) {
+          var id = 'edit-item-table' + '-' + i;
+          var checkeditem = $('#' + id).is(':checked');
+
+          var currentRow = $("#edit-item-table tbody tr");
+
+          var name = currentRow.find("td:eq(0)").text(); // get current row 1st TD value
+          var branch = currentRow.find("td:eq(1)").text(); // get current row 2nd TD
+          var artPrint = currentRow.find("td:eq(2)").text(); // get current row 3rd TD
+
+          var artprint = (col3 == '1');
+          alert("ROW: " + name + " -- " + branch + " -- " + artPrint);
+
+          if ( artPrint && checkeditem) {
+            artPrintChecked =true;
+          }
+        }
+        return artPrintChecked;
+      }
+
+
       function displayBanner(bannerText) {
         // build the banner 
         var msgWrapper = $(document.createElement('div'));
@@ -44,6 +70,12 @@
           // show the warning banner
           displayBanner('Please note, the ' + numItemsSelected + ' checked items may not fit in the selected locker pickup method. Any items that do not fit in the locker will be placed in the lobby', 'warning');
         }
+
+        if (lowercaseSelected.includes('locker') && (true == artPrintChecked())) {
+          // show the warning banner
+          displayBanner('Please note, the art print selected cannot be picked up from a locker', 'warning');
+        }
+
       }
 
       // EVENT HANDLERS 
