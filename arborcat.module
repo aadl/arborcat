@@ -12,6 +12,7 @@ function arborcat_help($path, $arg) {
   switch ($path) {
   case "admin/help#arborcat":
     $output = '<p>' .  t("Catalog functions for Evergreen") . '</p>';
+
     break;
   }
 
@@ -344,7 +345,6 @@ function arborcat_patron_fines_expired($fines, $patron) {
         return $id;
       } catch (Exception $e) {
         $txn->rollBack();
-
         return -1;
       }
     }
@@ -409,36 +409,41 @@ function arborcat_patron_fines_expired($fines, $patron) {
         $barcode = $assocResults['barcode'];
         $patronId = (strlen($barcode) == 14) ? patronIdFromBarcode($barcode) : NULL;
         $branchNameArray = explode(" ", $assocResults['delivery_method']);
-        $frontBack = ($branchNameArray[1] == 'Back' || $branchNameArray[1] == 'Front') ? $branchNameArray[1] : NULL;
-        $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], $frontBack, TRUE);
-        $branch = $pickupLocations[0]->branchLocationId;
-        $pickupLocation = $pickupLocations[0]->locationId;
-
-        $timeslot = 0;
-        $pickupDate = $assocResults['pickup_date'];
-        $patronPhone = $assocResults['patron_phone'];
-        $patronEmail = $assocResults['patron_email'];
-        $notification_options = $assocResults['notification_options'];
-        // create new arborcat_pickup_request_record (if one does not already exist)
-        $result = arborcat_create_pickup_request_record(
-          $pickup_request_type,
-          $customPickupRequestId,
-          $patronId,
-          $branch,
-          $timeslot,
-          $pickupLocation,
-          $pickupDate,
-          $patronEmail,
-          (in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
-          (in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
-          (in_array('phone call', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
-          $patronPhone ?? NULL
-        );
-                                        
-        if ($result > 0) {
+        if ($branchNameArray[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
           $resultMessage = 'SUCCESS';
-        } else {
-          $resultMessage = 'Failed to create Pickup Request Record';
+        }
+        else {
+          $frontBack = ($branchNameArray[1] == 'Back' || $branchNameArray[1] == 'Front') ? $branchNameArray[1] : NULL;
+          $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], $frontBack, TRUE);
+          $branch = $pickupLocations[0]->branchLocationId;
+          $pickupLocation = $pickupLocations[0]->locationId;
+
+          $timeslot = 0;
+          $pickupDate = $assocResults['pickup_date'];
+          $patronPhone = $assocResults['patron_phone'];
+          $patronEmail = $assocResults['patron_email'];
+          $notification_options = $assocResults['notification_options'];
+          // create new arborcat_pickup_request_record (if one does not already exist)
+          $result = arborcat_create_pickup_request_record(
+            $pickup_request_type,
+            $customPickupRequestId,
+            $patronId,
+            $branch,
+            $timeslot,
+            $pickupLocation,
+            $pickupDate,
+            $patronEmail,
+            (in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
+            (in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+            (in_array('phone call', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
+            $patronPhone ?? NULL
+          );
+                                        
+          if ($result > 0) {
+            $resultMessage = 'SUCCESS';
+          } else {
+            $resultMessage = 'Failed to create Pickup Request Record';
+          }
         }
       }
     } elseif ($pickup_request_type == 'SG_ORDER') {
