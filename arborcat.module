@@ -410,7 +410,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
         $patronId = (strlen($barcode) == 14) ? patronIdFromBarcode($barcode) : NULL;
         $branchNameArray = explode(" ", $assocResults['delivery_method']);
         if ($branchNameArray[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
-          $resultMessage = 'NO_ACTION';
+          $resultMessage = 'SUCCESS';
         }
         else {
           $frontBack = ($branchNameArray[1] == 'Back' || $branchNameArray[1] == 'Front') ? $branchNameArray[1] : NULL;
