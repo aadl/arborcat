@@ -96,7 +96,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
 
 //check if a hold is eligible for a locker based on material type
   function arborcat_eligible_for_locker($hold) {
-    if ($hold['material'] == "Tools" || $hold['material'] == "Oversize") {
+    if ($hold['material'] == "Oversize") {
       return FALSE;
     } else {
       return TRUE;
