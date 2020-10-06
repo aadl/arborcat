@@ -33,15 +33,21 @@
           var name = currentRow.find("td:eq(0)").text(); // get current row 1st TD value
           var branch = currentRow.find("td:eq(1)").text(); // get current row 2nd TD
           var artPrint = currentRow.find("td:eq(2)").text(); // get current row 3rd TD
-
-          var artprint = (col3 == '1');
-          alert("ROW: " + name + " -- " + branch + " -- " + artPrint);
-
           if ( artPrint && checkeditem) {
             artPrintChecked =true;
           }
         }
         return artPrintChecked;
+      }
+      function lockerSelected() {
+        pickupTypeSelectedText = $("#edit-pickup-type :selected").text();
+        var lowercaseSelected = pickupTypeSelectedText.toLowerCase();
+        if (lowercaseSelected.includes('locker')) {
+          return true;
+        }
+        else {
+          return false;
+        }
       }
 
 
@@ -63,15 +69,13 @@
 
       function selectedItemsCheck() {
         $('.status-messages').remove();
-        selectedText = $("#edit-pickup-type :selected").text();
-        var lowercaseSelected = selectedText.toLowerCase();
         var numItemsSelected = checkedItems();
-        if (lowercaseSelected.includes('locker') && numItemsSelected > max_locker_items_check) {
+        if ((true == lockerSelected()) && (numItemsSelected > max_locker_items_check)) {
           // show the warning banner
           displayBanner('Please note, the ' + numItemsSelected + ' checked items may not fit in the selected locker pickup method. Any items that do not fit in the locker will be placed in the lobby', 'warning');
         }
 
-        if (lowercaseSelected.includes('locker') && (true == artPrintChecked())) {
+        if ((true == lockerSelected()) && (true == artPrintChecked())) {
           // show the warning banner
           displayBanner('Please note, the art print selected cannot be picked up from a locker', 'warning');
         }
@@ -99,6 +103,11 @@
           var cancelHolds = confirm('Once the request is canceled, you will be removed from the waitlist');
           if (!cancelHolds) {
             return false;
+          }
+        }
+        else {
+          if (true == artPrintChecked() && true == lockerSelected()) {
+            var cancelHolds = confirm('The selected art print will be placed in the lobby for pickup');
           }
         }
       });
