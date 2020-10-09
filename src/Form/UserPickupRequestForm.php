@@ -198,12 +198,14 @@ class UserPickupRequestForm extends FormBase {
             ];
     }
 
+    $prefixHTML = '<div class="loading" id="submitting">';
     $form['submit'] = [
             '#type' => 'submit',
             '#default_value' => t($submit_text),
+            '#prefix' => $prefixHTML,
+            '#suffix' => '</div>',
         ];
-    // $form['#attached']['library'][] = 'arborcat/pickuprequest-functions';
-
+        
     return $form;
   }
 
@@ -260,7 +262,7 @@ class UserPickupRequestForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $pickup_date =  $form_state->getValue('pickup_date');
 
-    $messenger = \Drupal::messenger();
+   $messenger = \Drupal::messenger();
     //parse telephone number into seven digit locker code
     $lockercode = $form_state->getValue('lockercode');
     $lockercode = preg_replace("/[\\s\\-()]/", "", $lockercode);
@@ -338,7 +340,6 @@ class UserPickupRequestForm extends FormBase {
           );
         }
       }
- 
       $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
       $messenger->addMessage($submit_message);
  
