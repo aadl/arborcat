@@ -211,8 +211,8 @@ class UserPickupRequestForm extends FormBase {
             // Exclusion date/location handling
             $pickup_date =  $form_state->getValue('pickup_date');
             $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
-            if ($pickup_point == 1000 && ($pickup_date >= '2020-07-31' && $pickup_date <= '2020-08-13')) {
-                $form_state->setErrorByName('pickup_date', t('The Downtown Library will be closed for two weeks. All items will be held and able to be scheduled once Downtown reopens.'));
+            if ($pickup_point == 1000 && ($pickup_date >= '2020-10-11' && $pickup_date <= '2020-10-12')) {
+                $form_state->setErrorByName('pickup_date', t('The Downtown Library will be closed due to utility issues on October 11th and 12th.'));
             }
             if (($pickup_point == 1000 || $pickup_point == 1002 || $pickup_point == 1012) && $pickup_date == '2020-08-04') {
               $form_state->setErrorByName('pickup_date', t('No appointments are available Downtown or at Pittsfield this day due to Election Day.'));
