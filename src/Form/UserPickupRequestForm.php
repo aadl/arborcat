@@ -86,7 +86,7 @@ class UserPickupRequestForm extends FormBase {
     $header = [
             'Title'=>t('Title'),
             'PickupLoc'=>t('Pickup Location'),
-            'artPrint'=>t('Art Print')
+            'artPrintTool'=>t('Art Print/Tool')
         ];
 
     $keys = array_keys($eligible_holds);

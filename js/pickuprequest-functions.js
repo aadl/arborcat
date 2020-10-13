@@ -19,25 +19,21 @@
             return numchecked;
           }
 
-          function artPrintChecked() {
+          function artPrintorToolChecked() {
+            var returnflag = false;
             var numitems = $("#edit-item-table tbody tr").length;
-
-            var artPrintChecked = false;
-
             for (var i = numitems; i > 0; i--) {
               var id = 'edit-item-table' + '-' + i;
               var checkeditem = $('#' + id).is(':checked');
-
               var currentRow = $("#edit-item-table tbody tr");
-
               var name = currentRow.find("td:eq(0)").text(); // get current row 1st TD value
               var branch = currentRow.find("td:eq(1)").text(); // get current row 2nd TD
-              var artPrint = currentRow.find("td:eq(2)").text(); // get current row 3rd TD
-              if (artPrint && checkeditem) {
-                artPrintChecked = true;
+              var artPrintTool = currentRow.find("td:eq(2)").text(); // get current row 3rd TD
+              if (artPrintTool && checkeditem) {
+                returnflag = true;
               }
             }
-            return artPrintChecked;
+            return returnflag;
           }
 
           function lockerSelected() {
@@ -89,13 +85,19 @@
               displayBanner('Please note, the ' + numItemsSelected + ' checked items may not fit in the selected locker pickup method. Any items that do not fit in the locker will be placed in the lobby', 'warning');
             }
 
-            if ((true == lockerSelected()) && (true == artPrintChecked())) {
+            if ((true == lockerSelected()) && (true == artPrintorToolChecked())) {
               // show the warning banner
               displayBanner('Please note, the art print selected cannot be picked up from a locker', 'warning');
             }
           }
 
-          // EVENT HANDLERS 
+           function submitForm() {
+            $("#submitting").css("position", "sticky"); // Shows the loading spinner
+            $('#edit-submit').attr('disabled', true);
+            $('#edit-submit').parents('form').submit();
+          }
+
+           // --------------------------------- EVENT HANDLERS --------------------------------- 
 
           $('#edit-pickup-type').change(function () {
             selectedItemsCheck();
@@ -114,23 +116,19 @@
           $('#edit-submit').click(function () {
             buttonName = $(this).val();
             // --- Handle Cancel pickup requests
-            if (buttonName.startsWith('Cancel')) {
+            if (buttonName.startsWith('Cancel'))  {
               var cancelHolds = confirm('Once the request is canceled, you will be removed from the waitlist');
+              submitForm();
             }
             // --- Handle Schedule pickup requests
             if (buttonName.startsWith('Schedule')) {
-              if (true == artPrintChecked() && true == lockerSelected()) {
-                var artPrintLockerAlert = confirm('The selected art print will be placed in the lobby for pickup');
-              }
               // do validation on location, date and that items are checked in the list to be scheduled for pickup
               if (true == locationSelected() && true == dateSelected() && checkedItems() > 0) {
-                $("#submitting").css("position", "sticky");   // Shows the loading spinner
-                $(this).attr('disabled', true);
-                $(this).parents('form').submit();
+                submitForm();
               }
               else {
                 if (0 == checkedItems()) {
-                  var noItemsChecked = confirm('At least one hold-request must be checked to make a pickup appointment');
+                  displayBanner('At least one item must be checked to make a pickup appointment', 'warning');
                 }
               } 
             }

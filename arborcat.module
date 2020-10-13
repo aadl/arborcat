@@ -284,7 +284,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
                               'pickup_lib' => $hold['hold']['pickup_lib'],
                               'holdId' => $hold['id'],
                               'usr' => $hold['hold']['usr'],
-                              'artPrint' => ($hold['material'] == "Art Print") ? TRUE : FALSE
+                              'artPrintTool' => ($hold['material'] == "Art Print" || $hold['material'] == "Tools") ? TRUE : FALSE
                           ];
               $i++;
             }
