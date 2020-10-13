@@ -121,7 +121,8 @@ class UserPickupRequestForm extends FormBase {
             '#default_value' => $selection
         ];
 
-    $possibleDates = $this->calculateLobbyPickupDates();
+    $possibleDates = $this->arborcat_calculate_pickup_dates();
+    
     $pickupdates = [];
     foreach ($possibleDates as $key => $dateStringsArray) {
       $pickupdates[$key] = $dateStringsArray['formattedDate'];
