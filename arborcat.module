@@ -468,20 +468,19 @@ function processExclusionData($exclusionData) {
     $interval = \DateInterval::createFromDateString('1 day');
     $period = new \DatePeriod($start, $interval, $end);
     foreach ($period as $date) {
-      array_push($exclusionDates, $date->format('M. j'));
+      array_push($exclusionDates, $date->format('Y-m-d'));
    }
   }
 
   return $exclusionDates;
 }
 
-function arborcat_calculate_pickup_dates() {
-  $arrayOfDates = [];
- 
+function arborcat_calculate_pickup_dates() { 
   $startingDayOffset = 1; // Load these from ArborCat Settings?
-  $numPickupDays = 7;     // Load these from ArborCat Settings?
+  $numPickupDays = 90;     // Load these from ArborCat Settings?
   $startingDay = new DateTime('+' . $startingDayOffset . ' day');
-  $startingDayPlusPickup = new DateTime('+' . $numPickupDays . ' days');
+  $startingDayPlusPickupDays = clone $startingDay;
+  $startingDayPlusPickupDays->modify('+' . $numPickupDays . ' days');
 
   // now loop for x days and create a date string for each day, preceded with the day name
   // create a human friendly version - 'formattedDate' for display purposes in the UI
@@ -492,27 +491,26 @@ function arborcat_calculate_pickup_dates() {
   $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
   $query->fields('aple', ['locationId', 'dateStart', 'dateEnd']);
   $query->condition('dateStart', $startingDay->format('Y-m-d'), '>=');
-  $query->condition('dateStart', $startingDayPlusPickup->format('Y-m-d'), '<=');
+  $query->condition('dateStart', $startingDayPlusPickupDays->format('Y-m-d'), '<=');
   $query->condition('locationId', 9999, '=');
   $result = $query->execute();
   $exclusionData = $result->fetchAll();
 
-  $date_exclude = processExclusionData($exclusionData);
+  $exclusionDates = processExclusionData($exclusionData);
 
-  for ($x=0; $x < $numPickupDays; $x++) {
-    $theDate_mdY = $startingDay->format('M. j');
-    $day_of_week = intval($startingDay->format('w'));
+  $interval = \DateInterval::createFromDateString('1 day');
+  $period = new \DatePeriod($startingDay, $interval, $startingDayPlusPickupDays);
+
+  $pickupdates = [];
+  foreach ($period as $date) {
+    $theDate_mdY = $date->format('M. j');
+    $day_of_week = intval($date->format('w'));
     $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
     $datestring = $dayOfWeek . ', ' . $theDate_mdY;
-
-    $datestr_Ymd = $startingDay->format('Y-m-d');
-    $twoDates = array("date" => $datestr_Ymd, "formattedDate" => $datestring);
-
-    if (!in_array($theDate_mdY, $date_exclude)) {
-      $arrayOfDates[$datestr_Ymd] = $twoDates;
+    $datestr_Ymd = $date->format('Y-m-d');
+    if (!in_array($datestr_Ymd, $exclusionDates)) {
+      $pickupdates[$datestr_Ymd] = $datestring;
     }
-    $startingDay->modify('+1 day');
   }
-
-  return $arrayOfDates;
+  return $pickupdates;
 }

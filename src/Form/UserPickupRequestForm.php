@@ -120,16 +120,10 @@ class UserPickupRequestForm extends FormBase {
             '#suffix' => '</div>',
             '#default_value' => $selection
         ];
-
-    $possibleDates = arborcat_calculate_pickup_dates();
-    
-    $pickupdates = [];
-    foreach ($possibleDates as $key => $dateStringsArray) {
-      $pickupdates[$key] = $dateStringsArray['formattedDate'];
-    }
-
+ 
     if (!isset($cancel_holds)) {
       // Populate the possible pickup dates popup menu
+      $pickupdates = arborcat_calculate_pickup_dates();
       $form['pickup_date'] = [
               '#prefix' => '<div class="l-inline-b side-by-side-form">',
               '#type' => 'select',
