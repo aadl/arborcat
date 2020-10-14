@@ -92,7 +92,7 @@
           }
 
            function submitForm() {
-            $("#submitting").css("position", "sticky"); // Shows the loading spinner
+            $('#submitting').addClass('loading').css('position', 'relative'); // Shows the loading spinner
             $('#edit-submit').attr('disabled', true);
             $('#edit-submit').parents('form').submit();
           }

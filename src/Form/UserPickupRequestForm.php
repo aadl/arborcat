@@ -198,12 +198,12 @@ class UserPickupRequestForm extends FormBase {
             ];
     }
 
-    $prefixHTML = '<div class="loading" id="submitting">';
+    $prefixHTML = '<span id="submitting">';
     $form['submit'] = [
             '#type' => 'submit',
             '#default_value' => t($submit_text),
             '#prefix' => $prefixHTML,
-            '#suffix' => '</div>',
+            '#suffix' => '</span>',
         ];
         
     return $form;
