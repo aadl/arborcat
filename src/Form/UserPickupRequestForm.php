@@ -199,14 +199,14 @@ class UserPickupRequestForm extends FormBase {
             ];
     }
 
-    $prefixHTML = '<div class="loading" id="submitting">';
+    $prefixHTML = '<span id="submitting">';
     $form['submit'] = [
             '#type' => 'submit',
             '#default_value' => t($submit_text),
             '#prefix' => $prefixHTML,
-            '#suffix' => '</div>',
-        ];
-        
+            '#suffix' => '</span>',
+    ];
+
     return $form;
   }
 
@@ -215,8 +215,8 @@ class UserPickupRequestForm extends FormBase {
       // Exclusion date/location handling
       $pickup_date =  $form_state->getValue('pickup_date');
       $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
-      if ($pickup_point == 1000 && ($pickup_date >= '2020-07-31' && $pickup_date <= '2020-08-13')) {
-        $form_state->setErrorByName('pickup_date', t('The Downtown Library will be closed for two weeks. All items will be held and able to be scheduled once Downtown reopens.'));
+      if ($pickup_point == 1000 && ($pickup_date >= '2020-10-11' && $pickup_date <= '2020-10-12')) {
+          $form_state->setErrorByName('pickup_date', t('The Downtown Library will be closed due to utility issues on October 11th and 12th.'));
       }
       if (($pickup_point == 1000 || $pickup_point == 1002 || $pickup_point == 1012) && $pickup_date == '2020-08-04') {
         $form_state->setErrorByName('pickup_date', t('No appointments are available Downtown or at Pittsfield this day due to Election Day.'));
@@ -225,8 +225,8 @@ class UserPickupRequestForm extends FormBase {
       $lockers = arborcat_locker_pickup_locations();
       $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
       if (in_array($pickup_point, $lockers)) {                                        // check if it's a locker pickup request
-        $pickup_date =  $form_state->getValue('pickup_date');
-                
+          $pickup_date =  $form_state->getValue('pickup_date');
+              
         if (!$form_state->getValue('phone')) {
           $form_state->setErrorByName('phone', t('A phone number is required for lockers so we can generate your locker code'));
         }
