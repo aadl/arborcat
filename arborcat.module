@@ -453,21 +453,41 @@ function arborcat_custom_pickup_request($pickup_request_type, $customPickupReque
   return $resultMessage;
 }
 
+function processExclusionData($exclusionData) {
+  $exclusionDates = [];
+  foreach ($exclusionData as $exclusionDataRec) {
+    $start = $exclusionDataRec->dateStart;
+    $end = $exclusionDataRec->dateEnd;
+    if ($end == null) { //  single day, so set $end to $start
+      $end = $start;
+    }
+    $start = new DateTime($start);
+    $end = new DateTime($end);
+    $end->setTime(0, 0, 1);     // Make ending dateTime at least 1 second greater than the start dateTime.
+    // iterate between startDate and endDate creating simple Date strings of the format: 'Jun. 20'
+    $interval = \DateInterval::createFromDateString('1 day');
+    $period = new \DatePeriod($start, $interval, $end);
+    foreach ($period as $date) {
+      array_push($exclusionDates, $date->format('M. j'));
+   }
+  }
+
+  return $exclusionDates;
+}
+
 function arborcat_calculate_pickup_dates() {
   $arrayOfDates = [];
  
   $startingDayOffset = 1; // Load these from ArborCat Settings?
-  $numPickupDays = 90;     // Load these from ArborCat Settings?
+  $numPickupDays = 7;     // Load these from ArborCat Settings?
   $startingDay = new DateTime('+' . $startingDayOffset . ' day');
   $startingDayPlusPickup = new DateTime('+' . $numPickupDays . ' days');
-  dblog('arborcat_calculate_pickup_dates:                startDate =', $startingDay->format('Y-m-d'));
-  dblog('arborcat_calculate_pickup_dates: startingDayPlusPickup =', $startingDayPlusPickup->format('Y-m-d'));
 
   // now loop for x days and create a date string for each day, preceded with the day name
   // create a human friendly version - 'formattedDate' for display purposes in the UI
   // and a basic verson 'date' for use in date db queries
 
-  // Load exclusion dates for the next $numPickup Days from the table: arborcat_pickup_location_exclusion
+  // Load exclusion dates for all branches (locationId=9999) for the next $numPickup Days from the table: arborcat_pickup_location_exclusion
   $db = \Drupal::database();
   $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
   $query->fields('aple', ['locationId', 'dateStart', 'dateEnd']);
@@ -476,15 +496,9 @@ function arborcat_calculate_pickup_dates() {
   $query->condition('locationId', 9999, '=');
   $result = $query->execute();
   $exclusionData = $result->fetchAll();
-  dblog('exclusionData: ', json_encode($exclusionData));
 
-  // this is not ideal whatsoever and just quick way to address unavailable / closure dates
-  $date_exclude = [
-          'Jun. 20',
-          'Jun. 21',
-          'Jul. 4',
-          'Sep. 7'
-      ];
+  $date_exclude = processExclusionData($exclusionData);
+
   for ($x=0; $x < $numPickupDays; $x++) {
     $theDate_mdY = $startingDay->format('M. j');
     $day_of_week = intval($startingDay->format('w'));
@@ -501,25 +515,4 @@ function arborcat_calculate_pickup_dates() {
   }
 
   return $arrayOfDates;
-}
-
-function dblog(...$thingsToLog)
-{
-  $lineToLog = '';
-  foreach ($thingsToLog as $item) {
-    //$lineToLog = $lineToLog . ' ' . print_r($item, true);
-    $item2 = $item;
-    if (is_array($item)) {
-      $item2 = ' ARRAY: ' . json_encode($item);
-    }
-    else if (is_object($item)) {
-      $item2 = 'OBJECT: ' . json_encode($item);
-    }
-    $lineToLog .= ' ' . $item2;
-  }
-  // prepend date/time onto log line
-  $nowDateTime = new DrupalDateTime();
-  $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
-  $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
-  error_log($completeLine, 3, "LWKLWK.log");
 }

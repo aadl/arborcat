@@ -70,37 +70,117 @@ function arborcat_schema()
                 'default' => 0,
                'description' => 'set to 1 when hold is checked out and placed for pickup',
              ],
-        ],
+             'created' => [
+                'type' => 'int',
+                'default' => 0,
+               'description' => 'created timestamp',
+             ],
+             'locker_code' => [
+                'type' => 'varchar',
+                'length' => 50,
+                'default' => '',
+                'description' => 'phone for generating locker code',
+            ],
+            'requestType' => [
+                'type' => 'varchar',
+                'length' => 20,
+                'default' => 'HOLD_REQUEST',
+                'description' => 'type of pickup request',
+            ],
+     ],
         'primary key' => ['id'],
     ];
 
     $schema['arborcat_pickup_location'] = [
         'description' => 'table containing pickup locations with descriptions or each place',
         'fields' => [
-           'locationId' => [
+            'locationId' => [
                 'description' => 'pickup location Id',
                 'type' => 'int',
                 'unsigned' => true,
                 'not null' => true,
             ],
-          'branchLocationId' => [
+             'branchLocationId' => [
                 'description' => 'library branch location Id',
                 'type' => 'int',
                 'unsigned' => true,
                 'not null' => true,
             ],
-            'locationName' => [
-                'description' => 'Patron UID',
-                'type' => 'varchar',
-                'length' => 50,
+            'timePeriod' => [
+                'description' => 'time period for pickup',
+                'type' => 'int',
+                'unsigned' => true,
                 'not null' => true,
             ],
-            'LocationDescription' => [
+            'timePeriodStart' => [
+                'description' => 'time period start for pickup',
+                'type' => 'time',
+                'unsigned' => true,
+                'not null' => true,
+            ],
+           'timePeriodEnd' => [
+                'description' => 'time period end for pickup',
+                'type' => 'time',
+                'unsigned' => true,
+                'not null' => true,
+            ],
+            'maxLockers' => [
+                'description' => 'max number of lockers for a time period and location',
+                'type' => 'int',
+                'unsigned' => true,
+                'not null' => true,
+            ],
+            'locationName' => [
+                'type' => 'text',
+                'description' => 'unique name of pickup location',
+            ],
+            'locationDescription' => [
                 'type' => 'text',
                 'description' => 'Detailed description of the pickup location',
             ],
+            'active' => [
+                'type' => 'int',
+                'default' => 0,
+                'not null' => true,
+               'description' => 'flag indicating whether pickup location is currently being used',
+             ],
       ],
       'primary key' => ['locationId']
     ];
+
+    $schema['arborcat_pickup_location_exclusion'] = [
+        'description' => 'table containing exlusion dates for library pickup locations',
+        'fields' => [
+            'id' => [
+                'type' => 'serial',
+                'unsigned' => true,
+                'not null' => true,
+            ],
+            'locationId' => [
+                'description' => 'pickup location Id',
+                'type' => 'int',
+                'unsigned' => TRUE,
+                'not null' => TRUE,
+            ],
+            'dateStart' => [
+                'description' => 'exclusion start date',
+                'type' => 'date',
+                'not null' => true,
+            ],
+            'dateEnd' => [
+                'description' => 'exclusion end date',
+                'type' => 'date',
+                'not null' => false,
+                 'default' => null,
+            ],
+            'notes' => [
+                'type' => 'text',
+                'description' => 'Deescription of exclusion',
+            ],
+      ],
+      'primary key' => ['id']
+    ];
+
+
     return $schema;
 }

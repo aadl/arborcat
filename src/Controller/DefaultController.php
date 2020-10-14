@@ -408,15 +408,15 @@ class DefaultController extends ControllerBase {
   }
 
   public function pickup_test() {
-    dblog('pickup_test ENTERED');
     $returnval = '';
     
-    $pickupDates = arborcat_calculate_pickup_dates();
-    dblog('pickupDates', json_encode($pickupDates));
-    return [
-      '#title' => 'pickup request test',
-      '#markup' => $returnval
-    ];
+    // For testing pickupDate calculate method changes
+    // $pickupDates = arborcat_calculate_pickup_dates();
+    // dblog('pickupDates', json_encode($pickupDates));
+    // return [
+    //   '#title' => 'pickup request test',
+    //   '#markup' => $returnval
+    // ];
 
     $barcode = \Drupal::request()->query->get('barcode');
     $patronId = \Drupal::request()->query->get('patronid');
