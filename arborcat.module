@@ -477,7 +477,7 @@ function processExclusionData($exclusionData) {
 
 function arborcat_calculate_pickup_dates() { 
   $startingDayOffset = 1; // Load these from ArborCat Settings?
-  $numPickupDays = 90;     // Load these from ArborCat Settings?
+  $numPickupDays = 7;     // Load these from ArborCat Settings?
   $startingDay = new DateTime('+' . $startingDayOffset . ' day');
   $startingDayPlusPickupDays = clone $startingDay;
   $startingDayPlusPickupDays->modify('+' . $numPickupDays . ' days');
