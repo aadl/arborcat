@@ -453,8 +453,30 @@ function arborcat_custom_pickup_request($pickup_request_type, $customPickupReque
   return $resultMessage;
 }
 
-function processExclusionData($exclusionData) {
+ function arborcat_load_exclusion_data($loadScope, $startDateYmd, $endDateYmd) {
+   dblog('ENTERED arborcat_load_exclusion_data', $loadScope, '|', $startDateYmd, '|',  $endDateYmd);
+// Load exclusion dates for all branches (locationId=9999) for the next $numPickup Days from the table: arborcat_pickup_location_exclusion
+  $db = \Drupal::database();
+  $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
+  $query->fields('aple', ['locationId', 'dateStart', 'dateEnd','display_reason']);
+  $query->condition('dateStart', $startDateYmd, '>=');
+  $query->condition('dateStart', $endDateYmd, '<=');
+  if ('DISTRICT_WIDE' == $loadScope) {
+    $query->condition('locationId', 9999, '=');
+  }
+  else {
+    $query->condition('locationId', 9999, '<>');
+  }
+  $result = $query->execute();
+  $exclusionData = $result->fetchAll();
+  dblog('arborcat_load_exclusion_data: RETURNING exclusionData = ', $exclusionData);
+
+  return $exclusionData;
+}
+
+function arborcat_process_exclusion_data($exclusionData) {
   $exclusionDates = [];
+  
   foreach ($exclusionData as $exclusionDataRec) {
     $start = $exclusionDataRec->dateStart;
     $end = $exclusionDataRec->dateEnd;
@@ -475,29 +497,24 @@ function processExclusionData($exclusionData) {
   return $exclusionDates;
 }
 
-function arborcat_calculate_pickup_dates() { 
+function arborcat_calculate_pickup_dates($exclusionData) { 
+  dblog('arborcat_calculate_pickup_dates: ENTERED $exclusionData =', $exclusionData);
   $startingDayOffset = 1; // Load these from ArborCat Settings?
   $numPickupDays = 7;     // Load these from ArborCat Settings?
   $startingDay = new DateTime('+' . $startingDayOffset . ' day');
   $startingDayPlusPickupDays = clone $startingDay;
   $startingDayPlusPickupDays->modify('+' . $numPickupDays . ' days');
 
+  if (NULL == $exclusionData) {
+    dblog('arborcat_calculate_pickup_dates: $exclusionData == NULL');
+    $exclusionData = arborcat_load_exclusion_data('DISTRICT_WIDE', $startingDay->format('Y-m-d'), $startingDayPlusPickupDays->format('Y-m-d'));
+  }
+  dblog('arborcat_calculate_pickup_dates: AFTER NULL CHECK $exclusionData =', $exclusionData);
+  $exclusionDates = arborcat_process_exclusion_data($exclusionData);
+
   // now loop for x days and create a date string for each day, preceded with the day name
   // create a human friendly version - 'formattedDate' for display purposes in the UI
   // and a basic verson 'date' for use in date db queries
-
-  // Load exclusion dates for all branches (locationId=9999) for the next $numPickup Days from the table: arborcat_pickup_location_exclusion
-  $db = \Drupal::database();
-  $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
-  $query->fields('aple', ['locationId', 'dateStart', 'dateEnd']);
-  $query->condition('dateStart', $startingDay->format('Y-m-d'), '>=');
-  $query->condition('dateStart', $startingDayPlusPickupDays->format('Y-m-d'), '<=');
-  $query->condition('locationId', 9999, '=');
-  $result = $query->execute();
-  $exclusionData = $result->fetchAll();
-
-  $exclusionDates = processExclusionData($exclusionData);
-
   $interval = \DateInterval::createFromDateString('1 day');
   $period = new \DatePeriod($startingDay, $interval, $startingDayPlusPickupDays);
 
@@ -513,4 +530,23 @@ function arborcat_calculate_pickup_dates() {
     }
   }
   return $pickupdates;
+}
+
+function dblog(...$thingsToLog) {
+  $lineToLog = '';
+  foreach ($thingsToLog as $item) {
+    //$lineToLog = $lineToLog . ' ' . print_r($item, true);
+    $item2 = $item;
+    if (is_array($item)) {
+      $item2 = ' ARRAY: ' . json_encode($item);
+    } elseif (is_object($item)) {
+      $item2 = 'OBJECT: ' . json_encode($item);
+    }
+    $lineToLog .= ' ' . $item2;
+  }
+  // prepend date/time onto log line
+  $nowDateTime = new DrupalDateTime();
+  $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
+  $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
+  error_log($completeLine, 3, "LWKLWK.log");
 }

@@ -11,6 +11,7 @@ use DateTime;
 use DateTimeHelper;
 
 class UserPickupRequestForm extends FormBase {
+
   public function getFormId() {
     return 'user_pickup_request_form';
   }
@@ -25,6 +26,17 @@ class UserPickupRequestForm extends FormBase {
     $patron_barcode = $patron_info['evg_user']['card']['barcode'];
     $eligible_holds = arborcat_load_patron_eligible_holds($patron_barcode, $requestLocation);
         
+    $startingDayOffset = 1; // Load these from ArborCat Settings?
+    $numPickupDays = 7;     // Load these from ArborCat Settings?
+    $startingDay = new DateTime('+' . $startingDayOffset . ' day');
+    $startingDayPlusPickupDays = clone $startingDay;
+    $startingDayPlusPickupDays->modify('+' . $numPickupDays . ' days');
+
+    $exclusionData = arborcat_load_exclusion_data('BRANCH_DATA', $startingDay->format('Y-m-d'), $startingDayPlusPickupDays->format('Y-m-d'));
+    $form_state->set('exclusionData', $exclusionData);
+
+    dblog('buildForm: exclusionData = ', $form_state->get('exclusionData'));
+
     // Get the locations
     $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
     $locationName = $locations->$requestLocation;
@@ -123,7 +135,7 @@ class UserPickupRequestForm extends FormBase {
  
     if (!isset($cancel_holds)) {
       // Populate the possible pickup dates popup menu
-      $pickupdates = arborcat_calculate_pickup_dates();
+      $pickupdates = arborcat_calculate_pickup_dates($exclusionData);
       $form['pickup_date'] = [
               '#prefix' => '<div class="l-inline-b side-by-side-form">',
               '#type' => 'select',
@@ -209,6 +221,10 @@ class UserPickupRequestForm extends FormBase {
       // Exclusion date/location handling
       $pickup_date =  $form_state->getValue('pickup_date');
       $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
+
+      $exclusionData = $form_state->get('exclusionData');
+      dblog('validateForm: exclusionData = ', $exclusionData);
+
       if ($pickup_point == 1000 && ($pickup_date >= '2020-10-11' && $pickup_date <= '2020-10-12')) {
           $form_state->setErrorByName('pickup_date', t('The Downtown Library will be closed due to utility issues on October 11th and 12th.'));
       }
