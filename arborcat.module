@@ -432,7 +432,6 @@ function arborcat_patron_fines_expired($fines, $patron) {
             $timeslot,
             $pickupLocation,
             $pickupDate,
-            $patronEmail,
             (in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
             (in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
             (in_array('phone call', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
