@@ -283,7 +283,8 @@ function arborcat_patron_fines_expired($fines, $patron) {
                               'PickupLoc' => $hold['pickup'],
                               'pickup_lib' => $hold['hold']['pickup_lib'],
                               'holdId' => $hold['id'],
-                              'usr' => $hold['hold']['usr']
+                              'usr' => $hold['hold']['usr'],
+                              'artPrintTool' => ($hold['material'] == "Art Print" || $hold['material'] == "Tools") ? TRUE : FALSE
                           ];
               $i++;
             }
@@ -345,6 +346,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
         return $id;
       } catch (Exception $e) {
         $txn->rollBack();
+
         return -1;
       }
     }
