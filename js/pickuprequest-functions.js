@@ -4,6 +4,9 @@
       $(document, context).once('pickupRequestBehavior').each(function () {
         var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check;
 
+        const MOVE_ALL_TO_LOBBY = 0;
+        const LOCKER_AND_LOBBY = 1;
+
         $(function () {
           // INITIALIZATION/SETUP
 
@@ -19,21 +22,23 @@
             return numchecked;
           }
 
-          function artPrintorToolChecked() {
-            var returnflag = false;
+          function artPrintOrToolChecked() {
             var numitems = $("#edit-item-table tbody tr").length;
+
+            var artPrintOrToolChecked = false;
+
             for (var i = numitems; i > 0; i--) {
               var id = 'edit-item-table' + '-' + i;
               var checkeditem = $('#' + id).is(':checked');
               var currentRow = $("#edit-item-table tbody tr");
               var name = currentRow.find("td:eq(0)").text(); // get current row 1st TD value
               var branch = currentRow.find("td:eq(1)").text(); // get current row 2nd TD
-              var artPrintTool = currentRow.find("td:eq(2)").text(); // get current row 3rd TD
-              if (artPrintTool && checkeditem) {
-                returnflag = true;
+              var artPrint = currentRow.find("td:eq(2)").text(); // get current row 3rd TD
+              if (artPrint && checkeditem) {
+                artPrintOrToolChecked = true;
               }
             }
-            return returnflag;
+            return artPrintOrToolChecked;
           }
 
           function lockerSelected() {
@@ -85,13 +90,29 @@
               displayBanner('Please note, the ' + numItemsSelected + ' checked items may not fit in the selected locker pickup method. Any items that do not fit in the locker will be placed in the lobby', 'warning');
             }
 
-            if ((true == lockerSelected()) && (true == artPrintorToolChecked())) {
+            if ((true == lockerSelected()) && (true == artPrintOrToolChecked())) {
               // show the warning banner
               displayBanner('Please note, the art print selected cannot be picked up from a locker', 'warning');
             }
           }
 
-           function submitForm() {
+          function createOversizeInLockerModal() {
+            var dialogBox = $("#modalDialog").dialog({
+              title: 'Oversize Item selected for Locker Pickup',
+              modal: true,
+              show: true,
+              width: "450",
+              buttons: [{
+                  text: 'OK',
+                  click: function () {
+                    dialogBox.dialog('close');
+                  }
+                }
+              ],
+            });
+          }
+
+          function submitForm() {
             $('#submitting').addClass('loading').css('position', 'relative'); // Shows the loading spinner
             $('#edit-submit').attr('disabled', true);
             $('#edit-submit').parents('form').submit();
@@ -115,18 +136,29 @@
           // give confirmation before canceling requests
           $('#edit-submit').click(function () {
             buttonName = $(this).val();
+            
             // --- Handle Cancel pickup requests
             if (buttonName.startsWith('Cancel'))  {
               var cancelHolds = confirm('Once the request is canceled, you will be removed from the waitlist');
               submitForm();
             }
+
             // --- Handle Schedule pickup requests
             if (buttonName.startsWith('Schedule')) {
-              // do validation on location, date and that items are checked in the list to be scheduled for pickup
-              if (true == locationSelected() && true == dateSelected() && checkedItems() > 0) {
-                submitForm();
-              }
-              else {
+                // do validation on location, date and that items are checked in the list to be scheduled for pickup
+                if (true == locationSelected() && true == dateSelected() && checkedItems() > 0) {
+
+
+                  if (true == artPrintOrToolChecked() && true == lockerSelected()) {
+                    // put up modal dialox box
+                    createOversizeInLockerModal();
+                  }
+                  else {
+                    // Not an art print or a tool so just submit the form
+                    submitForm();
+                  }
+                }
+                else {
                 if (0 == checkedItems()) {
                   displayBanner('At least one item must be checked to make a pickup appointment', 'warning');
                 }
