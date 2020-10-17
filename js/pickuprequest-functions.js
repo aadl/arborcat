@@ -33,8 +33,8 @@
               var currentRow = $("#edit-item-table tbody tr");
               var name = currentRow.find("td:eq(0)").text(); // get current row 1st TD value
               var branch = currentRow.find("td:eq(1)").text(); // get current row 2nd TD
-              var artPrint = currentRow.find("td:eq(2)").text(); // get current row 3rd TD
-              if (artPrint && checkeditem) {
+              var artPrintOrTool = currentRow.find("td:eq(2)").text(); // get current row 3rd TD
+              if (artPrintOrTool && checkeditem) {
                 artPrintOrToolChecked = true;
               }
             }
