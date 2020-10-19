@@ -286,11 +286,11 @@ class UserPickupRequestForm extends FormBase {
     $cancel_holds = $form_state->getValue('cancel_holds');
 
     // pickup point/location tied in with time slot
-    $pickup_timeslot = explode('-', $form_state->getValue('pickup_type'));
+    //$pickup_timeslot = explode('-', $form_state->getValue('pickup_type'));
 
     $pickupLocationsForRequest = $form_state->get('pickupLocationsForRequest');
     $locationId_timeslot = explode('-', $form_state->getValue('pickup_type'));
-
+    $pickupLocationDescription = $pickupLocationsForRequest[$locationId_timeslot[0]];
     $selected_titles = array_filter($table_values);
 
     $holds = [];
@@ -344,7 +344,7 @@ class UserPickupRequestForm extends FormBase {
       $messenger->addMessage($submit_message);
 
       // redirect to the user's account page (if user is logged in) or to the front page
-      $currentUserId = currentUser()->id();
+      $currentUserId = \Drupal::currentUser()->id();
       if ($currentUserId > 0) {
           $user = \Drupal\user\Entity\User::load($currentUserId);
           $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
