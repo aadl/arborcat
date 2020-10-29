@@ -32,7 +32,8 @@ class UserPickupRequestForm extends FormBase {
     $startingDayPlusPickupDays = clone $startingDay;
     $startingDayPlusPickupDays->modify('+' . $numPickupDays . ' days');
 
-    $exclusionData = arborcat_load_exclusion_data('BRANCH_DATA', $startingDay->format('Y-m-d'), $startingDayPlusPickupDays->format('Y-m-d'));
+    // Get the exclusion data for the requested branch locaton whilst the form is being built. Store as a form_state variable for use in the validateForm method.
+    $exclusionData = arborcat_load_exclusion_data($requestLocation, $startingDay->format('Y-m-d'), $startingDayPlusPickupDays->format('Y-m-d'));
     $form_state->set('exclusionData', $exclusionData);
 
     dblog('buildForm: exclusionData = ', $form_state->get('exclusionData'));
@@ -134,8 +135,8 @@ class UserPickupRequestForm extends FormBase {
         ];
  
     if (!isset($cancel_holds)) {
-      // Populate the possible pickup dates popup menu
-      $pickupdates = arborcat_calculate_pickup_dates($exclusionData);
+      // Populate the possible pickup dates popup menu for the requested pickup location
+      $pickupdates = $this->calculate_pickup_dates($requestLocation, $exclusionData);
       $form['pickup_date'] = [
               '#prefix' => '<div class="l-inline-b side-by-side-form">',
               '#type' => 'select',
@@ -231,6 +232,9 @@ class UserPickupRequestForm extends FormBase {
       if (($pickup_point == 1000 || $pickup_point == 1002 || $pickup_point == 1012) && $pickup_date == '2020-08-04') {
         $form_state->setErrorByName('pickup_date', t('No appointments are available Downtown or at Pittsfield this day due to Election Day.'));
       }
+
+
+
       // check to see if locker pickup
       $lockers = arborcat_locker_pickup_locations();
       $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
@@ -423,4 +427,75 @@ class UserPickupRequestForm extends FormBase {
 
     return $arrayOfDates;
   }
+
+  private function calculate_pickup_dates($branchLocation, $exclusionData) {
+    dblog('arborcat_calculate_pickup_dates: ENTERED $branchLocation =', $branchLocation, '$exclusionData =', $exclusionData);
+  
+    $startingDayOffset = 1; // Load these from ArborCat Settings?
+    $numPickupDays = 7;     // Load these from ArborCat Settings?
+    $startingDay = new DateTime('+' . $startingDayOffset . ' day');
+    $startingDayPlusPickupDays = clone $startingDay;
+    $startingDayPlusPickupDays->modify('+' . $numPickupDays . ' days');
+
+    $pickupLocations = arborcat_get_pickup_locations($branchLocation);
+    dblog('arborcat_calculate_pickup_dates: pickupLocations =', json_encode($pickupLocations));
+
+    $exclusionDates = [];
+    
+    foreach ($exclusionData as $exclusionDataRec) {
+      // check whether any exclusionDataRec locationId is in the pickupLocations for the requested branch
+      dblog('arborcat_calculate_pickup_dates: FOREACH exclusionDataRec =', json_encode($exclusionDataRec));
+      dblog('arborcat_calculate_pickup_dates: Before unset =', json_encode($pickupLocations), $exclusionDataRec->locationId);
+      $offset = array_search($exclusionDataRec->locationId, $pickupLocations);
+      dblog('arborcat_calculate_pickup_dates:       offset =', $offset);
+      if (false != $offset) {
+        array_splice($pickupLocations, $offset);
+        dblog('arborcat_calculate_pickup_dates:  After unset =', json_encode($pickupLocations));
+      }
+      if (count($pickupLocations) == 0) {
+        $start = $exclusionDataRec->dateStart;
+        $end = $exclusionDataRec->dateEnd;
+        if ($end == NULL) { //  single day, so set $end to $start
+          $end = $start;
+        }
+        $start = new DateTime($start);
+        $end = new DateTime($end);
+        $end->setTime(0, 0, 1);     // Make ending dateTime at least 1 second greater than the start dateTime.
+        // iterate between startDate and endDate creating simple Date strings of the format: 'Jun. 20'
+        $interval = \DateInterval::createFromDateString('1 day');
+        $period = new \DatePeriod($start, $interval, $end);
+        foreach ($period as $date) {
+          array_push($exclusionDates, $date->format('Y-m-d'));
+        }
+      }
+    }
+
+    dblog('arborcat_calculate_pickup_dates: $exclusionDates =', $exclusionDates);
+
+    // now loop for x days and create a date string for each day, preceded with the day name
+    // create a human friendly version - 'formattedDate' for display purposes in the UI
+    // and a basic verson 'date' for use in date db queries
+    $interval = \DateInterval::createFromDateString('1 day');
+    $period = new \DatePeriod($startingDay, $interval, $startingDayPlusPickupDays);
+
+    $pickupdates = [];
+    foreach ($period as $date) {
+      $theDate_mdY = $date->format('M. j');
+      $day_of_week = intval($date->format('w'));
+      $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
+      $datestring = $dayOfWeek . ', ' . $theDate_mdY;
+      $datestr_Ymd = $date->format('Y-m-d');
+      if (!in_array($datestr_Ymd, $exclusionDates)) {
+        $pickupdates[$datestr_Ymd] = $datestring;
+      }
+    }
+
+    return $pickupdates;
+  }
+
+  private function process_exclusion_data($exclusionData) {
+
+    return $exclusionDates;
+  }
+
 }

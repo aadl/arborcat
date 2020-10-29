@@ -453,20 +453,34 @@ function arborcat_custom_pickup_request($pickup_request_type, $customPickupReque
   return $resultMessage;
 }
 
- function arborcat_load_exclusion_data($loadScope, $startDateYmd, $endDateYmd) {
-   dblog('ENTERED arborcat_load_exclusion_data', $loadScope, '|', $startDateYmd, '|',  $endDateYmd);
-// Load exclusion dates for all branches (locationId=9999) for the next $numPickup Days from the table: arborcat_pickup_location_exclusion
+ function arborcat_load_exclusion_data($location, $startDateYmd, $endDateYmd) {
+   dblog("\n\n", 'ENTERED arborcat_load_exclusion_data, location = ', $location, '|', $startDateYmd, '|',  $endDateYmd);
+  // Load exclusion dates for date range defined in the two params from the table: arborcat_pickup_location_exclusion
+  // For all branches (locationId=9999) 
   $db = \Drupal::database();
   $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
   $query->fields('aple', ['locationId', 'dateStart', 'dateEnd','display_reason']);
   $query->condition('dateStart', $startDateYmd, '>=');
-  $query->condition('dateStart', $endDateYmd, '<=');
-  if ('DISTRICT_WIDE' == $loadScope) {
-    $query->condition('locationId', 9999, '=');
+  // dateEnd could be null or a real date - need to form query for one OR the other
+  $orGroup = $query->orConditionGroup()
+    ->condition('dateEnd', $endDateYmd, '<=')
+    ->condition('dateEnd', null, '=');
+  $query->condition($orGroup);
+
+  // array initialized with "library wide" location Id - 9999
+  $queryLocationIds = array(9999);
+
+  if ($location < 1000) { // must be a branch location so we need to get all the pickup location ids for that branch
+    $branchLocationIds = arborcat_get_pickup_locations($location);
+    array_push($queryLocationIds, ...$branchLocationIds);
   }
-  else {
-    $query->condition('locationId', 9999, '<>');
-  }
+
+  // always push the location passed in because the exclusion record may contain
+  array_push($queryLocationIds, $location);
+  
+  dblog('arborcat_load_exclusion_data: BEFORE ADDING IN condition, $queryLocationIds = ', $queryLocationIds);
+  $query->condition('locationId', $queryLocationIds, 'IN');
+ 
   $result = $query->execute();
   $exclusionData = $result->fetchAll();
   dblog('arborcat_load_exclusion_data: RETURNING exclusionData = ', $exclusionData);
@@ -474,62 +488,16 @@ function arborcat_custom_pickup_request($pickup_request_type, $customPickupReque
   return $exclusionData;
 }
 
-function arborcat_process_exclusion_data($exclusionData) {
-  $exclusionDates = [];
-  
-  foreach ($exclusionData as $exclusionDataRec) {
-    $start = $exclusionDataRec->dateStart;
-    $end = $exclusionDataRec->dateEnd;
-    if ($end == null) { //  single day, so set $end to $start
-      $end = $start;
-    }
-    $start = new DateTime($start);
-    $end = new DateTime($end);
-    $end->setTime(0, 0, 1);     // Make ending dateTime at least 1 second greater than the start dateTime.
-    // iterate between startDate and endDate creating simple Date strings of the format: 'Jun. 20'
-    $interval = \DateInterval::createFromDateString('1 day');
-    $period = new \DatePeriod($start, $interval, $end);
-    foreach ($period as $date) {
-      array_push($exclusionDates, $date->format('Y-m-d'));
-   }
-  }
+function arborcat_get_pickup_locations($branchLocationId) {
+  $db = \Drupal::database();
+  $query = $db->select('arborcat_pickup_location', 'apl');
+  $query->fields('apl', ['locationId']);
+  $query->condition('branchLocationId', $branchLocationId, '=');
+  $result = $query->execute();
+  $locationIds = $result->fetchCol();
 
-  return $exclusionDates;
-}
-
-function arborcat_calculate_pickup_dates($exclusionData) { 
-  dblog('arborcat_calculate_pickup_dates: ENTERED $exclusionData =', $exclusionData);
-  $startingDayOffset = 1; // Load these from ArborCat Settings?
-  $numPickupDays = 7;     // Load these from ArborCat Settings?
-  $startingDay = new DateTime('+' . $startingDayOffset . ' day');
-  $startingDayPlusPickupDays = clone $startingDay;
-  $startingDayPlusPickupDays->modify('+' . $numPickupDays . ' days');
-
-  if (NULL == $exclusionData) {
-    dblog('arborcat_calculate_pickup_dates: $exclusionData == NULL');
-    $exclusionData = arborcat_load_exclusion_data('DISTRICT_WIDE', $startingDay->format('Y-m-d'), $startingDayPlusPickupDays->format('Y-m-d'));
-  }
-  dblog('arborcat_calculate_pickup_dates: AFTER NULL CHECK $exclusionData =', $exclusionData);
-  $exclusionDates = arborcat_process_exclusion_data($exclusionData);
-
-  // now loop for x days and create a date string for each day, preceded with the day name
-  // create a human friendly version - 'formattedDate' for display purposes in the UI
-  // and a basic verson 'date' for use in date db queries
-  $interval = \DateInterval::createFromDateString('1 day');
-  $period = new \DatePeriod($startingDay, $interval, $startingDayPlusPickupDays);
-
-  $pickupdates = [];
-  foreach ($period as $date) {
-    $theDate_mdY = $date->format('M. j');
-    $day_of_week = intval($date->format('w'));
-    $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
-    $datestring = $dayOfWeek . ', ' . $theDate_mdY;
-    $datestr_Ymd = $date->format('Y-m-d');
-    if (!in_array($datestr_Ymd, $exclusionDates)) {
-      $pickupdates[$datestr_Ymd] = $datestring;
-    }
-  }
-  return $pickupdates;
+  dblog('arborcat_get_pickup_locations: RETURNING pickup locationIds = ', json_encode($locationIds));
+  return $locationIds;
 }
 
 function dblog(...$thingsToLog) {
