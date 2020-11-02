@@ -1,0 +1,8 @@
+services:
+  logger.channel.arborcat:
+    parent: logger.channel_base
+    arguments: ['arborcat']
+  arborcat.custom_twig_items:
+    class: Drupal\arborcat\CustomTwigItems
+    tags:
+    - { name: twig.extension }
