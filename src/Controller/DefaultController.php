@@ -470,7 +470,6 @@ class DefaultController extends ControllerBase {
           drupal_set_message('The Pickup Request could not be processed');
       }
       $userLoggedIn = \Drupal::config('arborcat.settings')->get('user_logged_in');
-      dblog('$userLoggedIn = ', $userLoggedIn);
 
       $render[] = [
               '#theme' => 'pickup_request_form',
