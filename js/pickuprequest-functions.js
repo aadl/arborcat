@@ -110,7 +110,7 @@
                 }
               ],
             });
-          }
+          } 
 
           function submitForm() {
             $('#submitting').addClass('loading').css('position', 'relative'); // Shows the loading spinner
