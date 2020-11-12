@@ -352,12 +352,20 @@ function arborcat_patron_fines_expired($fines, $patron) {
     }
   }
 
-  function barcodeFromPatronId($patronId) {
+  function barcode_From_patronId($patronId) {
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $guzzle = \Drupal::httpClient();
     $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
-    $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+ 
+    try {
+      $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+
+     } catch (Exception $e) {
+
+      return "";
+    }
+
     if ($json) {
       $barcode =  $json->evg_user->card->barcode;
 
@@ -367,12 +375,16 @@ function arborcat_patron_fines_expired($fines, $patron) {
     }
   }
 
-  function patronIdFromBarcode($barcode) {
+  function patronId_from_barcode($barcode) {
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $guzzle = \Drupal::httpClient();
     $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
-    $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+     try {
+       $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+     } catch (Exception $e) {
+      return "";
+     }
     if ($json) {
       $patronId =  $json->pid;
 
@@ -409,7 +421,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
 
       if (count($assocResults) > 0) {
         $barcode = $assocResults['barcode'];
-        $patronId = (strlen($barcode) == 14) ? patronIdFromBarcode($barcode) : NULL;
+        $patronId = (strlen($barcode) == 14) ? patronId_from_barcode($barcode) : NULL;
         $branchNameArray = explode(" ", $assocResults['delivery_method']);
         if ($branchNameArray[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
           $resultMessage = 'SUCCESS';
@@ -452,3 +464,18 @@ function arborcat_patron_fines_expired($fines, $patron) {
 
     return $resultMessage;
   }
+
+  /*
+* Debugging routine to log to the <root folder>/LWKLWK.log IN arborcat.module
+*/
+function dblog(...$thingsToLog) {
+  $lineToLog = '';
+  foreach ($thingsToLog as $item) {
+    $lineToLog = $lineToLog . ' ' . print_r($item, TRUE);
+  }
+  // prepend date/time onto log line
+  $nowDateTime = new DrupalDateTime();
+  $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
+  $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
+  error_log($completeLine, 3, "LWKLWK.log");
+}
