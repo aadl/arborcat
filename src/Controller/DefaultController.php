@@ -436,9 +436,9 @@ class DefaultController extends ControllerBase {
           }
           else {
               if (strlen($patronId) > 0) {
-                  $barcode =  barcodeFromPatronId($patronId);
+                  $barcode =  barcode_From_patronId($patronId);
               } else {
-                  $patronId = patronIdFromBarcode($barcode);
+                  $patronId = patronId_from_barcode($barcode);
               }
               if (14 === strlen($barcode)) {
                 if (strlen($row) > 0) {
@@ -483,7 +483,7 @@ class DefaultController extends ControllerBase {
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
-      $patron_id = patronIdFromBarcode($patron_barcode);
+      $patron_id = patronId_from_barcode($patron_barcode);
       $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
       if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
@@ -510,7 +510,9 @@ class DefaultController extends ControllerBase {
                           $hold_shelf_expire_date = date_format($tomorrow, 'Y-m-d');
                       }
                       // Now update the hold_request expire_time in Evergreen
-                      $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
+                      $date_time_now = new DateTime('now');
+                      $cancel_time = $date_time_now->format('Y-m-d H:i:s');
+                      $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59&cancel_time=$cancel_time";
                       $updated_hold = $guzzle->get($url)->getBody()->getContents();
                       $response['success'] = 'Pickup Request Canceled';
                   } else {
@@ -531,7 +533,7 @@ class DefaultController extends ControllerBase {
 
   private function validateTransaction($pnum, $encrypted_barcode) {
     $returnval = FALSE;
-    $barcode =  barcodeFromPatronId($pnum);
+    $barcode =  barcode_From_patronId($pnum);
     if (14 == strlen($barcode)) {
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
         $hashedBarcode = md5($pickup_requests_salt . $barcode);

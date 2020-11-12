@@ -319,7 +319,8 @@ class UserPickupRequestForm extends FormBase {
 
       foreach ($holds as $hold) {
         if ($cancel_holds) {
-          $cancel_time = date('Y-m-d');
+          $date_time_now = new DateTime('now');
+          $cancel_time = $date_time_now->format('Y-m-d H:i:s');
           $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?cancel_time=$cancel_time&cancel_cause=6")->getBody()->getContents();
         } else {
           // set the expire date for each selected hold
