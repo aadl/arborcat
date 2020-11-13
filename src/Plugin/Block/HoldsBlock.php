@@ -54,7 +54,8 @@ class HoldsBlock extends BlockBase {
       $output .= '</tr></thead><tbody>';
 
       // used to cancel a hold by updating canceled_time field
-      $cur_time = date('Y-m-d');
+      $date_time_now = new DateTime('now');
+      $cur_time = $date_time_now->format('Y-m-d H:i:s');
       // build location change options for individual and modify selected
       $locOptions = '';
       foreach ($locations as $n => $loc) {
