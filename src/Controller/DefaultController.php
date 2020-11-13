@@ -510,9 +510,7 @@ class DefaultController extends ControllerBase {
                           $hold_shelf_expire_date = date_format($tomorrow, 'Y-m-d');
                       }
                       // Now update the hold_request expire_time in Evergreen
-                      $date_time_now = new DateTime('now');
-                      $cancel_time = $date_time_now->format('Y-m-d H:i:s');
-                      $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59&cancel_time=$cancel_time";
+                      $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
                       $updated_hold = $guzzle->get($url)->getBody()->getContents();
                       $response['success'] = 'Pickup Request Canceled';
                   } else {
@@ -533,7 +531,7 @@ class DefaultController extends ControllerBase {
 
   private function validateTransaction($pnum, $encrypted_barcode) {
     $returnval = FALSE;
-    $barcode =  barcode_From_patronId($pnum);
+    $barcode =  barcodeFromPatronId($pnum);
     if (14 == strlen($barcode)) {
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
         $hashedBarcode = md5($pickup_requests_salt . $barcode);
