@@ -26,10 +26,8 @@
               var id = 'edit-item-table' + '-' + i;
               var checkeditem = $('#' + id).is(':checked');
               var currentRow = $("#edit-item-table tbody tr");
-              var name = currentRow.find("td:eq(0)").text(); // get current row 1st TD value
-              var branch = currentRow.find("td:eq(1)").text(); // get current row 2nd TD
-              var artPrintTool = currentRow.find("td:eq(2)").text(); // get current row 3rd TD
-              if (artPrintTool && checkeditem) {
+              var artPrintOrTool = currentRow.find("td:eq(3)").text(); // get current row 4th column
+              if (artPrintOrTool && checkeditem) {
                 returnflag = true;
               }
             }
