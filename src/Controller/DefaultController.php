@@ -531,7 +531,7 @@ class DefaultController extends ControllerBase {
 
   private function validateTransaction($pnum, $encrypted_barcode) {
     $returnval = FALSE;
-    $barcode =  barcodeFromPatronId($pnum);
+    $barcode =  barcode_From_patronId($pnum);
     if (14 == strlen($barcode)) {
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
         $hashedBarcode = md5($pickup_requests_salt . $barcode);
