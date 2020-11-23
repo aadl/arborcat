@@ -464,18 +464,3 @@ function arborcat_patron_fines_expired($fines, $patron) {
 
     return $resultMessage;
   }
-
-  /*
-* Debugging routine to log to the <root folder>/LWKLWK.log IN arborcat.module
-*/
-function dblog(...$thingsToLog) {
-  $lineToLog = '';
-  foreach ($thingsToLog as $item) {
-    $lineToLog = $lineToLog . ' ' . print_r($item, TRUE);
-  }
-  // prepend date/time onto log line
-  $nowDateTime = new DrupalDateTime();
-  $dateTimeString = (string) $nowDateTime->format('Y-m-d H:i:s');
-  $completeLine = '[' . $dateTimeString . '] ' . $lineToLog . "\n";
-  error_log($completeLine, 3, "LWKLWK.log");
-}
