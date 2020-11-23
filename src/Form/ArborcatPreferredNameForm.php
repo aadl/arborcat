@@ -23,7 +23,8 @@ class ArborcatPreferredNameForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state, $uid = NULL, $delta = 0) {
-    $form = [];
+    $form['#attributes'] = ['class' => 'form-width-exception'];
+    $messenger = \Drupal::messenger();
 
     // Check access to Account
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
@@ -50,7 +51,7 @@ class ArborcatPreferredNameForm extends FormBase {
           $patron = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
         }
         catch (\Exception $e) {
-          drupal_set_message('Error retrieving patron data for ' . $field_barcode, 'error');
+          $messenger->addMessage('Error retrieving patron data for ' . $field_barcode, 'error');
         }
 
         if ($patron) {
@@ -62,8 +63,10 @@ class ArborcatPreferredNameForm extends FormBase {
             '#type' => 'value',
             '#value' => $delta,
           ];
+          $form['title'] = [
+            '#markup' => "<h1>Preferred Name Settings for $patron->name (Barcode $field_barcode)</h1>",
+          ];
           $form['pref_prefix'] = [
-            '#prefix' => "<p>$field_barcode, $patron->name</p>",
             '#type' => 'textfield',
             '#title' => t('Preferred Prefix'),
             '#default_value' => $patron->evg_user->pref_prefix,
@@ -103,15 +106,20 @@ class ArborcatPreferredNameForm extends FormBase {
             '#maxlength' => 64,
             '#description' => t('Official Suffix: ' . $patron->evg_user->suffix),
           ];
-          $form['update'] = [
+          $form['actions']['update'] = [
             '#type' => 'submit',
             '#value' => "Update Preferred Names for Library Card $field_barcode",
+          ];
+          $form['actions']['cancel'] = [
+            '#type' => 'link',
+            '#title' => $this->t('Cancel'),
+            '#url' => \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user' => $uid]),
           ];
         }
       }
     }
     else {
-      drupal_set_message('Access Denied to User ID ' . $uid, 'error');
+      $messenger->addMessage('Access Denied to User ID ' . $uid, 'error');
       return $this->redirect('<front>');
     }
     return $form;
