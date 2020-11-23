@@ -464,7 +464,7 @@ class DefaultController extends ControllerBase {
   public function pickup_request($pnum, $encrypted_barcode, $loc) {
       $mode = \Drupal::request()->query->get('mode');
       $requestPickup_html = '';
-      if ($this->validateTransaction($pnum, $encrypted_barcode)) {
+      if ($this->validate_transaction($pnum, $encrypted_barcode)) {
           $requestPickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
       } else {
           drupal_set_message('The Pickup Request could not be processed');
@@ -484,7 +484,7 @@ class DefaultController extends ControllerBase {
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
       $patron_id = patronId_from_barcode($patron_barcode);
-      $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
+      $cancelRecord = $this->find_record_to_cancel($patron_id, $encrypted_request_id);
       if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
           $guzzle = \Drupal::httpClient();
@@ -492,7 +492,7 @@ class DefaultController extends ControllerBase {
           $api_url = \Drupal::config('arborcat.settings')->get('api_url');
           $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
           
-          // check date is for tomorrow or later - NOTE this is overkill - the query inside 'findRecordToCancel' method checks for date > todays date.
+          // check date is for tomorrow or later - NOTE this is overkill - the query inside 'find_record_to_cancel' method checks for date > todays date.
           $today = (new DateTime("now", new DateTimeZone('UTC')));
           $today->setTime(0,0,0);
           $tomorrow = $today->modify('+1 day');
@@ -529,9 +529,9 @@ class DefaultController extends ControllerBase {
       return new JsonResponse($response);
   }
 
-  private function validateTransaction($pnum, $encrypted_barcode) {
+  private function validate_transaction($pnum, $encrypted_barcode) {
     $returnval = FALSE;
-    $barcode =  barcodeFromPatronId($pnum);
+    $barcode =  barcode_from_patronId($pnum);
     if (14 == strlen($barcode)) {
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
         $hashedBarcode = md5($pickup_requests_salt . $barcode);
@@ -542,7 +542,7 @@ class DefaultController extends ControllerBase {
     return $returnval;
   }
 
-  private function findRecordToCancel($patronId, $encrypted_holdId) {
+  private function find_record_to_cancel($patronId, $encrypted_holdId) {
       $returnRecord = [];
       // get all the pickupRequest records for the patron
       $today = (new DateTime("now"));
