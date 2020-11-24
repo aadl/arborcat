@@ -351,49 +351,53 @@ function arborcat_create_pickup_request_record($pickup_request_type, $customId, 
   }
 }
 
-  function barcode_from_patron_id($patronId) {
-    $api_key = \Drupal::config('arborcat.settings')->get('api_key');
-    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-    $guzzle = \Drupal::httpClient();
-    $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
- 
+function barcode_from_patron_id($patronId) {
+  $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+  $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+  $guzzle = \Drupal::httpClient();
+  $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
+
+  try {
+    $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+  } 
+  catch (Exception $e) {
+
+    return "";
+  }
+  if ($json) {
+    $barcode =  $json->evg_user->card->barcode;
+
+    return $barcode;
+  } 
+  else {
+  
+    return "";
+  }
+}
+
+function patron_id_from_barcode($barcode) {
+  $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+  $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+  $guzzle = \Drupal::httpClient();
+  $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
     try {
       $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+    } 
+    catch (Exception $e) {
 
-     } catch (Exception $e) {
+    return "";
+  }
+  if ($json) {
+    $patronId =  $json->pid;
 
-      return "";
-    }
-
-    if ($json) {
-      $barcode =  $json->evg_user->card->barcode;
-
-      return $barcode;
-    } else {
-      return "";
-    }
+    return $patronId;
+  } 
+  else {
+    
+    return "";
   }
 }
 
-  function patron_id_from_barcode($barcode) {
-    $api_key = \Drupal::config('arborcat.settings')->get('api_key');
-    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-    $guzzle = \Drupal::httpClient();
-    $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
-     try {
-       $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
-     } catch (Exception $e) {
-      return "";
-     }
-    if ($json) {
-      $patronId =  $json->pid;
-
-      return $patronId;
-    } else {
-      return "";
-    }
-  }
-}
   
 function arborcat_custom_pickup_request($pickup_request_type, $customPickupRequestId) {
   $resultMessage = '';
