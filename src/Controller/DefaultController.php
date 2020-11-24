@@ -446,9 +446,9 @@ class DefaultController extends ControllerBase {
         }
         else {
             if (strlen($patronId) > 0) {
-                $barcode =  barcodeFromPatronId($patronId);
+                $barcode =  barcode_from_patronId($patronId);
             } else {
-                $patronId = patronIdFromBarcode($barcode);
+                $patronId = patronId_from_barcode($barcode);
             }
             if (14 === strlen($barcode)) {
               if (strlen($row) > 0) {
@@ -461,9 +461,31 @@ class DefaultController extends ControllerBase {
               $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
               $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
 
-              $returnval .= $html2;
-            }
-        } 
+          if (strlen($requestId) > 0) {
+              $encryptedRequestId = md5($pickup_requests_salt . $requestId);
+              $returnval = '<p> Encrypting RequestId: ' . $requestId . ' -> ' . $encryptedRequestId . '<br>';
+              $returnval .= 'pickup_requests_salt: ' . $pickup_requests_salt . '</p><br>';
+          }
+          else {
+              if (strlen($patronId) > 0) {
+                  $barcode =  barcode_From_patronId($patronId);
+              } else {
+                  $patronId = patronId_from_barcode($barcode);
+              }
+              if (14 === strlen($barcode)) {
+                if (strlen($row) > 0) {
+                        $barcode = $row;
+                    }
+                $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+                $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
+            
+                $host = 'http://nginx.docker.localhost:8000';
+                $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+                $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
+
+                $returnval .= $html2;
+              }
+          } 
       }
       return [
         '#title' => 'pickup request test',
@@ -474,7 +496,7 @@ class DefaultController extends ControllerBase {
   public function pickup_request($pnum, $encrypted_barcode, $loc) {
       $mode = \Drupal::request()->query->get('mode');
       $requestPickup_html = '';
-      if ($this->validateTransaction($pnum, $encrypted_barcode)) {
+      if ($this->validate_transaction($pnum, $encrypted_barcode)) {
           $requestPickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
       } else {
           drupal_set_message('The Pickup Request could not be processed');
@@ -493,8 +515,8 @@ class DefaultController extends ControllerBase {
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
-      $patron_id = patronIdFromBarcode($patron_barcode);
-      $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
+      $patron_id = patronId_from_barcode($patron_barcode);
+      $cancelRecord = $this->find_record_to_cancel($patron_id, $encrypted_request_id);
       if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
           $guzzle = \Drupal::httpClient();
@@ -502,7 +524,7 @@ class DefaultController extends ControllerBase {
           $api_url = \Drupal::config('arborcat.settings')->get('api_url');
           $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
           
-          // check date is for tomorrow or later - NOTE this is overkill - the query inside 'findRecordToCancel' method checks for date > todays date.
+          // check date is for tomorrow or later - NOTE this is overkill - the query inside 'find_record_to_cancel' method checks for date > todays date.
           $today = (new DateTime("now", new DateTimeZone('UTC')));
           $today->setTime(0,0,0);
           $tomorrow = $today->modify('+1 day');
@@ -539,9 +561,9 @@ class DefaultController extends ControllerBase {
       return new JsonResponse($response);
   }
 
-  private function validateTransaction($pnum, $encrypted_barcode) {
+  private function validate_transaction($pnum, $encrypted_barcode) {
     $returnval = FALSE;
-    $barcode =  barcodeFromPatronId($pnum);
+    $barcode =  barcode_from_patronId($pnum);
     if (14 == strlen($barcode)) {
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
         $hashedBarcode = md5($pickup_requests_salt . $barcode);
@@ -552,7 +574,7 @@ class DefaultController extends ControllerBase {
     return $returnval;
   }
 
-  private function findRecordToCancel($patronId, $encrypted_holdId) {
+  private function find_record_to_cancel($patronId, $encrypted_holdId) {
       $returnRecord = [];
       // get all the pickupRequest records for the patron
       $today = (new DateTime("now"));

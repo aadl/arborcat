@@ -351,6 +351,7 @@ function arborcat_create_pickup_request_record($pickup_request_type, $customId, 
   }
 }
 
+<<<<<<< HEAD
 function barcodeFromPatronId($patronId) {
   $api_key = \Drupal::config('arborcat.settings')->get('api_key');
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -363,9 +364,33 @@ function barcodeFromPatronId($patronId) {
     return $barcode;
   } else {
     return "";
+=======
+  function barcode_From_patronId($patronId) {
+    $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $guzzle = \Drupal::httpClient();
+    $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
+ 
+    try {
+      $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+
+     } catch (Exception $e) {
+
+      return "";
+    }
+
+    if ($json) {
+      $barcode =  $json->evg_user->card->barcode;
+
+      return $barcode;
+    } else {
+      return "";
+    }
+>>>>>>> pickup-requests-cancel
   }
 }
 
+<<<<<<< HEAD
 function patronIdFromBarcode($barcode) {
   $api_key = \Drupal::config('arborcat.settings')->get('api_key');
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -378,6 +403,25 @@ function patronIdFromBarcode($barcode) {
     return $patronId;
   } else {
     return "";
+=======
+  function patronId_from_barcode($barcode) {
+    $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $guzzle = \Drupal::httpClient();
+    $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
+     try {
+       $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+     } catch (Exception $e) {
+      return "";
+     }
+    if ($json) {
+      $patronId =  $json->pid;
+
+      return $patronId;
+    } else {
+      return "";
+    }
+>>>>>>> pickup-requests-cancel
   }
 }
   
@@ -406,6 +450,7 @@ function arborcat_custom_pickup_request($pickup_request_type, $customPickupReque
       }
     }
 
+<<<<<<< HEAD
     if (count($assocResults) > 0) {
       $barcode = $assocResults['barcode'];
       $patronId = (strlen($barcode) == 14) ? patronIdFromBarcode($barcode) : NULL;
@@ -441,6 +486,13 @@ function arborcat_custom_pickup_request($pickup_request_type, $customPickupReque
         );
                                       
         if ($result > 0) {
+=======
+      if (count($assocResults) > 0) {
+        $barcode = $assocResults['barcode'];
+        $patronId = (strlen($barcode) == 14) ? patronId_from_barcode($barcode) : NULL;
+        $branchNameArray = explode(" ", $assocResults['delivery_method']);
+        if ($branchNameArray[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
+>>>>>>> pickup-requests-cancel
           $resultMessage = 'SUCCESS';
         } else {
           $resultMessage = 'Failed to create Pickup Request Record';
@@ -544,5 +596,10 @@ function arborcat_calculate_pickup_dates($branchLocation, $exclusionData) {
     }
   }
 
+<<<<<<< HEAD
   return $pickupdates;
 }
+=======
+    return $resultMessage;
+  }
+>>>>>>> pickup-requests-cancel
