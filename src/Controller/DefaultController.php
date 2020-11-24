@@ -431,66 +431,67 @@ class DefaultController extends ControllerBase {
       $this->addPickupRequest($patronId, '$9999903', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
       $this->addPickupRequest($patronId, '$9999904', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
     } else {
-        if (strlen($location) == 3) {
-            //$locations = pickupLocations($location);
-        } else {
-            $location = '102';
-        }
+      if (strlen($location) == 3) {
+        //$locations = pickupLocations($location);
+      } else {
+        $location = '102';
+      }
         
-        $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
+      $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
 
-        if (strlen($requestId) > 0) {
+      if (strlen($requestId) > 0) {
+        $encryptedRequestId = md5($pickup_requests_salt . $requestId);
+        $returnval = '<p> Encrypting RequestId: ' . $requestId . ' -> ' . $encryptedRequestId . '<br>';
+        $returnval .= 'pickup_requests_salt: ' . $pickup_requests_salt . '</p><br>';
+      } else {
+        if (strlen($patronId) > 0) {
+          $barcode =  barcode_from_patron_id($patronId);
+        } else {
+          $patronId = patron_id_from_barcode($barcode);
+        }
+        if (14 === strlen($barcode)) {
+          if (strlen($row) > 0) {
+            $barcode = $row;
+          }
+          $encryptedBarcode = md5($pickup_requests_salt . $barcode);
+          $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
+          
+          $host = 'http://nginx.docker.localhost:8000';
+          $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+          $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
+
+          if (strlen($requestId) > 0) {
             $encryptedRequestId = md5($pickup_requests_salt . $requestId);
             $returnval = '<p> Encrypting RequestId: ' . $requestId . ' -> ' . $encryptedRequestId . '<br>';
             $returnval .= 'pickup_requests_salt: ' . $pickup_requests_salt . '</p><br>';
-        }
-        else {
+          } else {
             if (strlen($patronId) > 0) {
-                $barcode =  barcode_from_patron_id($patronId);
+              $barcode =  barcode_from_patron_id($patronId);
             } else {
-                $patronId = patron_id_from_barcode($barcode);
+              $patronId = patron_id_from_barcode($barcode);
             }
             if (14 === strlen($barcode)) {
               if (strlen($row) > 0) {
-                      $barcode = $row;
-                  }
+                $barcode = $row;
+              }
               $encryptedBarcode = md5($pickup_requests_salt . $barcode);
               $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
-          
+            
               $host = 'http://nginx.docker.localhost:8000';
               $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
               $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
 
-          if (strlen($requestId) > 0) {
-              $encryptedRequestId = md5($pickup_requests_salt . $requestId);
-              $returnval = '<p> Encrypting RequestId: ' . $requestId . ' -> ' . $encryptedRequestId . '<br>';
-              $returnval .= 'pickup_requests_salt: ' . $pickup_requests_salt . '</p><br>';
+              $returnval .= $html2;
+            }
           }
-          else {
-              if (strlen($patronId) > 0) {
-                  $barcode =  barcode_from_patron_id($patronId);
-              } else {
-                  $patronId = patron_id_from_barcode($barcode);
-              }
-              if (14 === strlen($barcode)) {
-                if (strlen($row) > 0) {
-                        $barcode = $row;
-                    }
-                $encryptedBarcode = md5($pickup_requests_salt . $barcode);
-                $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
-            
-                $host = 'http://nginx.docker.localhost:8000';
-                $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
-                $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
+        }
 
-                $returnval .= $html2;
-              }
-          } 
-      }
-      return [
+        return [
         '#title' => 'pickup request test',
         '#markup' => $returnval
       ];
+      }
+    }
   }
 
   public function pickup_request($pnum, $encrypted_barcode, $loc) {
