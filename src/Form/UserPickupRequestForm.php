@@ -25,17 +25,7 @@ class UserPickupRequestForm extends FormBase {
     $account = \Drupal\user\Entity\User::load($uid);
     $patron_barcode = $patron_info['evg_user']['card']['barcode'];
     $eligible_holds = arborcat_load_patron_eligible_holds($patron_barcode, $requestLocation);
-        
-    $startingDayOffset = 1; // Load these from ArborCat Settings?
-    $numPickupDays = 7;     // Load these from ArborCat Settings?
-    $startingDay = new DateTime('+' . $startingDayOffset . ' day');
-    $startingDayPlusPickupDays = clone $startingDay;
-    $startingDayPlusPickupDays->modify('+' . $numPickupDays . ' days');
-
-    // Get the exclusion data for the requested branch locaton whilst the form is being built. Store as a form_state variable for use in the validateForm method.
-    $exclusionData = arborcat_load_exclusion_data($requestLocation, $startingDay->format('Y-m-d'), $startingDayPlusPickupDays->format('Y-m-d'));
-    $form_state->set('exclusionData', $exclusionData);
-
+  
     // Get the locations
     $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
     $locationName = $locations->$requestLocation;
@@ -133,12 +123,33 @@ class UserPickupRequestForm extends FormBase {
         ];
  
     if (!isset($cancel_holds)) {
-      // Populate the possible pickup dates popup menu for the requested pickup location
-      $pickupdates = arborcat_calculate_pickup_dates($requestLocation, $exclusionData);
+      $startingDayOffset = 1; // Load these from ArborCat Settings?
+      $numPickupDays = 7;     // Load these from ArborCat Settings?
+      $startingDay = new DateTime('+' . $startingDayOffset . ' day');
+      
+      // SPECIAL CASE for library-wide closure in order to force starting date to be the first day after the closure if 
+      // this form is being opened whilst the closure is in operation
+      $opening_date = new DateTime('20-12-09');
+
+      if ($startingDay < $opening_date) {
+        $startingDay = $opening_date;
+      }
+
+      $startingDayPlusPickupDays = clone $startingDay;
+      $startingDayPlusPickupDays->modify('+' . $numPickupDays - 1 . ' days');
+
+      $pickup_dates_data = arborcat_get_pickup_dates($requestLocation, $startingDay->format('Y-m-d'), $startingDayPlusPickupDays->format('Y-m-d'));             
+      $form_state->set('exclusionData', $pickup_dates_data);
+      
+      $pickupdates =[];
+      foreach ($pickup_dates_data as $data_item_key => $data_item_value) {
+        $append_string =  ($data_item_value['date_exclusion_data'] != NULL) ? ' * not available *' : '';
+        $pickupdates[$data_item_key] = $data_item_value['display_date_string'] . $append_string;
+      }
       $form['pickup_date'] = [
               '#prefix' => '<div class="l-inline-b side-by-side-form">',
               '#type' => 'select',
-              '#title' => t('Available Pickup Dates'),
+              '#title' => t('Pickup Dates'),
               '#options' => $pickupdates,
               '#description' => t('Choose the date to pick up your requests.'),
               '#required' => TRUE
@@ -210,7 +221,7 @@ class UserPickupRequestForm extends FormBase {
             '#default_value' => t($submit_text),
             '#prefix' => $prefixHTML,
             '#suffix' => '</span>',
-            '#attributes' => ['disabled' => 'disabled']
+            //'#attributes' => ['disabled' => 'disabled']
     ];
 
     $messenger = \Drupal::messenger();
@@ -224,8 +235,6 @@ class UserPickupRequestForm extends FormBase {
       // Exclusion date/location handling
       $pickup_date =  $form_state->getValue('pickup_date');
       $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
-
-
       // if ($pickup_date >= '2020-11-15') {
       //     $form_state->setErrorByName('pickup_date', t('Due to positive COVID tests, all AADL Locations will be closed for at least 2 weeks starting Sunday, Nov. 15th.'));
       // }
@@ -234,7 +243,10 @@ class UserPickupRequestForm extends FormBase {
 
 
       // Check for exclusion dates 
-      $exclusion_error_message = $this->check_exclusion($form_state->get('exclusionData'), $pickup_point, $pickup_date);
+      $exclusion_data = $form_state->get('exclusionData');
+      $exclusion_data_object = $exclusion_data[$pickup_date]['date_exclusion_data'];
+      $exclusion_data_array = (array)$exclusion_data_object;
+      $exclusion_error_message = $exclusion_data_array['display_reason'];
       if (strlen($exclusion_error_message) > 0) {
         $form_state->setErrorByName('pickup_date', t($exclusion_error_message));
       }
@@ -391,21 +403,5 @@ class UserPickupRequestForm extends FormBase {
       $mailManager = \Drupal::service('plugin.manager.mail');
       mail($email_to, $email_subject, $email_message, $email_headers);
     }
-  }
-
-  /*
-   * Check for any exclusion dates for a pickup location.
-   * Returns a reason text string if there is an exclusion on the date being checked
-   */
-  private function check_exclusion($exclusionData, $pickup_point, $pickup_date) {
-    $exclusionReason = '';
-    foreach ($exclusionData as $exclusion) {
-      if ($pickup_point == $exclusion->locationId && ($pickup_date >= $exclusion->dateStart && $pickup_date <= $exclusion->dateEnd)) {
-        $exclusionReason = $exclusion->display_reason;
-      break;
-      }
-    }
-
-    return $exclusionReason;
   }
 }

@@ -407,17 +407,36 @@ class DefaultController extends ControllerBase {
       return $link;
   }
 
+  // ----------------------------------
+  // ----------------------------------
   public function pickup_test() {
-    //dblog('pickup_test ENTERED');
     $returnval = '';
     
-    // // For testing pickupDate calculate method changes
-    // $pickupDates = arborcat_calculate_pickup_dates();
-    // dblog('pickupDates', json_encode($pickupDates));
-    // return [
-    //   '#title' => 'pickup request test',
-    //   '#markup' => json_encode($pickupDates)
-    // ];
+    $date1 = new DateTime("2020-11-01 23:59:59", new DateTimeZone('UTC'));
+    $date2 = clone $date1;
+    $date2->modify('+45 days');
+    // for ($i=1; $i<14; $i++) {
+    //   dblog("LOOP: ** $i **");
+    //   $stuff = arborcat_get_pickup_dates(102, date_format($date1, 'Y-m-d'), date_format($date2, 'Y-m-d'));
+    //   $date1->modify('+1 day');
+    //   $date2->modify('+1 day');
+    // }
+    // For testing pickupDate calculate method changes
+    // $stuff = arborcat_get_pickup_dates(102, date_format($date1, 'Y-m-d'), date_format($date2, 'Y-m-d'));
+
+    //   $pickupdates =[];
+    //   foreach ($stuff as $data_item_key => $data_item_value) {
+    //     dblog('FOREACH ', $data_item_key, $data_item_value);
+    //     $append_string =  ($data_item_value['date_exclusion_data'] != null) ? ' * not available *' : '';
+    //     $pickupdates[$data_item_key] = $data_item_value['display_date_string'] . $append_string;
+    //   }
+    //   dblog('AFTER FOREACH - pickupdates = ', $pickupdates);
+
+
+    return [
+      '#title' => 'pickup request test',
+      '#markup' => json_encode($stuff)
+    ];
 
     $barcode = \Drupal::request()->query->get('barcode');
     $patronId = \Drupal::request()->query->get('patronid');
@@ -446,9 +465,9 @@ class DefaultController extends ControllerBase {
         }
         else {
             if (strlen($patronId) > 0) {
-                $barcode =  barcodeFromPatronId($patronId);
+                $barcode =  barcode_from_patron_id($patronId);
             } else {
-                $patronId = patronIdFromBarcode($barcode);
+                $patronId = patron_id_from_barcode($barcode);
             }
             if (14 === strlen($barcode)) {
               if (strlen($row) > 0) {
@@ -493,7 +512,7 @@ class DefaultController extends ControllerBase {
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
-      $patron_id = patronIdFromBarcode($patron_barcode);
+      $patron_id = patron_id_from_barcode($patron_barcode);
       $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
       if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
@@ -541,7 +560,7 @@ class DefaultController extends ControllerBase {
 
   private function validateTransaction($pnum, $encrypted_barcode) {
     $returnval = FALSE;
-    $barcode =  barcodeFromPatronId($pnum);
+    $barcode =  barcode_from_patron_id($pnum);
     if (14 == strlen($barcode)) {
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
         $hashedBarcode = md5($pickup_requests_salt . $barcode);
