@@ -471,6 +471,55 @@ function arborcat_custom_pickup_request($pickup_request_type, $customPickupReque
   return $resultMessage;
 }
 
+function arborcat_get_pickup_dates($location, $startDateYmd, $endDateYmd) {
+  // Load exclusion dates for date range defined in the two params from the table: arborcat_pickup_location_exclusion
+  // For all branches (locationId=9999)
+  $pickupdates = [];
+  // Loop through each date, 1 day at a time, checking if there is an exclusion.
+  $date1 = new DateTime($startDateYmd);
+  $endingDate = new DateTime($endDateYmd);
+  while ($date1 <= $endingDate) {
+    $db = \Drupal::database();
+    $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
+    $query->fields('aple', ['locationId', 'dateStart', 'dateEnd','display_reason']);
+
+    // array initialized with "library wide" location Id - 9999
+    $queryLocationIds = array(9999);
+
+    if ($location < 1000) { // must be a branch location so we need to get all the pickup location ids for that branch
+      $branchLocationIds = arborcat_get_pickup_locations($location);
+      array_push($queryLocationIds, ...$branchLocationIds);
+    }
+
+    // always push the location passed in because the exclusion record may contain
+    array_push($queryLocationIds, $location);
+    $query->condition('locationId', $queryLocationIds, 'IN');
+    $query->condition('dateStart', date_format($date1, 'Y-m-d'), '<=');
+    $query->condition('dateEnd', date_format($date1, 'Y-m-d'), '>=');
+    // sort the exclusions that match the date by location in descending order so library-wide (9999) closures are first in the array of found exclusions
+    $query->orderBy('locationId', 'DESC');
+
+    $result = $query->execute();
+    $exclusionData = $result->fetchAll();
+
+    $exclusion_data = null;
+    if (count($exclusionData) > 0) {
+      $exclusion_data = $exclusionData[0];
+    }
+    // format the display string for the date that will be shown in the pickup dates dropdown menu
+    $theDate_mdY = $date1->format('M. j');
+    $day_of_week = intval($date1->format('w'));
+    $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
+    $datestring = $dayOfWeek . ', ' . $theDate_mdY;
+    $datestr_Ymd = $date1->format('Y-m-d');
+    $pickupdates[$datestr_Ymd] = ['display_date_string' => $datestring, 'date_exclusion_data' => $exclusion_data];
+
+    $date1->modify('+1 day');
+  }
+
+  return $pickupdates;
+}
+
  function arborcat_load_exclusion_data($location, $startDateYmd, $endDateYmd) {
  // Load exclusion dates for date range defined in the two params from the table: arborcat_pickup_location_exclusion
   // For all branches (locationId=9999) 
@@ -478,8 +527,16 @@ function arborcat_custom_pickup_request($pickup_request_type, $customPickupReque
   $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
   $query->fields('aple', ['locationId', 'dateStart', 'dateEnd','display_reason']);
   
-  $query->condition('dateStart', $startDateYmd, '>=');
-  $query->condition('dateEnd', $endDateYmd, '<=');
+  $andGroup1 = $query->andConditionGroup()
+    ->condition('dateStart', $startDateYmd, '<')
+    ->condition('dateEnd', $endDateYmd, '>');
+
+  $orGroup1 = $query->orConditionGroup()
+    ->condition('dateStart', [$startDateYmd, $endDateYmd], 'BETWEEN')
+    ->condition('dateEnd', [$startDateYmd, $endDateYmd], 'BETWEEN')
+    ->condition($andGroup1);
+  
+  $query->condition($orGroup1);
 
   // array initialized with "library wide" location Id - 9999
   $queryLocationIds = array(9999);
@@ -488,14 +545,12 @@ function arborcat_custom_pickup_request($pickup_request_type, $customPickupReque
     $branchLocationIds = arborcat_get_pickup_locations($location);
     array_push($queryLocationIds, ...$branchLocationIds);
   }
-
   // always push the location passed in because the exclusion record may contain
   array_push($queryLocationIds, $location);
   $query->condition('locationId', $queryLocationIds, 'IN');
 
   $result = $query->execute();
   $exclusionData = $result->fetchAll();
-
   return $exclusionData;
 }
 
