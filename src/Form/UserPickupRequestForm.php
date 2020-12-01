@@ -245,10 +245,12 @@ class UserPickupRequestForm extends FormBase {
       // Check for exclusion dates 
       $exclusion_data = $form_state->get('exclusionData');
       $exclusion_data_object = $exclusion_data[$pickup_date]['date_exclusion_data'];
-      $exclusion_data_array = (array)$exclusion_data_object;
-      $exclusion_error_message = $exclusion_data_array['display_reason'];
-      if (strlen($exclusion_error_message) > 0) {
-        $form_state->setErrorByName('pickup_date', t($exclusion_error_message));
+      if ($exclusion_data_object) {
+        $exclusion_data_array = (array)$exclusion_data_object;
+        $exclusion_error_message = $exclusion_data_array['display_reason'];
+        if (strlen($exclusion_error_message) > 0) {
+          $form_state->setErrorByName('pickup_date', t($exclusion_error_message));
+        }
       }
 
       // check to see if locker pickup
