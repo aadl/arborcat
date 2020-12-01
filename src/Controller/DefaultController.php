@@ -478,11 +478,11 @@ class DefaultController extends ControllerBase {
     ];
   }
 
-  public function pickup_request($patron_id, $encrypted_barcode, $loc) {
+  public function pickup_request($pnum, $encrypted_barcode, $loc) {
       $mode = \Drupal::request()->query->get('mode');
       $request_pickup_html = '';
-      if ($this->validateTransaction($patron_id, $encrypted_barcode)) {
-          $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $patron_id, $loc, $mode);
+      if ($this->validateTransaction($pnum, $encrypted_barcode)) {
+          $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
       } else {
           drupal_set_message('The Pickup Request could not be processed');
       }
