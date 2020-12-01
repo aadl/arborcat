@@ -407,9 +407,9 @@ class DefaultController extends ControllerBase {
   public function pickup_test() {
     $return_val = '';
     
-    $date1 = new DateTime("2020-11-01 23:59:59", new DateTimeZone('UTC'));
-    $date2 = clone $date1;
-    $date2->modify('+45 days');
+    // $date1 = new DateTime("2020-11-01 23:59:59", new DateTimeZone('UTC'));
+    // $date2 = clone $date1;
+    // $date2->modify('+45 days');
     // for ($i=1; $i<14; $i++) {
     //   dblog("LOOP: ** $i **");
     //   $stuff = arborcat_get_pickup_dates(102, date_format($date1, 'Y-m-d'), date_format($date2, 'Y-m-d'));
