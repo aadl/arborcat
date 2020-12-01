@@ -222,9 +222,6 @@ class UserPickupRequestForm extends FormBase {
             //'#attributes' => ['disabled' => 'disabled']
     ];
 
-    $messenger = \Drupal::messenger();
-    $messenger->addError(t('Due to positive COVID tests, all AADL Locations will be closed for at least 2 weeks starting Sunday, Nov. 15th. We are unable to process pickup appointments during this time.'));
-
     return $form;
   }
 
@@ -233,12 +230,12 @@ class UserPickupRequestForm extends FormBase {
       // Exclusion date/location handling
       $pickup_date =  $form_state->getValue('pickup_date');
       $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
+
       // if ($pickup_date >= '2020-11-15') {
       //     $form_state->setErrorByName('pickup_date', t('Due to positive COVID tests, all AADL Locations will be closed for at least 2 weeks starting Sunday, Nov. 15th.'));
       // }
       // if (($pickup_point == 1000 || $pickup_point == 1002 || $pickup_point == 1012) && $pickup_date == '2020-11-03') {
       //   $form_state->setErrorByName('pickup_date', t('No appointments are available Downtown or at Pittsfield this day due to Election Day.'));
-
 
       // Check for exclusion dates 
       $exclusion_data = $form_state->get('exclusionData');
