@@ -120,9 +120,9 @@ function arborcat_lockers_available($branch) {
     curl_setopt($ch, CURLOPT_USERPWD, \Drupal::config('arborcat.settings')->get('lockers_pass'));
     $result = curl_exec($ch);
 
-    $simpleXML = simplexml_load_string($result);
+    $simple_xml = simplexml_load_string($result);
     $i=1;
-    $s = $simpleXML->doors->children();
+    $s = $simple_xml->doors->children();
     if ($s->assign1==0&$s->assign2==0&$s->assign3==0&$s->assign4==0) {
       $available = FALSE;
     } elseif ($s->assign1!==0||$s->assign2!==0||$s->assign3!==0||$s->assign4!==0) {
@@ -150,45 +150,45 @@ function arborcat_lockers_available($branch) {
   * returns a list of request pickup locations.
   * If a branch location is passed in, that a filtered list of pickup locations is returned
   */
-function arborcat_pickup_locations($destLocation = NULL, $lookupName = NULL, $frontBack = NULL, $lobbyOnly = NULL) {
+function arborcat_pickup_locations($dest_location = NULL, $lookup_name = NULL, $front_back = NULL, $lobby_only = NULL) {
   $db = \Drupal::database();
   $query = $db->select('arborcat_pickup_location', 'apl')
     ->fields('apl', ['locationId', 'branchLocationId', 'timePeriod', 'timePeriodStart', 'timePeriodEnd', 'maxLockers', 'locationName', 'locationDescription'])
     ->condition('active', 1, "=");
 
-  // if lookupName supplied, get lib locations and lookup the branch number.
-  // Then set the parameter $destlocation to the branch number. If set, the location filter will be applied
-  if (strlen($lookupName) > 0) {
+  // if lookup_name supplied, get lib locations and lookup the branch number.
+  // Then set the parameter $dest_location to the branch number. If set, the location filter will be applied
+  if (strlen($lookup_name) > 0) {
     $guzzle = \Drupal::httpClient();
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
     foreach ($locations as $key => $value) {
-      if (strpos($value, $lookupName) !== FALSE) {
-        $destLocation = $key;
+      if (strpos($value, $lookup_name) !== FALSE) {
+        $dest_location = $key;
 
         break;
       }
     }
   }
   // add in a condition if a location is supplied to filter on
-  if (3 == strlen($destLocation)) {
-    $query->condition('branchLocationId', (int) $destLocation, '=');
+  if (3 == strlen($dest_location)) {
+    $query->condition('branchLocationId', (int) $dest_location, '=');
   }
-  // add in a condition if a lobbyOnly is supplied to filter on
-  if (NULL != $lobbyOnly) {
+  // add in a condition if a lobby_only is supplied to filter on
+  if (NULL != $lobby_only) {
     $query->condition('maxLockers', 0, '=');
   }
   // add in a condition for 'Front' versus 'Back' in the location Name
-  if (NULL != $frontBack) {
-    $query->condition('locationName', "%" . $db->escapeLike($frontBack) . "%", 'like');
+  if (NULL != $front_back) {
+    $query->condition('locationName', "%" . $db->escapeLike($front_back) . "%", 'like');
   }
   $result = $query->execute();
-  $pickupLocationRecords = $result->fetchAll();
+  $pickup_location_records = $result->fetchAll();
 
-  return $pickupLocationRecords;
+  return $pickup_location_records;
 }
 
-/*
+ /*
   * returns an array of active locker pickup locations.
   */
 function arborcat_locker_pickup_locations() {
@@ -208,39 +208,39 @@ function arborcat_locker_pickup_locations() {
   * Checks the availability of a locker fo the specified date and timePeriod.
   * If a branch location is passed in, that a filtered list of pickup locations is returned
   */
-function arborcat_check_locker_availability($queryDate, $locationObject, $patronId) {
-  $availableLockers = 0;
+function arborcat_check_locker_availability($query_date, $location_object, $patron_id) {
+  $available_lockers = 0;
   // Query current arborcat_patron_pickup_request records for the date and timePeriod to get inuse count
   // fields pickupDate & timeSlot
   $db = \Drupal::database();
-  $pickup_point = $locationObject->locationId;
+  $pickup_point = $location_object->locationId;
 
   $query = $db->select('arborcat_patron_pickup_request', 'appr')
     ->fields('appr', ['patronId'])
-    ->condition('pickupDate', $queryDate)
+    ->condition('pickupDate', $query_date)
     ->condition('pickupLocation', $pickup_point, '=')
     ->groupBy('patronId');
   $results = $query->execute()->fetchCol();
 
-  $lockersInUse = count($results);
-  $availableLockers = $locationObject->maxLockers - $lockersInUse;
-  $returnval = FALSE;
+  $lockers_in_use = count($results);
+  $available_lockers = $location_object->maxLockers - $lockers_in_use;
+  $return_val = FALSE;
   // check whether this patron already has a pickup appointment already scheduled for this locker at this time. OR whether there are available lockers at this time
-  if (in_array($patronId, $results) || $availableLockers > 0) {
-    $returnval = TRUE;
+  if (in_array($patron_id, $results) || $available_lockers > 0) {
+    $return_val = TRUE;
   }
 
-  return ($returnval);
+  return ($return_val);
 }
 
-function arborcat_load_patron_eligible_holds($patron_barcode, $requestLocation=NULL) {
+function arborcat_load_patron_eligible_holds($patron_barcode, $request_location=NULL) {
   $guzzle = \Drupal::httpClient();
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-  $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
-  $selfCheckApi_key .= '-' .  $patron_barcode;
+  $self_check_api_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+  $self_check_api_key .= '-' .  $patron_barcode;
 
   try {
-    $patron_holds = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/holds")->getBody()->getContents(), TRUE);
+    $patron_holds = json_decode($guzzle->get("$api_url/patron/$self_check_api_key/holds")->getBody()->getContents(), TRUE);
 
     // For debugging LWK
     // $jsonData = file_get_contents('10005279_21621034452183_holds.txt');
@@ -266,9 +266,9 @@ function arborcat_load_patron_eligible_holds($patron_barcode, $requestLocation=N
   if (count($patron_holds)) {
     foreach ($patron_holds as $hold) {
       if ($hold['status'] == 'Ready for Pickup') {
-        // check if there is a requestLocation to filter on. If not, set $includeLocationBoolean to TRUE, otherwise perform check for location match
-        $includeLocationBoolean = ($requestLocation == NULL) ? TRUE : ($hold['hold']['pickup_lib'] == $requestLocation);
-        if ($includeLocationBoolean || isset($mel_mappings[$hold['hold']['pickup_lib']])) {
+        // check if there is a request_location to filter on. If not, set $include_location_boolean to TRUE, otherwise perform check for location match
+        $include_location_boolean = ($request_location == NULL) ? TRUE : ($hold['hold']['pickup_lib'] == $request_location);
+        if ($include_location_boolean || isset($mel_mappings[$hold['hold']['pickup_lib']])) {
           // if pickup appt already set, don't display item
           $pickup_req_exists = $db->query("SELECT * from arborcat_patron_pickup_request WHERE requestId = :hid", [':hid' => $hold['id']])->fetch();
           if (isset($pickup_req_exists->id)) {
@@ -306,21 +306,21 @@ function arborcat_get_scheduled_pickups($barcode) {
   return $scheduled_pickups;
 }
 
-function arborcat_create_pickup_request_record($pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode) {
+function arborcat_create_pickup_request_record($pickup_request_type, $custom_id, $patron_id, $branch, $time_slot, $pickup_location, $pickup_date, $contact_email, $contact_sms, $contact_phone, $locker_code) {
   // create arborcat_patron_pickup_request records for each of the selected holds
   $db = \Drupal::database();
 
-  // First check if the record already exists for this customId
+  // First check if the record already exists for this custom_id
   $results = [];
   try {
     $query = $db->select('arborcat_patron_pickup_request', 'appr')
       ->fields('appr', ['id'])
-      ->condition('requestId', $customId, '=');
+      ->condition('requestId', $custom_id, '=');
     $results = $query->execute()->fetchCol();
   } catch (Exception $e) {
     return -1;
   }
-  // If a record exists containing the $customId, just return the id of the record, otherwise insert a new record with the customId and return the $id of the new record
+  // If a record exists containing the $custom_id, just return the id of the record, otherwise insert a new record with the custom_id and return the $id of the new record
   if (count($results) > 0) {
     return $results[0];
   } else {
@@ -328,17 +328,17 @@ function arborcat_create_pickup_request_record($pickup_request_type, $customId, 
     try {
       $dbaction = $db->insert('arborcat_patron_pickup_request')->fields([
         'requestType'   => $pickup_request_type,
-        'requestId'     => $customId,
-        'patronId'      => $patronId,
+        'requestId'     => $custom_id,
+        'patronId'      => $patron_id,
         'branch'        => (int) $branch,
-        'timeSlot'      => $timeSlot,
-        'pickupLocation' => $pickupLocation,
-        'pickupDate'    => $pickupDate,
-        'contactEmail'  => $contactEmail,
-        'contactSMS'    => $contactSMS,
-        'contactPhone'  => $contactPhone,
+        'timeSlot'      => $time_slot,
+        'pickupLocation' => $pickup_location,
+        'pickupDate'    => $pickup_date,
+        'contactEmail'  => $contact_email,
+        'contactSMS'    => $contact_sms,
+        'contactPhone'  => $contact_phone,
         'created'       => time(),
-        'locker_code'   => $lockerCode
+        'locker_code'   => $locker_code
       ]);
       $id = $dbaction->execute();
 
@@ -351,14 +351,14 @@ function arborcat_create_pickup_request_record($pickup_request_type, $customId, 
   }
 }
 
-function barcode_from_patron_id($patronId) {
+function arborcat_barcode_from_patron_id($patron_id) {
   $api_key = \Drupal::config('arborcat.settings')->get('api_key');
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
   $guzzle = \Drupal::httpClient();
-  $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
+  $request_url = "$api_url/patron?apikey=$api_key&pnum=$patron_id";
 
   try {
-    $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+    $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
   } 
   catch (Exception $e) {
 
@@ -375,22 +375,22 @@ function barcode_from_patron_id($patronId) {
   }
 }
 
-function patron_id_from_barcode($barcode) {
+function arborcat_patron_id_from_barcode($barcode) {
   $api_key = \Drupal::config('arborcat.settings')->get('api_key');
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
   $guzzle = \Drupal::httpClient();
-  $requestURL = "$api_url/patron?apikey=$api_key&barcode=$barcode";
+  $request_url = "$api_url/patron?apikey=$api_key&barcode=$barcode";
     try {
-      $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
+      $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
     } 
     catch (Exception $e) {
 
     return "";
   }
   if ($json) {
-    $patronId =  $json->pid;
+    $patron_id =  $json->pid;
 
-    return $patronId;
+    return $patron_id;
   } 
   else {
     
@@ -399,224 +399,136 @@ function patron_id_from_barcode($barcode) {
 }
 
   
-function arborcat_custom_pickup_request($pickup_request_type, $customPickupRequestId) {
-  $resultMessage = '';
+function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_request_id) {
+  $result_message = '';
   if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG') {
     // Extract fields from the printJob request form
     $db = \Drupal::database();
     $query = $db->select('webform_submission_data', 'wsd');
     $query->fields('wsd', ['name', 'value']);
-    $query->condition('sid', $customPickupRequestId, '=');
-    $rawNameValueResults= $query->execute()->fetchAll();
+    $query->condition('sid', $custom_pickup_request_id, '=');
+    $raw_name_value_results= $query->execute()->fetchAll();
 
     // process the raw results and create an associative array of the results.
     // NOTE notification_options can have multiple entries and this is handled by creating a regular array of the different result values
-    $assocResults = [];
-    foreach ($rawNameValueResults as $entry) {
+    $assoc_results = [];
+    foreach ($raw_name_value_results as $entry) {
       $keyname = $entry->name;
-      if ("notification_options" == $keyname) {
-        if (!array_key_exists($keyname, $assocResults)) {
-          $assocResults[$keyname] = [];
+      if ("notification_options" == $key_name) {
+        if (!array_key_exists($key_name, $assoc_results)) {
+          $assoc_results[$key_name] = [];
         }
-        array_push($assocResults[$keyname], $entry->value);
+        array_push($assoc_results[$key_name], $entry->value);
       } else {
-        $assocResults[$keyname] = $entry->value;
+        $assoc_results[$key_name] = $entry->value;
       }
     }
 
-    if (count($assocResults) > 0) {
-      $barcode = $assocResults['barcode'];
-      $patronId = (strlen($barcode) == 14) ? patron_id_from_barcode($barcode) : NULL;
-      $branchNameArray = explode(" ", $assocResults['delivery_method']);
-      if ($branchNameArray[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
-        $resultMessage = 'SUCCESS';
+    if (count($assoc_results) > 0) {
+      $bar_code = $assoc_results['barcode'];
+      $patron_id = (strlen($bar_code) == 14) ? arborcat_patron_id_from_barcode($bar_code) : NULL;
+      $branch_name_array = explode(" ", $assoc_results['delivery_method']);
+      if ($branch_name_array[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
+        $result_message = 'SUCCESS';
       }
       else {
-        $frontBack = ($branchNameArray[1] == 'Back' || $branchNameArray[1] == 'Front') ? $branchNameArray[1] : NULL;
-        $pickupLocations = arborcat_pickup_locations(NULL, $branchNameArray[0], $frontBack, TRUE);
-        $branch = $pickupLocations[0]->branchLocationId;
-        $pickupLocation = $pickupLocations[0]->locationId;
+        $front_back = ($branch_name_array[1] == 'Back' || $branch_name_array[1] == 'Front') ? $branch_name_array[1] : NULL;
+        $pickup_locations = arborcat_pickup_locations(NULL, $branch_name_array[0], $front_back, TRUE);
+        $branch = $pickup_locations[0]->branchLocationId;
+        $pickup_location = $pickup_locations[0]->locationId;
 
-        $timeslot = 0;
-        $pickupDate = $assocResults['pickup_date'];
-        $patronPhone = $assocResults['patron_phone'];
-        $patronEmail = $assocResults['patron_email'];
-        $notification_options = $assocResults['notification_options'];
+        $time_slot = 0;
+        $pickup_date = $assoc_results['pickup_date'];
+        $patron_phone = $assoc_results['patron_phone'];
+        $patron_email = $assoc_results['patron_email'];
+        $notification_options = $assoc_results['notification_options'];
         // create new arborcat_pickup_request_record (if one does not already exist)
         $result = arborcat_create_pickup_request_record(
           $pickup_request_type,
-          $customPickupRequestId,
-          $patronId,
+          $custom_pickup_request_id,
+          $patron_id,
           $branch,
-          $timeslot,
-          $pickupLocation,
-          $pickupDate,
-          $patronEmail,
-          (in_array('email', array_map('strtolower', $notification_options))) ? $patronEmail : NULL,
-          (in_array('text', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
-          (in_array('phone call', array_map("strtolower", $notification_options))) ? $patronPhone : NULL,
-          $patronPhone ?? NULL
+          $time_slot,
+          $pickup_location,
+          $pickup_date,
+          $patron_email,
+          (in_array('email', array_map('strtolower', $notification_options))) ? $patron_email : NULL,
+          (in_array('text', array_map("strtolower", $notification_options))) ? $patron_phone : NULL,
+          (in_array('phone call', array_map("strtolower", $notification_options))) ? $patron_phone : NULL,
+          $patron_phone ?? NULL
         );
                                       
         if ($result > 0) {
-          $resultMessage = 'SUCCESS';
+          $result_message = 'SUCCESS';
         } else {
-          $resultMessage = 'Failed to create Pickup Request Record';
+          $result_message = 'Failed to create Pickup Request Record';
         }
       }
     }
   } elseif ($pickup_request_type == 'SG_ORDER') {
   }
 
-  return $resultMessage;
+  return $result_message;
 }
 
-function arborcat_get_pickup_dates($location, $startDateYmd, $endDateYmd) {
+function arborcat_get_pickup_dates($location, $start_date_ymd, $end_date_ymd) {
   // Load exclusion dates for date range defined in the two params from the table: arborcat_pickup_location_exclusion
   // For all branches (locationId=9999)
-  $pickupdates = [];
+  $pickup_dates = [];
   // Loop through each date, 1 day at a time, checking if there is an exclusion.
-  $date1 = new DateTime($startDateYmd);
-  $endingDate = new DateTime($endDateYmd);
-  while ($date1 <= $endingDate) {
+  $starting_date = new DateTime($start_date_ymd);
+  $ending_date = new DateTime($end_date_ymd);
+  while ($starting_date <= $ending_date) {
     $db = \Drupal::database();
     $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
     $query->fields('aple', ['locationId', 'dateStart', 'dateEnd','display_reason']);
 
     // array initialized with "library wide" location Id - 9999
-    $queryLocationIds = array(9999);
+    $query_location_ids = array(9999);
 
     if ($location < 1000) { // must be a branch location so we need to get all the pickup location ids for that branch
-      $branchLocationIds = arborcat_get_pickup_locations($location);
-      array_push($queryLocationIds, ...$branchLocationIds);
+      $branch_location_ids = arborcat_get_pickup_locations($location);
+      array_push($query_location_ids, ...$branch_location_ids);
     }
 
     // always push the location passed in because the exclusion record may contain
-    array_push($queryLocationIds, $location);
-    $query->condition('locationId', $queryLocationIds, 'IN');
-    $query->condition('dateStart', date_format($date1, 'Y-m-d'), '<=');
-    $query->condition('dateEnd', date_format($date1, 'Y-m-d'), '>=');
+    array_push($query_location_ids, $location);
+    $query->condition('locationId', $query_location_ids, 'IN');
+    $query->condition('dateStart', date_format($starting_date, 'Y-m-d'), '<=');
+    $query->condition('dateEnd', date_format($starting_date, 'Y-m-d'), '>=');
     // sort the exclusions that match the date by location in descending order so library-wide (9999) closures are first in the array of found exclusions
     $query->orderBy('locationId', 'DESC');
 
     $result = $query->execute();
-    $exclusionData = $result->fetchAll();
+    $exclusion_data_array = $result->fetchAll();
 
     $exclusion_data = null;
-    if (count($exclusionData) > 0) {
-      $exclusion_data = $exclusionData[0];
+    if (count($exclusion_data) > 0) {
+      $exclusion_data = $exclusion_data_array[0];
     }
     // format the display string for the date that will be shown in the pickup dates dropdown menu
-    $theDate_mdY = $date1->format('M. j');
-    $day_of_week = intval($date1->format('w'));
-    $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
-    $datestring = $dayOfWeek . ', ' . $theDate_mdY;
-    $datestr_Ymd = $date1->format('Y-m-d');
-    $pickupdates[$datestr_Ymd] = ['display_date_string' => $datestring, 'date_exclusion_data' => $exclusion_data];
+    $date_month_day = $starting_date->format('M. j');
+    $day_of_week = intval($starting_date->format('w'));
+    $day_of_week_string = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
+    $day_month_daynum = $day_of_week_string . ', ' . $date_month_day;
+    $datestr_Ymd = $starting_date->format('Y-m-d');
+    $pickup_dates[$datestr_Ymd] = ['display_date_string' => $day_month_daynum, 'date_exclusion_data' => $exclusion_data];
 
-    $date1->modify('+1 day');
+    $starting_date->modify('+1 day');
   }
 
-  return $pickupdates;
+  return $pickup_dates;
 }
 
- function arborcat_load_exclusion_data($location, $startDateYmd, $endDateYmd) {
- // Load exclusion dates for date range defined in the two params from the table: arborcat_pickup_location_exclusion
-  // For all branches (locationId=9999) 
-  $db = \Drupal::database();
-  $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
-  $query->fields('aple', ['locationId', 'dateStart', 'dateEnd','display_reason']);
-  
-  $andGroup1 = $query->andConditionGroup()
-    ->condition('dateStart', $startDateYmd, '<')
-    ->condition('dateEnd', $endDateYmd, '>');
-
-  $orGroup1 = $query->orConditionGroup()
-    ->condition('dateStart', [$startDateYmd, $endDateYmd], 'BETWEEN')
-    ->condition('dateEnd', [$startDateYmd, $endDateYmd], 'BETWEEN')
-    ->condition($andGroup1);
-  
-  $query->condition($orGroup1);
-
-  // array initialized with "library wide" location Id - 9999
-  $queryLocationIds = array(9999);
-
-  if ($location < 1000) { // must be a branch location so we need to get all the pickup location ids for that branch
-    $branchLocationIds = arborcat_get_pickup_locations($location);
-    array_push($queryLocationIds, ...$branchLocationIds);
-  }
-  // always push the location passed in because the exclusion record may contain
-  array_push($queryLocationIds, $location);
-  $query->condition('locationId', $queryLocationIds, 'IN');
-
-  $result = $query->execute();
-  $exclusionData = $result->fetchAll();
-  return $exclusionData;
-}
-
-function arborcat_get_pickup_locations($branchLocationId) {
+function arborcat_get_pickup_locations($branch_location_id) {
   $db = \Drupal::database();
   $query = $db->select('arborcat_pickup_location', 'apl');
   $query->fields('apl', ['locationId']);
-  $query->condition('branchLocationId', $branchLocationId, '=');
+  $query->condition('branchLocationId', $branch_location_id, '=');
   $result = $query->execute();
-  $locationIds = $result->fetchCol();
+  $location_ids = $result->fetchCol();
 
-  return $locationIds;
+  return $location_ids;
 }
 
-function arborcat_calculate_pickup_dates($branchLocation, $exclusionData) {
-  $startingDayOffset = 1; // Load these from ArborCat Settings?
-  $numPickupDays = 7;     // Load these from ArborCat Settings?
-  $startingDay = new DateTime('+' . $startingDayOffset . ' day');
-  $startingDayPlusPickupDays = clone $startingDay;
-  $startingDayPlusPickupDays->modify('+' . $numPickupDays . ' days');
-
-  $pickupLocations = arborcat_get_pickup_locations($branchLocation);
-    // now loop for x days and create a date string for each day, preceded with the day name
-  // create a human friendly version - 'formattedDate' for display purposes in the UI
-  // and a basic verson 'date' for use in date db queries
-  $interval = \DateInterval::createFromDateString('1 day');
-  $period = new \DatePeriod($startingDay, $interval, $startingDayPlusPickupDays);
-
-  $pickupdates = [];
-
-  foreach ($period as $adate) {
-    $adatestr_Ymd = $adate->format('Y-m-d');
-    $pickupLocations = arborcat_get_pickup_locations($branchLocation);
-    // Loop through the exclusion data  - check whether the date is between the start and end dates.
-    // If so, check whether the exclusion is branch wide or location specific 
-    // (ie. one of the vestibules or lockers at a branch and others are available on that date)
-
-    foreach($exclusionData as $exclusion) {
-      $exclusionStart = new DateTime($exclusion->dateStart);
-      $exclusionEnd = new DateTime($exclusion->dateEnd);
-      $addthisdate = FALSE;
- 
-      if ($adatestr_Ymd >= $exclusion->dateStart && $adatestr_Ymd <= $exclusion->dateEnd) {
-        // need to check if actually exclusion
-        if ($exclusion->locationId < 1000) { // this is branch-wide        
-          $pickupLocations = [];
-        }
-        else {
-          $offset = array_search($exclusion->locationId, $pickupLocations);
-          if (FALSE != $offset) {
-            array_splice($pickupLocations, $offset);
-          }
-        }
-      }
-    }
-    // if there are no locations left after looping through the exclusion data, then we can mark the date as an exclusion date
-    if (count($pickupLocations) > 0) {
-      $theDate_mdY = $adate->format('M. j');
-      $day_of_week = intval($adate->format('w'));
-      $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
-      $datestring = $dayOfWeek . ', ' . $theDate_mdY;
-      $datestr_Ymd = $adate->format('Y-m-d');
-      $pickupdates[$datestr_Ymd] = $datestring;
-    }
-  }
-
-  return $pickupdates;
-}
 

@@ -465,9 +465,9 @@ class DefaultController extends ControllerBase {
         }
         else {
             if (strlen($patronId) > 0) {
-                $barcode =  barcode_from_patron_id($patronId);
+                $barcode =  arborcat_barcode_from_patron_id($patronId);
             } else {
-                $patronId = patron_id_from_barcode($barcode);
+                $patronId = arborcat_patron_id_from_barcode($barcode);
             }
             if (14 === strlen($barcode)) {
               if (strlen($row) > 0) {
@@ -512,7 +512,7 @@ class DefaultController extends ControllerBase {
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
-      $patron_id = patron_id_from_barcode($patron_barcode);
+      $patron_id = arborcat_patron_id_from_barcode($patron_barcode);
       $cancelRecord = $this->findRecordToCancel($patron_id, $encrypted_request_id);
       if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
@@ -560,7 +560,7 @@ class DefaultController extends ControllerBase {
 
   private function validateTransaction($pnum, $encrypted_barcode) {
     $returnval = FALSE;
-    $barcode =  barcode_from_patron_id($pnum);
+    $barcode =  arborcat_barcode_from_patron_id($pnum);
     if (14 == strlen($barcode)) {
         $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
         $hashedBarcode = md5($pickup_requests_salt . $barcode);
