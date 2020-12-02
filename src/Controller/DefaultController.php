@@ -426,12 +426,10 @@ class DefaultController extends ControllerBase {
     //     $pickupdates[$data_item_key] = $data_item_value['display_date_string'] . $append_string;
     //   }
     //   dblog('AFTER FOREACH - pickupdates = ', $pickupdates);
-
-
-    return [
-      '#title' => 'pickup request test',
-      '#markup' => json_encode($stuff)
-    ];
+    // return [
+    //   '#title' => 'pickup request test',
+    //   '#markup' => json_encode($stuff)
+    // ];
 
     $barcode = \Drupal::request()->query->get('barcode');
     $patron_id = \Drupal::request()->query->get('patronid');
