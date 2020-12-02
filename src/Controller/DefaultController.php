@@ -364,7 +364,7 @@ class DefaultController extends ControllerBase {
       if (!isset($eligibleHolds['error'])) {
         if (count($eligibleHolds) > 0) {
           // Get the patron ID from the first hold object in $eligibleHolds. NOTE - this starts at offset [1]
-          $patronId = $eligibleHolds[1]['usr'];
+          $patron_id = $eligibleHolds[1]['usr'];
           $holdLocations = [];
           // spin through the eligible holds and get the locations
           foreach ($eligibleHolds as $holdobj) {
@@ -378,7 +378,7 @@ class DefaultController extends ControllerBase {
 
           foreach ($holdLocations as $loc) {
               $locationName = ($loc < 110) ? $locations->{$loc} : 'melcat';
-              $url = $this->createPickupURL($patronId, $barcode, $loc);
+              $url = $this->createPickupURL($patron_id, $barcode, $loc);
               array_push($locationURLs, ['url'=>$url, 'loc'=>$loc, 'locname'=>$locationName]);
           }
         }
@@ -398,28 +398,28 @@ class DefaultController extends ControllerBase {
     return $render;
   }
 
-  private function createPickupURL($patronId, $barcode, $location) {
+  private function createPickupURL($patron_id, $barcode, $location) {
       $html = '';
       $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
       $encryptedBarcode = md5($pickup_requests_salt . $barcode);
       $host = \Drupal::request()->getHost();
-      $link = 'https://'. $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+      $link = 'https://'. $host . '/pickuprequest/' . $patron_id . '/'. $encryptedBarcode . '/' . $location;
       return $link;
   }
 
   public function pickup_test() {
       $returnval = '';
       $barcode = \Drupal::request()->query->get('barcode');
-      $patronId = \Drupal::request()->query->get('patronid');
+      $patron_id = \Drupal::request()->query->get('patronid');
       $location = \Drupal::request()->query->get('location');
       $seeddb = \Drupal::request()->query->get('seeddb');
       $requestId = \Drupal::request()->query->get('requestid');
       
       if (strlen($seeddb) > 0) {
-          $this->addPickupRequest($patronId, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-          $this->addPickupRequest($patronId, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-          $this->addPickupRequest($patronId, '$9999903', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
-          $this->addPickupRequest($patronId, '$9999904', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
+          $this->addPickupRequest($patron_id, '$9999901', '104', '2020-06-17', '0', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
+          $this->addPickupRequest($patron_id, '$9999902', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
+          $this->addPickupRequest($patron_id, '$9999903', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
+          $this->addPickupRequest($patron_id, '$9999904', '104', '2020-06-17', '1', '1003', 'kirchmeierl@aadl.org', '734-327-4218', '734-417-7747');
       } else {
           if (strlen($location) == 3) {
               //$locations = pickupLocations($location);
@@ -435,20 +435,20 @@ class DefaultController extends ControllerBase {
               $returnval .= 'pickup_requests_salt: ' . $pickup_requests_salt . '</p><br>';
           }
           else {
-              if (strlen($patronId) > 0) {
-                  $barcode =  barcode_From_patronId($patronId);
+              if (strlen($patron_id) > 0) {
+                  $barcode =  barcode_From_patronId($patron_id);
               } else {
-                  $patronId = patronId_from_barcode($barcode);
+                  $patron_id = patronId_from_barcode($barcode);
               }
               if (14 === strlen($barcode)) {
                 if (strlen($row) > 0) {
                         $barcode = $row;
                     }
                 $encryptedBarcode = md5($pickup_requests_salt . $barcode);
-                $returnval = '<h2>' . $patronId .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
+                $returnval = '<h2>' . $patron_id .' -> '. $barcode . ' -> ' . $encryptedBarcode . '</h2><br>';
             
                 $host = 'http://nginx.docker.localhost:8000';
-                $link = $host . '/pickuprequest/' . $patronId . '/'. $encryptedBarcode . '/' . $location;
+                $link = $host . '/pickuprequest/' . $patron_id . '/'. $encryptedBarcode . '/' . $location;
                 $html2 = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
 
                 $returnval .= $html2;
@@ -542,7 +542,7 @@ class DefaultController extends ControllerBase {
     return $returnval;
   }
 
-  private function find_record_to_cancel($patronId, $encrypted_holdId) {
+  private function find_record_to_cancel($patron_id, $encrypted_holdId) {
       $returnRecord = [];
       // get all the pickupRequest records for the patron
       $today = (new DateTime("now"));
@@ -551,7 +551,7 @@ class DefaultController extends ControllerBase {
       $db = \Drupal::database();
       $query = $db->select('arborcat_patron_pickup_request', 'appr');
       $query->fields('appr', ['id', 'patronId', 'requestId', 'pickupDate']);
-      $query->condition('patronId', $patronId);
+      $query->condition('patronId', $patron_id);
       $query->condition('pickupDate', $todayDateString, '>');
       $results = $query->execute()->fetchAll();        
       if (count($results) > 0) {

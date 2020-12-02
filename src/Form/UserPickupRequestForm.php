@@ -15,11 +15,11 @@ class UserPickupRequestForm extends FormBase {
     return 'user_pickup_request_form';
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state, string $patronId = NULL, string $requestLocation = NULL, string $mode = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, string $patron_id = NULL, string $requestLocation = NULL, string $mode = NULL) {
     $guzzle = \Drupal::httpClient();
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-    $patron_info = json_decode((string) $guzzle->get("$api_url/patron?apikey=$api_key&pnum=$patronId")->getBody()->getContents(), TRUE);
+    $patron_info = json_decode((string) $guzzle->get("$api_url/patron?apikey=$api_key&pnum=$patron_id")->getBody()->getContents(), TRUE);
     $uid = $patron_info['evg_user']['card']['id'];
     $account = \Drupal\user\Entity\User::load($uid);
     $patron_barcode = $patron_info['evg_user']['card']['barcode'];
@@ -47,7 +47,7 @@ class UserPickupRequestForm extends FormBase {
 
     $form['pnum'] = [
             '#type' => 'hidden',
-            '#default_value' => $patronId
+            '#default_value' => $patron_id
         ];
 
     $form['patron_barcode'] = [
@@ -241,8 +241,8 @@ class UserPickupRequestForm extends FormBase {
                     ->execute();
         $pickup_location = $query->fetch();
                 
-        $patronId = $form_state->getValue('pnum');
-        $avail = arborcat_check_locker_availability($pickup_date, $pickup_location, $patronId);
+        $patron_id = $form_state->getValue('pnum');
+        $avail = arborcat_check_locker_availability($pickup_date, $pickup_location, $patron_id);
 
         // if no avail lockers, set form error
         if (!$avail) {

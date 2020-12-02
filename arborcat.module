@@ -209,7 +209,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
    * Checks the availability of a locker fo the specified date and timePeriod.
    * If a branch location is passed in, that a filtered list of pickup locations is returned
    */
-  function arborcat_check_locker_availability($queryDate, $locationObject, $patronId) {
+  function arborcat_check_locker_availability($queryDate, $locationObject, $patron_id) {
     $availableLockers = 0;
     // Query current arborcat_patron_pickup_request records for the date and timePeriod to get inuse count
     // fields pickupDate & timeSlot
@@ -227,7 +227,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
     $availableLockers = $locationObject->maxLockers - $lockersInUse;
     $returnval = FALSE;
     // check whether this patron already has a pickup appointment already scheduled for this locker at this time. OR whether there are available lockers at this time
-    if (in_array($patronId, $results) || $availableLockers > 0) {
+    if (in_array($patron_id, $results) || $availableLockers > 0) {
       $returnval = TRUE;
     }
 
@@ -307,7 +307,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
     return $scheduled_pickups;
   }
 
-  function arborcat_create_pickup_request_record($pickup_request_type, $customId, $patronId, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode) {
+  function arborcat_create_pickup_request_record($pickup_request_type, $customId, $patron_id, $branch, $timeSlot, $pickupLocation, $pickupDate, $contactEmail, $contactSMS, $contactPhone, $lockerCode) {
     // create arborcat_patron_pickup_request records for each of the selected holds
     $db = \Drupal::database();
  
@@ -330,7 +330,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
         $dbaction = $db->insert('arborcat_patron_pickup_request')->fields([
           'requestType'   => $pickup_request_type,
           'requestId'     => $customId,
-          'patronId'      => $patronId,
+          'patronId'      => $patron_id,
           'branch'        => (int) $branch,
           'timeSlot'      => $timeSlot,
           'pickupLocation' => $pickupLocation,
@@ -352,11 +352,11 @@ function arborcat_patron_fines_expired($fines, $patron) {
     }
   }
 
-  function barcode_From_patronId($patronId) {
+  function barcode_From_patronId($patron_id) {
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $guzzle = \Drupal::httpClient();
-    $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patronId";
+    $requestURL = "$api_url/patron?apikey=$api_key&pnum=$patron_id";
  
     try {
       $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
@@ -386,9 +386,9 @@ function arborcat_patron_fines_expired($fines, $patron) {
       return "";
      }
     if ($json) {
-      $patronId =  $json->pid;
+      $patron_id =  $json->pid;
 
-      return $patronId;
+      return $patron_id;
     } else {
       return "";
     }
@@ -421,7 +421,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
 
       if (count($assocResults) > 0) {
         $barcode = $assocResults['barcode'];
-        $patronId = (strlen($barcode) == 14) ? patronId_from_barcode($barcode) : NULL;
+        $patron_id = (strlen($barcode) == 14) ? patronId_from_barcode($barcode) : NULL;
         $branchNameArray = explode(" ", $assocResults['delivery_method']);
         if ($branchNameArray[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
           $resultMessage = 'SUCCESS';
@@ -441,7 +441,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
           $result = arborcat_create_pickup_request_record(
             $pickup_request_type,
             $customPickupRequestId,
-            $patronId,
+            $patron_id,
             $branch,
             $timeslot,
             $pickupLocation,
