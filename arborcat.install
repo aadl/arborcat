@@ -8,179 +8,177 @@
 /**
  * Implements hook_schema().
  */
-function arborcat_schema()
-{
-    $schema['arborcat_patron_pickup_request'] = [
-        'description' => 'table containing pickup requests ',
-        'fields' => [
-            'id' => [
-                'type' => 'serial',
-                'unsigned' => true,
-                'not null' => true,
-            ],
-           'requestId' => [
-                'description' => 'request holdId',
-                'type' => 'int',
-                'size' => 'big',
-                'unsigned' => true,
-                'not null' => true,
-            ],
-            'patronId' => [
-                'description' => 'Patron UID',
-                'type' => 'int',
-                'unsigned' => true,
-                'not null' => true,
-            ],
-            'branch' => [
-                'description' => 'pickup branch',
-                'type' => 'varchar',
-                'length' => 10,
-                'default' => '',
-            ],
-            'timeSlot' => [
-                'type' => 'int',
-                'description' => 'time slot for locker pickup',
-            ],
-            'pickupDate' => [
-                'type' => 'varchar',
-                'length' => 50,
-                'default' => '',
-                'description' => 'Date to pickup requested item',
-            ],
-           'contactEmail' => [
-                'type' => 'varchar',
-                'length' => 50,
-                'default' => '',
-                'description' => 'email to notify patron',
-            ],
-             'contactPhone' => [
-                'type' => 'varchar',
-                'length' => 50,
-                'default' => '',
-                'description' => 'telephone number to notify patron using voicemail',
-            ],
-             'contactSMS' => [
-                'type' => 'varchar',
-                'length' => 50,
-                'default' => '',
-                'description' => 'cell phone number to notify patron using an SMS text message',
-            ],
-             'completed' => [
-                'type' => 'int',
-                'default' => 0,
-               'description' => 'set to 1 when hold is checked out and placed for pickup',
-             ],
-             'created' => [
-                'type' => 'int',
-                'default' => 0,
-               'description' => 'created timestamp',
-             ],
-             'locker_code' => [
-                'type' => 'varchar',
-                'length' => 50,
-                'default' => '',
-                'description' => 'phone for generating locker code',
-            ],
-            'requestType' => [
-                'type' => 'varchar',
-                'length' => 20,
-                'default' => 'HOLD_REQUEST',
-                'description' => 'type of pickup request',
-            ],
-     ],
-        'primary key' => ['id'],
-    ];
-
-    $schema['arborcat_pickup_location'] = [
-        'description' => 'table containing pickup locations with descriptions or each place',
-        'fields' => [
-            'locationId' => [
-                'description' => 'pickup location Id',
-                'type' => 'int',
-                'unsigned' => true,
-                'not null' => true,
-            ],
-             'branchLocationId' => [
-                'description' => 'library branch location Id',
-                'type' => 'int',
-                'unsigned' => true,
-                'not null' => true,
-            ],
-            'timePeriod' => [
-                'description' => 'time period for pickup',
-                'type' => 'int',
-                'unsigned' => true,
-                'not null' => true,
-            ],
-            'timePeriodStart' => [
-                'description' => 'time period start for pickup',
-                'type' => 'time',
-                'unsigned' => true,
-                'not null' => true,
-            ],
-           'timePeriodEnd' => [
-                'description' => 'time period end for pickup',
-                'type' => 'time',
-                'unsigned' => true,
-                'not null' => true,
-            ],
-            'maxLockers' => [
-                'description' => 'max number of lockers for a time period and location',
-                'type' => 'int',
-                'unsigned' => true,
-                'not null' => true,
-            ],
-            'locationName' => [
-                'type' => 'text',
-                'description' => 'unique name of pickup location',
-            ],
-            'locationDescription' => [
-                'type' => 'text',
-                'description' => 'Detailed description of the pickup location',
-            ],
-            'active' => [
-                'type' => 'int',
-                'default' => 0,
-                'not null' => true,
-               'description' => 'flag indicating whether pickup location is currently being used',
-             ],
+function arborcat_schema() {
+  $schema['arborcat_patron_pickup_request'] = [
+    'description' => 'table containing pickup requests ',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
       ],
-      'primary key' => ['locationId']
-    ];
-
-    $schema['arborcat_pickup_location_exclusion'] = [
-        'description' => 'table containing exlusion dates for library pickup locations',
-        'fields' => [
-            'id' => [
-                'type' => 'serial',
-                'unsigned' => true,
-                'not null' => true,
-            ],
-            'locationId' => [
-                'description' => 'pickup location Id',
-                'type' => 'int',
-                'unsigned' => TRUE,
-                'not null' => TRUE,
-            ],
-            'dateStart' => [
-                'description' => 'exclusion start date',
-                'type' => 'date',
-                'not null' => true,
-            ],
-            'dateEnd' => [
-                'description' => 'exclusion end date',
-                'type' => 'date',
-                'not null' => false,
-                 'default' => null,
-            ],
-            'notes' => [
-                'type' => 'text',
-                'description' => 'Deescription of exclusion',
-            ],
+      'requestId' => [
+        'description' => 'request holdId',
+        'type' => 'int',
+        'size' => 'big',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
       ],
-      'primary key' => ['id']
-    ];
+      'patronId' => [
+        'description' => 'Patron UID',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'branch' => [
+        'description' => 'pickup branch',
+        'type' => 'varchar',
+        'length' => 10,
+        'default' => '',
+      ],
+      'timeSlot' => [
+        'type' => 'int',
+        'description' => 'time slot for locker pickup',
+      ],
+      'pickupDate' => [
+        'type' => 'varchar',
+        'length' => 50,
+        'default' => '',
+        'description' => 'Date to pickup requested item',
+      ],
+    'contactEmail' => [
+        'type' => 'varchar',
+        'length' => 50,
+        'default' => '',
+        'description' => 'email to notify patron',
+      ],
+      'contactPhone' => [
+        'type' => 'varchar',
+        'length' => 50,
+        'default' => '',
+        'description' => 'telephone number to notify patron using voicemail',
+      ],
+      'contactSMS' => [
+        'type' => 'varchar',
+        'length' => 50,
+        'default' => '',
+        'description' => 'cell phone number to notify patron using an SMS text message',
+      ],
+      'completed' => [
+        'type' => 'int',
+        'default' => 0,
+        'description' => 'set to 1 when hold is checked out and placed for pickup',
+      ],
+      'created' => [
+        'type' => 'int',
+        'default' => 0,
+        'description' => 'created timestamp',
+      ],
+      'locker_code' => [
+        'type' => 'varchar',
+        'length' => 50,
+        'default' => '',
+        'description' => 'phone for generating locker code',
+      ],
+      'requestType' => [
+        'type' => 'varchar',
+        'length' => 20,
+        'default' => 'HOLD_REQUEST',
+        'description' => 'type of pickup request',
+      ],
+    ],
+    'primary key' => ['id'],
+  ];
 
+  $schema['arborcat_pickup_location'] = [
+    'description' => 'table containing pickup locations with descriptions or each place',
+    'fields' => [
+      'locationId' => [
+        'description' => 'pickup location Id',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'branchLocationId' => [
+        'description' => 'library branch location Id',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'timePeriod' => [
+        'description' => 'time period for pickup',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'timePeriodStart' => [
+        'description' => 'time period start for pickup',
+        'type' => 'time',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'timePeriodEnd' => [
+        'description' => 'time period end for pickup',
+        'type' => 'time',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'maxLockers' => [
+        'description' => 'max number of lockers for a time period and location',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'locationName' => [
+        'type' => 'text',
+        'description' => 'unique name of pickup location',
+      ],
+      'locationDescription' => [
+        'type' => 'text',
+        'description' => 'Detailed description of the pickup location',
+      ],
+      'active' => [
+        'type' => 'int',
+        'default' => 0,
+        'not null' => TRUE,
+        'description' => 'flag indicating whether pickup location is currently being used',
+      ],
+    ],
+    'primary key' => ['locationId']
+  ];
 
-    return $schema;
+  $schema['arborcat_pickup_location_exclusion'] = [
+    'description' => 'table containing exlusion dates for library pickup locations',
+    'fields' => [
+      'id' => [
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'locationId' => [
+        'description' => 'pickup location Id',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ],
+      'dateStart' => [
+        'description' => 'exclusion start date',
+        'type' => 'date',
+        'not null' => TRUE,
+      ],
+      'dateEnd' => [
+        'description' => 'exclusion end date',
+        'type' => 'date',
+        'not null' => FALSE,
+        'default' => NULL,
+      ],
+      'notes' => [
+        'type' => 'text',
+        'description' => 'Deescription of exclusion',
+      ],
+    ],
+    'primary key' => ['id']
+  ];
+
+  return $schema;
 }
