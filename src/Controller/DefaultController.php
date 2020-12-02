@@ -135,7 +135,7 @@ class DefaultController extends ControllerBase {
     $ratings->average = round($ratings->average, 1);
     $user_rating = $db->query("SELECT rating FROM arborcat_ratings WHERE bib=:bib AND uid=:uid",
         [':bib' => $bib_record->id, ':uid' => $user->id()])->fetch();
-    $ratings->user_rating = $user_rating->rating;
+    $ratings->user_rating = $user_rating->rating ?? '';
 
     // if summer game codes, convert to array so template can loop over
     if (isset($bib_record->gamecodes)) {
