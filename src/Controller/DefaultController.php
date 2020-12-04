@@ -484,47 +484,51 @@ class DefaultController extends ControllerBase {
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
       $patron_id = patronId_from_barcode($patron_barcode);
-      $cancelRecord = $this->find_record_to_cancel($patron_id, $encrypted_request_id);
-      if (count($cancelRecord) > 0) {
+      if (strlen(patron_id) > 0) {
+        $cancelRecord = $this->find_record_to_cancel($patron_id, $encrypted_request_id);
+        if (count($cancelRecord) > 0) {
           $db = \Drupal::database();
           $guzzle = \Drupal::httpClient();
           $api_key = \Drupal::config('arborcat.settings')->get('api_key');
           $api_url = \Drupal::config('arborcat.settings')->get('api_url');
           $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
-          
+            
           // check date is for tomorrow or later - NOTE this is overkill - the query inside 'find_record_to_cancel' method checks for date > todays date.
           $today = (new DateTime("now", new DateTimeZone('UTC')));
-          $today->setTime(0,0,0);
+          $today->setTime(0, 0, 0);
           $tomorrow = $today->modify('+1 day');
           $pickupTime = new DateTime($cancelRecord->pickupDate, new DateTimeZone('UTC'));
           if ($pickupTime >= $tomorrow) {
-              if ($patron_id == $cancelRecord->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
-                  // go ahead and cancel the record
-                  $num_deleted = $db->delete('arborcat_patron_pickup_request')
-                      ->condition('id', $cancelRecord->id, '=')
-		                  ->execute();
-                  if (1 == $num_deleted) {
-                      // Check if the expire time > tomorrow, if not set it to tomorrow
-                      $hold_shelf_expire = new DateTime("$hold_shelf_expire_date 23:59:59", new DateTimeZone('UTC'));
-                      if ($hold_shelf_expire < $tomorrow) {
-                          $hold_shelf_expire_date = date_format($tomorrow, 'Y-m-d');
-                      }
-                      // Now update the hold_request expire_time in Evergreen
-                      $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
-                      $updated_hold = $guzzle->get($url)->getBody()->getContents();
-                      $response['success'] = 'Pickup Request Canceled';
-                  } else {
-                      $response['error'] = 'Error canceling Pickup Request';
-                  }               
+            if ($patron_id == $cancelRecord->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
+              // go ahead and cancel the record
+              $num_deleted = $db->delete('arborcat_patron_pickup_request')
+                        ->condition('id', $cancelRecord->id, '=')
+                            ->execute();
+              if (1 == $num_deleted) {
+                // Check if the expire time > tomorrow, if not set it to tomorrow
+                $hold_shelf_expire = new DateTime("$hold_shelf_expire_date 23:59:59", new DateTimeZone('UTC'));
+                if ($hold_shelf_expire < $tomorrow) {
+                  $hold_shelf_expire_date = date_format($tomorrow, 'Y-m-d');
+                }
+                // Now update the hold_request expire_time in Evergreen
+                $url = "$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $cancelRecord->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
+                $updated_hold = $guzzle->get($url)->getBody()->getContents();
+                $response['success'] = 'Pickup Request Canceled';
               } else {
-                  $response['error'] = "You are not authorized to cancel this Pickup Request";
+                $response['error'] = 'Error canceling Pickup Request';
               }
+            } else {
+              $response['error'] = "You are not authorized to cancel this Pickup Request";
+            }
           } else {
-              $response['error'] = "A Pickup Request scheduled for today cannot be canceled";
+            $response['error'] = "A Pickup Request scheduled for today cannot be canceled";
           }
+        } else {
+          $response['error'] = "The Pickup Request cancellation could not be completed";
+        }
       }
       else {
-          $response['error'] = "The Pickup Request cancellation could not be completed";
+        $response['error'] = "The Pickup Request cancellation could not be completed";
       }
       return new JsonResponse($response);
   }

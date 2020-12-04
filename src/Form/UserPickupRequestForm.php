@@ -320,7 +320,7 @@ class UserPickupRequestForm extends FormBase {
         $submit_message .= 'If all the items do not fit in the locker, the remaining items will be placed in the ' . $locations->{$branch} . ' lobby';
         $messenger->addWarning($submit_message);
       }
-
+      $error_count = 0;
       foreach ($holds as $hold) {
         if ($cancel_holds) {
           $date_time_now = new DateTime('now');
@@ -330,7 +330,7 @@ class UserPickupRequestForm extends FormBase {
           // set the expire date for each selected hold
           $updated_hold = $guzzle->get("$api_url/patron/$selfCheckApi_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
           // create arborcat_patron_pickup_request records for each of the selected holds
-          arborcat_create_pickup_request_record(
+          $result = arborcat_create_pickup_request_record(
             'HOLD_REQUEST',
             $hold['holdId'],
             $pnum,
@@ -343,16 +343,27 @@ class UserPickupRequestForm extends FormBase {
             ($notification_types['phone'] ? $patron_phone : NULL),
             $patron_phone ?? NULL
           );
+
+          if ($result < 0) {
+            $error_count += 1;
+          }
+
         }
       }
-      $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
-      $messenger->addMessage($submit_message);
- 
-      $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-      $uid = $user->id();
-      $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
+      if ($error_count == 0) {
+        $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
+        $messenger->addMessage($submit_message);
+  
+        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+        $uid = $user->id();
+        $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
 
-      return $form_state->setRedirectUrl($url);
+        return $form_state->setRedirectUrl($url);
+      }
+      else {
+        $messenger->addMessage("There was an error processing your pickup requests. Please try submitting the form again");
+      }
+
     }
   }
 

@@ -319,6 +319,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
         ->condition('requestId', $customId, '=');
       $results = $query->execute()->fetchCol();
     } catch (Exception $e) {
+      drupal_set_message('An error occurred creating this pickup request. Please try again');
       return -1;
     }
     // If a record exists containing the $customId, just return the id of the record, otherwise insert a new record with the customId and return the $id of the new record
@@ -345,6 +346,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
 
         return $id;
       } catch (Exception $e) {
+        drupal_set_message('An error occurred saving this pickup request. Please try again');
         $txn->rollBack();
 
         return -1;
@@ -353,6 +355,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
   }
 
   function barcode_From_patronId($patron_id) {
+    $return_val = "";
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $guzzle = \Drupal::httpClient();
@@ -362,20 +365,22 @@ function arborcat_patron_fines_expired($fines, $patron) {
       $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
 
      } catch (Exception $e) {
+      // Note no error message is not set here - check in made in calling methods for a valid barcode and
+       // an error message is displayed to the user there.
 
-      return "";
+      return $return_val;
     }
 
     if ($json) {
       $barcode =  $json->evg_user->card->barcode;
-
-      return $barcode;
-    } else {
-      return "";
+      $return_val = $barcode;
     }
+
+    return $return_val;
   }
 
   function patronId_from_barcode($barcode) {
+    $return_val = "";
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $guzzle = \Drupal::httpClient();
@@ -383,15 +388,18 @@ function arborcat_patron_fines_expired($fines, $patron) {
      try {
        $json = json_decode($guzzle->get($requestURL)->getBody()->getContents());
      } catch (Exception $e) {
-      return "";
+       // Note no error message is not set here - check in made in calling method for a valid patron_id and 
+       // an error message is displayed to the user there.
+
+     return $return_val;
      }
+
     if ($json) {
       $patron_id =  $json->pid;
-
-      return $patron_id;
-    } else {
-      return "";
+      $return_val = $patron_id;
     }
+
+    return $return_val;
   }
   
   function arborcat_custom_pickup_request($pickup_request_type, $customPickupRequestId) {
