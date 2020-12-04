@@ -406,30 +406,6 @@ class DefaultController extends ControllerBase {
   // ----------------------------------
   public function pickup_test() {
     $return_val = '';
-    
-    // $date1 = new DateTime("2020-11-01 23:59:59", new DateTimeZone('UTC'));
-    // $date2 = clone $date1;
-    // $date2->modify('+45 days');
-    // for ($i=1; $i<14; $i++) {
-    //   dblog("LOOP: ** $i **");
-    //   $stuff = arborcat_get_pickup_dates(102, date_format($date1, 'Y-m-d'), date_format($date2, 'Y-m-d'));
-    //   $date1->modify('+1 day');
-    //   $date2->modify('+1 day');
-    // }
-    // For testing pickupDate calculate method changes
-    // $stuff = arborcat_get_pickup_dates(102, date_format($date1, 'Y-m-d'), date_format($date2, 'Y-m-d'));
-
-    //   $pickupdates =[];
-    //   foreach ($stuff as $data_item_key => $data_item_value) {
-    //     dblog('FOREACH ', $data_item_key, $data_item_value);
-    //     $append_string =  ($data_item_value['date_exclusion_data'] != null) ? ' * not available *' : '';
-    //     $pickupdates[$data_item_key] = $data_item_value['display_date_string'] . $append_string;
-    //   }
-    //   dblog('AFTER FOREACH - pickupdates = ', $pickupdates);
-    // return [
-    //   '#title' => 'pickup request test',
-    //   '#markup' => json_encode($stuff)
-    // ];
 
     $barcode = \Drupal::request()->query->get('barcode');
     $patron_id = \Drupal::request()->query->get('patronid');
