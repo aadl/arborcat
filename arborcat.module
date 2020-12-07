@@ -61,12 +61,15 @@ function arborcat_theme($existing, $type, $theme, $path) {
 }
 
 /**
+ * Pass variables to front-end JS
  * @param $variables
  */
 function arborcat_preprocess_page(&$variables) {
   // get the max locker item check  from ArborCat module settings
   $max_locker_items = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
   $variables['#attached']['drupalSettings']['arborcat']['max_locker_items_check'] = $max_locker_items;
+  $exclusion_marker_string = \Drupal::config('arborcat.settings')->get('exclusion_marker_string');
+  $variables['#attached']['drupalSettings']['arborcat']['exclusion_marker_string'] = $exclusion_marker_string;
 }
 
 function arborcat_generate_api_key() {
@@ -530,5 +533,4 @@ function arborcat_get_pickup_locations($branch_location_id) {
 
   return $location_ids;
 }
-
 

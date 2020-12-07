@@ -3,12 +3,23 @@
     attach: function (context, settings) {
       $(document, context).once('pickupRequestBehavior').each(function () {
         var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check;
+        var exclusion_marker_string = drupalSettings.arborcat.exclusion_marker_string;
 
         $(function () {
           // INITIALIZATION/SETUP
+          var pickup_date_select_field = $("#edit-pickup-date");
+          // check each of the option display strngs for each date to see whether the exclusion_marker_string has been appended to the end of the date.
+          // If so, disable the menu item
+          var options = $('#edit-pickup-date option');
+          for (var index=0; index < options.length; index++) {
+            var an_option = options[index];
+            var option_outer_text = an_option.outerText;
+            if (option_outer_text.includes(exclusion_marker_string)) {
+              $(an_option).attr('disabled','disabled');
+            }
+          }
 
-          // helper methods
-          function checkedItems() {
+         function checkedItems() {
             var numitems = $("#edit-item-table tbody tr").length;
             var numchecked = 0;
             for (var i = numitems; i > 0; i--) {

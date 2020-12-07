@@ -455,15 +455,17 @@ class DefaultController extends ControllerBase {
   public function pickup_request($pnum, $encrypted_barcode, $loc) {
       $mode = \Drupal::request()->query->get('mode');
       $request_pickup_html = '';
+      $exclusion_marker_string = \Drupal::config('arborcat.settings')->get('exclusion_marker_string');
       if ($this->validateTransaction($pnum, $encrypted_barcode)) {
-          $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
+          $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode, $exclusion_marker_string);
       } else {
           drupal_set_message('The Pickup Request could not be processed');
       }
       $render[] = [
               '#theme' => 'pickup_request_form',
               '#formhtml' => $request_pickup_html,
-              '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check')
+              '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
+              '#exclusion_marker_string' => $exclusion_marker_string,
           ];
       return $render;
   } 

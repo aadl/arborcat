@@ -16,7 +16,7 @@ class UserPickupRequestForm extends FormBase {
     return 'user_pickup_request_form';
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state, string $patron_id = NULL, string $request_location = NULL, string $mode = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, string $patron_id = NULL, string $request_location = NULL, string $mode = NULL, string $exclusion_marker_string = NULL) {
     $guzzle = \Drupal::httpClient();
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -123,8 +123,8 @@ class UserPickupRequestForm extends FormBase {
         ];
  
     if (!isset($cancel_holds)) {
-      $starting_day_offset = 1; // Load these from ArborCat Settings?
-      $number_of_pickup_days = 7;     // Load these from ArborCat Settings?
+      $starting_day_offset = \Drupal::config('arborcat.settings')->get('starting_day_offset');
+      $number_of_pickup_days = \Drupal::config('arborcat.settings')->get('number_of_pickup_days');
       $starting_day = new DateTime('+' . $starting_day_offset . ' day');
       
       // SPECIAL CASE for library-wide closure in order to force starting date to be the first day after the closure if 
@@ -143,7 +143,7 @@ class UserPickupRequestForm extends FormBase {
       
       $pickup_dates =[];
       foreach ($pickup_dates_data as $data_item_key => $data_item_value) {
-        $append_string =  ($data_item_value['date_exclusion_data'] != NULL) ? ' * not available *' : '';
+        $append_string =  ($data_item_value['date_exclusion_data'] != NULL) ? ' ' . $exclusion_marker_string : '';
         $pickup_dates[$data_item_key] = $data_item_value['display_date_string'] . $append_string;
       }
       $form['pickup_date'] = [
