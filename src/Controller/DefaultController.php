@@ -372,9 +372,9 @@ class DefaultController extends ControllerBase {
           $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
           foreach ($hold_locations as $loc) {
-              $locationName = ($loc < 110) ? $locations->{$loc} : 'melcat';
+              $location_name = ($loc < 110) ? $locations->{$loc} : 'melcat';
               $url = $this->create_pickup_url($patron_id, $barcode, $loc);
-              array_push($location_urls, ['url'=>$url, 'loc'=>$loc, 'locname'=>$locationName]);
+              array_push($location_urls, ['url'=>$url, 'loc'=>$loc, 'locname'=>$location_name]);
           }
         }
       } else {
@@ -471,8 +471,8 @@ class DefaultController extends ControllerBase {
   } 
 
   public function custom_pickup_request($pickup_request_type, $overload_parameter) {
-     $resultMessage = arborcat_custom_pickup_request($pickup_request_type, $overload_parameter);
-   return new JsonResponse($resultMessage);
+     $result_message = arborcat_custom_pickup_request($pickup_request_type, $overload_parameter);
+   return new JsonResponse($result_message);
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {

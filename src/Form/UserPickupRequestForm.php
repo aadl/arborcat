@@ -159,8 +159,8 @@ class UserPickupRequestForm extends FormBase {
       $pickup_options =  [];
       $i = 1;
       foreach ($pickup_locations_for_request as $location_object) {
-        $addLocation = TRUE;
-        if (TRUE == $addLocation) {
+        $add_location = TRUE;
+        if (TRUE == $add_location) {
           // need to append the times in human readable form
           $start_time_object = new dateTime($location_object->timePeriodStart);
           $end_time_Object = new dateTime($location_object->timePeriodEnd);

@@ -17,9 +17,9 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 class DefaultController extends ControllerBase {
 
   public function user_lists($uid = NULL) {
-    $currentUid = \Drupal::currentUser()->id();
+    $current_uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    if ($currentUid != $uid && !$user->hasPermission('administer users')) {
+    if ($current_uid != $uid && !$user->hasPermission('administer users')) {
       drupal_set_message('You are not authorized to view these lists', 'warning');
       return new RedirectResponse(\Drupal::url('user.page'));
     }
