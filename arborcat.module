@@ -416,7 +416,7 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
     // NOTE notification_options can have multiple entries and this is handled by creating a regular array of the different result values
     $assoc_results = [];
     foreach ($raw_name_value_results as $entry) {
-      $keyname = $entry->name;
+      $key_name = $entry->name;
       if ("notification_options" == $key_name) {
         if (!array_key_exists($key_name, $assoc_results)) {
           $assoc_results[$key_name] = [];
