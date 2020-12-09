@@ -276,14 +276,14 @@ function arborcat_load_patron_eligible_holds($patron_barcode, $request_location=
           $shelf_expire = date('Y-m-d', strtotime($hold['hold']['shelf_expire_time']));
           if (arborcat_eligible_for_locker($hold) && $shelf_expire >= date('Y-m-d')) {
             $eligible_holds[$i] = [
-                            'Title' => $hold['title'],
-                            'Status' => $hold['status'],
-                            'PickupLoc' => $hold['pickup'],
-                            'pickup_lib' => $hold['hold']['pickup_lib'],
-                            'holdId' => $hold['id'],
-                            'usr' => $hold['hold']['usr'],
-                            'artPrintTool' => ($hold['material'] == "Art Print" || $hold['material'] == "Tools") ? TRUE : FALSE
-                        ];
+              'Title' => $hold['title'],
+              'Status' => $hold['status'],
+              'PickupLoc' => $hold['pickup'],
+              'pickup_lib' => $hold['hold']['pickup_lib'],
+              'holdId' => $hold['id'],
+              'usr' => $hold['hold']['usr'],
+              'artPrintTool' => ($hold['material'] == "Art Print" || $hold['material'] == "Tools") ? TRUE : FALSE
+            ];
             $i++;
           }
         }
@@ -358,18 +358,14 @@ function arborcat_barcode_from_patron_id($patron_id) {
 
   try {
     $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
-  } 
-  catch (Exception $e) {
-
+  } catch (Exception $e) {
     return "";
   }
   if ($json) {
     $barcode =  $json->evg_user->card->barcode;
 
     return $barcode;
-  } 
-  else {
-  
+  } else {
     return "";
   }
 }
@@ -379,20 +375,16 @@ function arborcat_patron_id_from_barcode($barcode) {
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
   $guzzle = \Drupal::httpClient();
   $request_url = "$api_url/patron?apikey=$api_key&barcode=$barcode";
-    try {
-      $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
-    } 
-    catch (Exception $e) {
-
+  try {
+    $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
+  } catch (Exception $e) {
     return "";
   }
   if ($json) {
     $patron_id =  $json->pid;
 
     return $patron_id;
-  } 
-  else {
-    
+  } else {
     return "";
   }
 }
@@ -429,8 +421,7 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
       $branch_name_array = explode(" ", $assoc_results['delivery_method']);
       if ($branch_name_array[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
         $result_message = 'SUCCESS';
-      }
-      else {
+      } else {
         $front_back = ($branch_name_array[1] == 'Back' || $branch_name_array[1] == 'Front') ? $branch_name_array[1] : NULL;
         $pickup_locations = arborcat_pickup_locations(NULL, $branch_name_array[0], $front_back, TRUE);
         $branch = $pickup_locations[0]->branchLocationId;
@@ -501,7 +492,7 @@ function arborcat_get_pickup_dates($location, $start_date_ymd, $end_date_ymd) {
     $result = $query->execute();
     $exclusion_data_array = $result->fetchAll();
 
-    $exclusion_data = null;
+    $exclusion_data = NULL;
     if (count($exclusion_data_array) > 0) {
       $exclusion_data = $exclusion_data_array[0];
     }
@@ -529,4 +520,3 @@ function arborcat_get_pickup_locations($branch_location_id) {
 
   return $location_ids;
 }
-

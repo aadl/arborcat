@@ -11,7 +11,6 @@ use DateTime;
 use DateTimeHelper;
 
 class UserPickupRequestForm extends FormBase {
-
   public function getFormId() {
     return 'user_pickup_request_form';
   }
@@ -112,22 +111,22 @@ class UserPickupRequestForm extends FormBase {
                                      $direction_string .
                                      '<div><div class="l-inline-b side-by-side-form">';
     $form['item_table']=[
-            '#prefix' => $prefix_html,
-            '#type'=>'tableselect',
-            '#header' => $header,
-            '#options' => $eligible_holds,
-            '#multiple' => 'TRUE',
-            '#empty' => "You have no holds ready for pickup.",
-            '#suffix' => '</div>',
-            '#default_value' => $selection
-        ];
+      '#prefix' => $prefix_html,
+      '#type'=>'tableselect',
+      '#header' => $header,
+      '#options' => $eligible_holds,
+      '#multiple' => 'TRUE',
+      '#empty' => "You have no holds ready for pickup.",
+      '#suffix' => '</div>',
+      '#default_value' => $selection
+    ];
  
     if (!isset($cancel_holds)) {
       $starting_day_offset = \Drupal::config('arborcat.settings')->get('starting_day_offset');
       $number_of_pickup_days = \Drupal::config('arborcat.settings')->get('number_of_pickup_days');
       $starting_day = new DateTime('+' . $starting_day_offset . ' day');
       
-      // SPECIAL CASE for library-wide closure in order to force starting date to be the first day after the closure if 
+      // SPECIAL CASE for library-wide closure in order to force starting date to be the first day after the closure if
       // this form is being opened whilst the closure is in operation
       $opening_date = new DateTime('20-12-09');
 
@@ -138,7 +137,7 @@ class UserPickupRequestForm extends FormBase {
       $starting_day_plus_pickup_days = clone $starting_day;
       $starting_day_plus_pickup_days->modify('+' . $number_of_pickup_days - 1 . ' days');
 
-      $pickup_dates_data = arborcat_get_pickup_dates($request_location, $starting_day->format('Y-m-d'), $starting_day_plus_pickup_days->format('Y-m-d'));             
+      $pickup_dates_data = arborcat_get_pickup_dates($request_location, $starting_day->format('Y-m-d'), $starting_day_plus_pickup_days->format('Y-m-d'));
       $form_state->set('exclusionData', $pickup_dates_data);
       
       $pickup_dates =[];
@@ -147,13 +146,13 @@ class UserPickupRequestForm extends FormBase {
         $pickup_dates[$data_item_key] = $data_item_value['display_date_string'] . $append_string;
       }
       $form['pickup_date'] = [
-              '#prefix' => '<div class="l-inline-b side-by-side-form">',
-              '#type' => 'select',
-              '#title' => t('Pickup Dates'),
-              '#options' => $pickup_dates,
-              '#description' => t('Choose the date to pick up your requests.'),
-              '#required' => TRUE
-            ];
+        '#prefix' => '<div class="l-inline-b side-by-side-form">',
+        '#type' => 'select',
+        '#title' => t('Pickup Dates'),
+        '#options' => $pickup_dates,
+        '#description' => t('Choose the date to pick up your requests.'),
+        '#required' => TRUE
+      ];
 
       $pickup_locations_for_request = arborcat_pickup_locations($request_location);
       $pickup_options =  [];
@@ -175,51 +174,51 @@ class UserPickupRequestForm extends FormBase {
         }
       }
       $form['pickup_type'] = [
-              '#prefix' => '<div class="l-inline-b side-by-side-form">',
-              '#type' => 'select',
-              '#title' => t("Contactless Pickup Method for $location_name"),
-              '#options' => $pickup_options,
-              '#description' => t('Select how you would like to pick up your requests. To use a locker, please choose an available timeslot'),
-              '#required' => TRUE
-            ];
+        '#prefix' => '<div class="l-inline-b side-by-side-form">',
+        '#type' => 'select',
+        '#title' => t("Contactless Pickup Method for $location_name"),
+        '#options' => $pickup_options,
+        '#description' => t('Select how you would like to pick up your requests. To use a locker, please choose an available timeslot'),
+        '#required' => TRUE
+      ];
 
       $form['notification_types'] = [
-                '#type' => 'checkboxes',
-                '#title' => t('Notification Options'),
-                '#options' => [
-                    'email' => 'Email',
-                    'sms' => 'Text',
-                    'phone' => 'Phone Call'
-                ],
-                '#description' => t('Select which ways you would like to be notified when your request is ready for pickup'),
-                '#required' => TRUE,
-                '#default_value' => ['email']
-            ];
+        '#type' => 'checkboxes',
+        '#title' => t('Notification Options'),
+        '#options' => [
+          'email' => 'Email',
+          'sms' => 'Text',
+          'phone' => 'Phone Call'
+        ],
+        '#description' => t('Select which ways you would like to be notified when your request is ready for pickup'),
+        '#required' => TRUE,
+        '#default_value' => ['email']
+      ];
 
       $form['phone'] = [
-                '#type' => 'textfield',
-                '#title' => t('Phone Number'),
-                '#default_value' => $patron_info['telephone'],
-                '#size' => 32,
-                '#maxlength' => 64
-            ];
+        '#type' => 'textfield',
+        '#title' => t('Phone Number'),
+        '#default_value' => $patron_info['telephone'],
+        '#size' => 32,
+        '#maxlength' => 64
+      ];
 
       $form['email'] = [
-                '#type' => 'textfield',
-                '#title' => t('Email'),
-                '#default_value' => $patron_info['email'],
-                '#size' => 32,
-                '#maxlength' => 64
-            ];
+        '#type' => 'textfield',
+        '#title' => t('Email'),
+        '#default_value' => $patron_info['email'],
+        '#size' => 32,
+        '#maxlength' => 64
+      ];
     }
 
     $prefix_html = '<span id="submitting">';
     $form['submit'] = [
-            '#type' => 'submit',
-            '#default_value' => t($submit_text),
-            '#prefix' => $prefix_html,
-            '#suffix' => '</span>',
-            //'#attributes' => ['disabled' => 'disabled']
+      '#type' => 'submit',
+      '#default_value' => t($submit_text),
+      '#prefix' => $prefix_html,
+      '#suffix' => '</span>',
+      //'#attributes' => ['disabled' => 'disabled']
     ];
 
     return $form;
@@ -237,7 +236,7 @@ class UserPickupRequestForm extends FormBase {
       // if (($pickup_point == 1000 || $pickup_point == 1002 || $pickup_point == 1012) && $pickup_date == '2020-11-03') {
       //   $form_state->setErrorByName('pickup_date', t('No appointments are available Downtown or at Pittsfield this day due to Election Day.'));
 
-      // Check for exclusion dates 
+      // Check for exclusion dates
       $exclusion_data = $form_state->get('exclusionData');
       $exclusion_data_object = $exclusion_data[$pickup_date]['date_exclusion_data'];
       if ($exclusion_data_object) {
@@ -252,7 +251,7 @@ class UserPickupRequestForm extends FormBase {
       $lockers = arborcat_locker_pickup_locations();
       $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
       if (in_array($pickup_point, $lockers)) {                                        // check if it's a locker pickup request
-          $pickup_date =  $form_state->getValue('pickup_date');
+        $pickup_date =  $form_state->getValue('pickup_date');
               
         if (!$form_state->getValue('phone')) {
           $form_state->setErrorByName('phone', t('A phone number is required for lockers so we can generate your locker code'));
@@ -290,7 +289,7 @@ class UserPickupRequestForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $pickup_date =  $form_state->getValue('pickup_date');
 
-   $messenger = \Drupal::messenger();
+    $messenger = \Drupal::messenger();
     //parse telephone number into seven digit locker code
     $locker_code = $form_state->getValue('lockercode');
     $locker_code = preg_replace("/[\\s\\-()]/", "", $locker_code);
