@@ -375,7 +375,7 @@ function arborcat_barcode_from_patron_id($patron_id) {
     $return_val = $barcode;
   }
   
-  return return_val;
+  return $return_val;
 }
 
 function arborcat_patron_id_from_barcode($barcode) {
