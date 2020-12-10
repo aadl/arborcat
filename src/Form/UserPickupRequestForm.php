@@ -24,7 +24,7 @@ class UserPickupRequestForm extends FormBase {
     $account = \Drupal\user\Entity\User::load($uid);
     $patron_barcode = $patron_info['evg_user']['card']['barcode'];
     $eligible_holds = arborcat_load_patron_eligible_holds($patron_barcode, $request_location);
-  
+
     // Get the locations
     $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
     $location_name = $locations->$request_location;
@@ -120,12 +120,12 @@ class UserPickupRequestForm extends FormBase {
             '#suffix' => '</div>',
             '#default_value' => $selection
         ];
- 
+
     if (!isset($cancel_holds)) {
       $starting_day_offset = \Drupal::config('arborcat.settings')->get('starting_day_offset');
       $number_of_pickup_days = \Drupal::config('arborcat.settings')->get('number_of_pickup_days');
       $starting_day = new DateTime('+' . $starting_day_offset . ' day');
-      
+
       // SPECIAL CASE for library-wide closure in order to force starting date to be the first day after the closure if
       // this form is being opened whilst the closure is in operation
       $opening_date = new DateTime('20-12-09');
@@ -139,7 +139,7 @@ class UserPickupRequestForm extends FormBase {
 
       $pickup_dates_data = arborcat_get_pickup_dates($request_location, $starting_day->format('Y-m-d'), $starting_day_plus_pickup_days->format('Y-m-d'));
       $form_state->set('exclusionData', $pickup_dates_data);
-      
+
       $pickup_dates =[];
       foreach ($pickup_dates_data as $data_item_key => $data_item_value) {
         $append_string =  ($data_item_value['date_exclusion_data'] != NULL) ? ' ' . $exclusion_marker_string : '';
@@ -158,8 +158,8 @@ class UserPickupRequestForm extends FormBase {
       $pickup_options =  [];
       $i = 1;
       foreach ($pickup_locations_for_request as $location_object) {
-        $addLocation = TRUE;
-        if (TRUE == $addLocation) {
+        $add_location = TRUE;
+        if (TRUE == $add_location) {
           // need to append the times in human readable form
           $start_time_object = new dateTime($location_object->timePeriodStart);
           $end_time_Object = new dateTime($location_object->timePeriodEnd);
@@ -252,7 +252,7 @@ class UserPickupRequestForm extends FormBase {
       $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
       if (in_array($pickup_point, $lockers)) {                                        // check if it's a locker pickup request
         $pickup_date =  $form_state->getValue('pickup_date');
-              
+
         if (!$form_state->getValue('phone')) {
           $form_state->setErrorByName('phone', t('A phone number is required for lockers so we can generate your locker code'));
         }
@@ -263,7 +263,7 @@ class UserPickupRequestForm extends FormBase {
                     ->condition('locationId', $pickup_point, '=')
                     ->execute();
         $pickup_location = $query->fetch();
-                
+
         $patron_id = $form_state->getValue('pnum');
         $avail = arborcat_check_locker_availability($pickup_date, $pickup_location, $patron_id);
 
@@ -332,7 +332,7 @@ class UserPickupRequestForm extends FormBase {
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $self_check_api_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
- 
+
       // Get the locations
       $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
@@ -373,7 +373,7 @@ class UserPickupRequestForm extends FormBase {
       if ($error_count == 0) {
         $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
         $messenger->addMessage($submit_message);
-  
+
         $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
         $uid = $user->id();
         $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
@@ -403,7 +403,7 @@ class UserPickupRequestForm extends FormBase {
       foreach ($holds as $title) {
         $email_message = $email_message.$title['Title']."\r\n";
       }
-      $mailManager = \Drupal::service('plugin.manager.mail');
+      $mail_manager = \Drupal::service('plugin.manager.mail');
       mail($email_to, $email_subject, $email_message, $email_headers);
     }
   }

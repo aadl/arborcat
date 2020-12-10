@@ -384,9 +384,9 @@ class DefaultController extends ControllerBase {
           $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
           foreach ($hold_locations as $loc) {
-            $locationName = ($loc < 110) ? $locations->{$loc} : 'melcat';
+            $location_name = ($loc < 110) ? $locations->{$loc} : 'melcat';
             $url = $this->create_pickup_url($patron_id, $barcode, $loc);
-            array_push($location_urls, ['url'=>$url, 'loc'=>$loc, 'locname'=>$locationName]);
+            array_push($location_urls, ['url'=>$url, 'loc'=>$loc, 'locname'=>$location_name]);
           }
         }
       } else {
@@ -424,13 +424,13 @@ class DefaultController extends ControllerBase {
     $patron_id = \Drupal::request()->query->get('patronid');
     $location = \Drupal::request()->query->get('location');
     $request_id = \Drupal::request()->query->get('requestid');
-    
+
     if (strlen($location) == 3) {
       //$locations = pickupLocations($location);
     } else {
       $location = '102';
     }
-    
+
     $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
 
     if (strlen($request_id) > 0) {
@@ -448,7 +448,7 @@ class DefaultController extends ControllerBase {
       }
       $encrypted_barcode = md5($pickup_requests_salt . $barcode);
       $return_val = '<h2>' . $patron_id .' -> '. $barcode . ' -> ' . $encrypted_barcode . '</h2><br>';
-  
+
       $host = 'http://nginx.docker.localhost:8000';
       $link = $host . '/pickuprequest/' . $patron_id . '/'. $encrypted_barcode . '/' . $location;
       $html = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
@@ -482,9 +482,9 @@ class DefaultController extends ControllerBase {
   }
 
   public function custom_pickup_request($pickup_request_type, $overload_parameter) {
-    $resultMessage = arborcat_custom_pickup_request($pickup_request_type, $overload_parameter);
+    $result_message = arborcat_custom_pickup_request($pickup_request_type, $overload_parameter);
 
-    return new JsonResponse($resultMessage);
+    return new JsonResponse($result_message);
   }
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
@@ -496,7 +496,7 @@ class DefaultController extends ControllerBase {
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $self_check_api_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
-      
+
       // check date is for tomorrow or later - NOTE this is overkill - the query inside 'find_record_to_cancel' method checks for date > todays date.
       $today = (new DateTime("now", new DateTimeZone('UTC')));
       $today->setTime(0, 0, 0);
@@ -530,7 +530,7 @@ class DefaultController extends ControllerBase {
     } else {
       $response['error'] = "The Pickup Request cancellation could not be completed";
     }
-    
+
     return new JsonResponse($response);
   }
 
