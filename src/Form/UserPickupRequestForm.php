@@ -124,18 +124,20 @@ class UserPickupRequestForm extends FormBase {
     if (!isset($cancel_holds)) {
       $starting_day_offset = \Drupal::config('arborcat.settings')->get('starting_day_offset');
       $number_of_pickup_days = \Drupal::config('arborcat.settings')->get('number_of_pickup_days');
-      $starting_day = new DateTime('+' . $starting_day_offset . ' day');
+      $starting_day = new DateTime();
+      $starting_day->modify('+1 day');
 
       // SPECIAL CASE for library-wide closure in order to force starting date to be the first day after the closure if
       // this form is being opened whilst the closure is in operation
-      $opening_date = new DateTime('20-12-09');
+      // $opening_date = new DateTime('20-12-09');
 
-      if ($starting_day < $opening_date) {
-        $starting_day = $opening_date;
-      }
+      // if ($starting_day < $opening_date) {
+      //   $starting_day = $opening_date;
+      // }
 
       $starting_day_plus_pickup_days = clone $starting_day;
-      $starting_day_plus_pickup_days->modify('+' . $number_of_pickup_days - 1 . ' days');
+      $modifystring = '+' . $number_of_pickup_days - 1 . ' days';
+      $starting_day_plus_pickup_days->modify($modifystring);
 
       $pickup_dates_data = arborcat_get_pickup_dates($request_location, $starting_day->format('Y-m-d'), $starting_day_plus_pickup_days->format('Y-m-d'));
       $form_state->set('exclusionData', $pickup_dates_data);
@@ -158,20 +160,17 @@ class UserPickupRequestForm extends FormBase {
       $pickup_options =  [];
       $i = 1;
       foreach ($pickup_locations_for_request as $location_object) {
-        $add_location = TRUE;
-        if (TRUE == $add_location) {
-          // need to append the times in human readable form
-          $start_time_object = new dateTime($location_object->timePeriodStart);
-          $end_time_Object = new dateTime($location_object->timePeriodEnd);
-          $time_period_formatted = ', ' . date_format($start_time_object, "ga") . ' to ' . date_format($end_time_Object, "ga");
-          // check if this is an overnight time period
-          if ($end_time_Object < $start_time_object) {
-            $time_period_formatted .= ' (overnight)';
-          }
-          $name_plus_time_period = $location_object->locationName . $time_period_formatted;
-          // concatenate the locationId and the timeslot into the key
-          $pickup_options["$location_object->locationId-$location_object->timePeriod"] = $name_plus_time_period;
+        // need to append the times in human readable form
+        $start_time_object = new dateTime($location_object->timePeriodStart);
+        $end_time_Object = new dateTime($location_object->timePeriodEnd);
+        $time_period_formatted = ', ' . date_format($start_time_object, "ga") . ' to ' . date_format($end_time_Object, "ga");
+        // check if this is an overnight time period
+        if ($end_time_Object < $start_time_object) {
+          $time_period_formatted .= ' (overnight)';
         }
+        $name_plus_time_period = $location_object->locationName . $time_period_formatted;
+        // concatenate the locationId and the timeslot into the key
+        $pickup_options["$location_object->locationId-$location_object->timePeriod"] = $name_plus_time_period;
       }
       $form['pickup_type'] = [
               '#prefix' => '<div class="l-inline-b side-by-side-form">',
