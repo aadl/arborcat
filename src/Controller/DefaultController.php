@@ -469,7 +469,7 @@ class DefaultController extends ControllerBase {
     if ($this->validate_transaction($pnum, $encrypted_barcode)) {
       $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode, $exclusion_marker_string);
     } else {
-      drupal_set_message('The Pickup Request could not be processed');
+      drupal_set_message('The Pickup Request could not be processed', 'error');
     }
     $render[] = [
       '#theme' => 'pickup_request_form',

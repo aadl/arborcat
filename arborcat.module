@@ -347,7 +347,7 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
 
       return $id;
     } catch (Exception $e) {
-      drupal_set_message('An error occurred saving this pickup request. Please try again');
+      drupal_set_message('An error occurred saving this pickup request. Please try again', 'error');
       $txn->rollBack();
 
       return -1;
@@ -402,7 +402,7 @@ function arborcat_patron_id_from_barcode($barcode) {
 }
 
 function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_request_id) {
-  $resultMessage = '';
+  $result_message = '';
   if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG') {
     // Extract fields from the printJob request form
     $db = \Drupal::database();

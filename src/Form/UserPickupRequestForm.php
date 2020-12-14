@@ -402,7 +402,6 @@ class UserPickupRequestForm extends FormBase {
       foreach ($holds as $title) {
         $email_message = $email_message.$title['Title']."\r\n";
       }
-      $mail_manager = \Drupal::service('plugin.manager.mail');
       mail($email_to, $email_subject, $email_message, $email_headers);
     }
   }
