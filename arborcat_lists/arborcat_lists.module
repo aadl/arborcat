@@ -162,8 +162,8 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       /* SG2020 NO POINTS FOR CHECKOUTS =================================================
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
         if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
-          $userData = \Drupal::service('user.data');
-          if ($sg_active_pid = $userData->get('summergame', $uid, 'sg_active_pid')) {
+          $user_data = \Drupal::service('user.data');
+          if ($sg_active_pid = $user_data->get('summergame', $uid, 'sg_active_pid')) {
             $player = summergame_player_load($sg_active_pid);
           }
           else {
@@ -192,9 +192,9 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
     }
 
     // Save checkouts to checkout cache
-    $userData = \Drupal::service('user.data');
-    $userData->delete('arborcat_lists', $uid, 'cc_bnums');
-    $userData->set('arborcat_lists', $uid, 'cc_bnums', $co_bnums);
+    $user_data = \Drupal::service('user.data');
+    $user_data->delete('arborcat_lists', $uid, 'cc_bnums');
+    $user_data->set('arborcat_lists', $uid, 'cc_bnums', $co_bnums);
   }
 }
 

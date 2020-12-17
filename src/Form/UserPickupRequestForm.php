@@ -11,7 +11,6 @@ use DateTime;
 use DateTimeHelper;
 
 class UserPickupRequestForm extends FormBase {
-
   public function getFormId() {
     return 'user_pickup_request_form';
   }
@@ -25,7 +24,7 @@ class UserPickupRequestForm extends FormBase {
     $account = \Drupal\user\Entity\User::load($uid);
     $patron_barcode = $patron_info['evg_user']['card']['barcode'];
     $eligible_holds = arborcat_load_patron_eligible_holds($patron_barcode, $request_location);
-  
+
     // Get the locations
     $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
     $location_name = $locations->$request_location;
@@ -121,26 +120,28 @@ class UserPickupRequestForm extends FormBase {
             '#suffix' => '</div>',
             '#default_value' => $selection
         ];
- 
+
     if (!isset($cancel_holds)) {
       $starting_day_offset = \Drupal::config('arborcat.settings')->get('starting_day_offset');
       $number_of_pickup_days = \Drupal::config('arborcat.settings')->get('number_of_pickup_days');
-      $starting_day = new DateTime('+' . $starting_day_offset . ' day');
-      
-      // SPECIAL CASE for library-wide closure in order to force starting date to be the first day after the closure if 
-      // this form is being opened whilst the closure is in operation
-      $opening_date = new DateTime('20-12-09');
+      $starting_day = new DateTime();
+      $starting_day->modify('+1 day');
 
-      if ($starting_day < $opening_date) {
-        $starting_day = $opening_date;
-      }
+      // SPECIAL CASE for library-wide closure in order to force starting date to be the first day after the closure if
+      // this form is being opened whilst the closure is in operation
+      // $opening_date = new DateTime('20-12-09');
+
+      // if ($starting_day < $opening_date) {
+      //   $starting_day = $opening_date;
+      // }
 
       $starting_day_plus_pickup_days = clone $starting_day;
-      $starting_day_plus_pickup_days->modify('+' . $number_of_pickup_days - 1 . ' days');
+      $modifystring = '+' . $number_of_pickup_days - 1 . ' days';
+      $starting_day_plus_pickup_days->modify($modifystring);
 
-      $pickup_dates_data = arborcat_get_pickup_dates($request_location, $starting_day->format('Y-m-d'), $starting_day_plus_pickup_days->format('Y-m-d'));             
+      $pickup_dates_data = arborcat_get_pickup_dates($request_location, $starting_day->format('Y-m-d'), $starting_day_plus_pickup_days->format('Y-m-d'));
       $form_state->set('exclusionData', $pickup_dates_data);
-      
+
       $pickup_dates =[];
       foreach ($pickup_dates_data as $data_item_key => $data_item_value) {
         $append_string =  ($data_item_value['date_exclusion_data'] != NULL) ? ' ' . $exclusion_marker_string : '';
@@ -159,20 +160,17 @@ class UserPickupRequestForm extends FormBase {
       $pickup_options =  [];
       $i = 1;
       foreach ($pickup_locations_for_request as $location_object) {
-        $addLocation = TRUE;
-        if (TRUE == $addLocation) {
-          // need to append the times in human readable form
-          $start_time_object = new dateTime($location_object->timePeriodStart);
-          $end_time_Object = new dateTime($location_object->timePeriodEnd);
-          $time_period_formatted = ', ' . date_format($start_time_object, "ga") . ' to ' . date_format($end_time_Object, "ga");
-          // check if this is an overnight time period
-          if ($end_time_Object < $start_time_object) {
-            $time_period_formatted .= ' (overnight)';
-          }
-          $name_plus_time_period = $location_object->locationName . $time_period_formatted;
-          // concatenate the locationId and the timeslot into the key
-          $pickup_options["$location_object->locationId-$location_object->timePeriod"] = $name_plus_time_period;
+        // need to append the times in human readable form
+        $start_time_object = new dateTime($location_object->timePeriodStart);
+        $end_time_Object = new dateTime($location_object->timePeriodEnd);
+        $time_period_formatted = ', ' . date_format($start_time_object, "ga") . ' to ' . date_format($end_time_Object, "ga");
+        // check if this is an overnight time period
+        if ($end_time_Object < $start_time_object) {
+          $time_period_formatted .= ' (overnight)';
         }
+        $name_plus_time_period = $location_object->locationName . $time_period_formatted;
+        // concatenate the locationId and the timeslot into the key
+        $pickup_options["$location_object->locationId-$location_object->timePeriod"] = $name_plus_time_period;
       }
       $form['pickup_type'] = [
               '#prefix' => '<div class="l-inline-b side-by-side-form">',
@@ -237,7 +235,7 @@ class UserPickupRequestForm extends FormBase {
       // if (($pickup_point == 1000 || $pickup_point == 1002 || $pickup_point == 1012) && $pickup_date == '2020-11-03') {
       //   $form_state->setErrorByName('pickup_date', t('No appointments are available Downtown or at Pittsfield this day due to Election Day.'));
 
-      // Check for exclusion dates 
+      // Check for exclusion dates
       $exclusion_data = $form_state->get('exclusionData');
       $exclusion_data_object = $exclusion_data[$pickup_date]['date_exclusion_data'];
       if ($exclusion_data_object) {
@@ -252,8 +250,8 @@ class UserPickupRequestForm extends FormBase {
       $lockers = arborcat_locker_pickup_locations();
       $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
       if (in_array($pickup_point, $lockers)) {                                        // check if it's a locker pickup request
-          $pickup_date =  $form_state->getValue('pickup_date');
-              
+        $pickup_date =  $form_state->getValue('pickup_date');
+
         if (!$form_state->getValue('phone')) {
           $form_state->setErrorByName('phone', t('A phone number is required for lockers so we can generate your locker code'));
         }
@@ -264,7 +262,7 @@ class UserPickupRequestForm extends FormBase {
                     ->condition('locationId', $pickup_point, '=')
                     ->execute();
         $pickup_location = $query->fetch();
-                
+
         $patron_id = $form_state->getValue('pnum');
         $avail = arborcat_check_locker_availability($pickup_date, $pickup_location, $patron_id);
 
@@ -290,7 +288,7 @@ class UserPickupRequestForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $pickup_date =  $form_state->getValue('pickup_date');
 
-   $messenger = \Drupal::messenger();
+    $messenger = \Drupal::messenger();
     //parse telephone number into seven digit locker code
     $locker_code = $form_state->getValue('lockercode');
     $locker_code = preg_replace("/[\\s\\-()]/", "", $locker_code);
@@ -333,7 +331,7 @@ class UserPickupRequestForm extends FormBase {
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $self_check_api_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
- 
+
       // Get the locations
       $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
@@ -342,16 +340,17 @@ class UserPickupRequestForm extends FormBase {
         $submit_message .= 'If all the items do not fit in the locker, the remaining items will be placed in the ' . $locations->{$branch} . ' lobby';
         $messenger->addWarning($submit_message);
       }
-
+      $error_count = 0;
       foreach ($holds as $hold) {
         if ($cancel_holds) {
-          $cancel_time = date('Y-m-d');
+          $date_time_now = new DateTime('now');
+          $cancel_time = $date_time_now->format('Y-m-d H:i:s');
           $guzzle->get("$api_url/patron/$self_check_api_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?cancel_time=$cancel_time&cancel_cause=6")->getBody()->getContents();
         } else {
           // set the expire date for each selected hold
           $updated_hold = $guzzle->get("$api_url/patron/$self_check_api_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
           // create arborcat_patron_pickup_request records for each of the selected holds
-          arborcat_create_pickup_request_record(
+          $result = arborcat_create_pickup_request_record(
             'HOLD_REQUEST',
             $hold['holdId'],
             $pnum,
@@ -364,16 +363,24 @@ class UserPickupRequestForm extends FormBase {
             ($notification_types['phone'] ? $patron_phone : NULL),
             $patron_phone ?? NULL
           );
+
+          if ($result < 0) {
+            $error_count += 1;
+          }
         }
       }
-      $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
-      $messenger->addMessage($submit_message);
- 
-      $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-      $uid = $user->id();
-      $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
+      if ($error_count == 0) {
+        $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
+        $messenger->addMessage($submit_message);
 
-      return $form_state->setRedirectUrl($url);
+        $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+        $uid = $user->id();
+        $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
+
+        return $form_state->setRedirectUrl($url);
+      } else {
+        $messenger->addMessage("There was an error processing your pickup requests. Please try submitting the form again");
+      }
     }
   }
 
@@ -395,7 +402,6 @@ class UserPickupRequestForm extends FormBase {
       foreach ($holds as $title) {
         $email_message = $email_message.$title['Title']."\r\n";
       }
-      $mailManager = \Drupal::service('plugin.manager.mail');
       mail($email_to, $email_subject, $email_message, $email_headers);
     }
   }
