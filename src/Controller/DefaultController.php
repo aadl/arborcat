@@ -424,40 +424,38 @@ class DefaultController extends ControllerBase {
     $patron_id = \Drupal::request()->query->get('patronid');
     $location = \Drupal::request()->query->get('location');
     $request_id = \Drupal::request()->query->get('requestid');
-    
+
     if (strlen($location) == 3) {
       //$locations = pickupLocations($location);
     } else {
       $location = '102';
     }
-    
+
     $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
 
     if (strlen($request_id) > 0) {
       $encrypted_request_id = md5($pickup_requests_salt . $request_id);
       $return_val = '<p> Encrypting RequestId: ' . $request_id . ' -> ' . $encrypted_request_id . '<br>';
       $return_val .= 'pickup_requests_salt: ' . $pickup_requests_salt . '</p><br>';
+    } elseif (strlen($patron_id) > 0) {
+      $barcode =  arborcat_barcode_from_patron_id($patron_id);
     } else {
-      if (strlen($patron_id) > 0) {
-        $barcode =  arborcat_barcode_from_patron_id($patron_id);
-      } else {
-        $patron_id = arborcat_patron_id_from_barcode($barcode);
-      }
-      if (14 === strlen($barcode)) {
-        if (strlen($row) > 0) {
-          $barcode = $row;
-        }
-        $encrypted_barcode = md5($pickup_requests_salt . $barcode);
-        $return_val = '<h2>' . $patron_id .' -> '. $barcode . ' -> ' . $encrypted_barcode . '</h2><br>';
-      
-        $host = 'http://nginx.docker.localhost:8000';
-        $link = $host . '/pickuprequest/' . $patron_id . '/'. $encrypted_barcode . '/' . $location;
-        $html = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
-
-        $return_val .= $html;
-      }
+      $patron_id = arborcat_patron_id_from_barcode($barcode);
     }
-      
+    if (14 === strlen($barcode)) {
+      if (strlen($row) > 0) {
+        $barcode = $row;
+      }
+      $encrypted_barcode = md5($pickup_requests_salt . $barcode);
+      $return_val = '<h2>' . $patron_id .' -> '. $barcode . ' -> ' . $encrypted_barcode . '</h2><br>';
+
+      $host = 'http://nginx.docker.localhost:8000';
+      $link = $host . '/pickuprequest/' . $patron_id . '/'. $encrypted_barcode . '/' . $location;
+      $html = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
+
+      $return_val .= $html;
+    }
+
     return [
       '#title' => 'pickup request test',
       '#markup' => $return_val
@@ -471,13 +469,13 @@ class DefaultController extends ControllerBase {
     if ($this->validate_transaction($pnum, $encrypted_barcode)) {
       $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode, $exclusion_marker_string);
     } else {
-      drupal_set_message('The Pickup Request could not be processed');
+      drupal_set_message('The Pickup Request could not be processed', 'error');
     }
     $render[] = [
-        '#theme' => 'pickup_request_form',
-        '#formhtml' => $request_pickup_html,
-        '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
-        '#exclusion_marker_string' => $exclusion_marker_string,
+      '#theme' => 'pickup_request_form',
+      '#formhtml' => $request_pickup_html,
+      '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
+      '#exclusion_marker_string' => $exclusion_marker_string,
     ];
 
     return $render;
@@ -498,7 +496,6 @@ class DefaultController extends ControllerBase {
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $self_check_api_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
-          
       // check date is for tomorrow or later - NOTE this is overkill - the query inside 'find_record_to_cancel' method checks for date > todays date.
       $today = (new DateTime("now", new DateTimeZone('UTC')));
       $today->setTime(0, 0, 0);
@@ -508,8 +505,8 @@ class DefaultController extends ControllerBase {
         if ($patron_id == $cancel_record->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
           // go ahead and cancel the record
           $num_deleted = $db->delete('arborcat_patron_pickup_request')
-                      ->condition('id', $cancel_record->id, '=')
-                          ->execute();
+                            ->condition('id', $cancel_record->id, '=')
+                            ->execute();
           if (1 == $num_deleted) {
             // Check if the expire time > tomorrow, if not set it to tomorrow
             $hold_shelf_expire = new DateTime("$hold_shelf_expire_date 23:59:59", new DateTimeZone('UTC'));

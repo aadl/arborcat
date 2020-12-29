@@ -343,6 +343,7 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
 
       return $id;
     } catch (Exception $e) {
+      drupal_set_message('An error occurred saving this pickup request. Please try again', 'error');
       $txn->rollBack();
 
       return -1;
@@ -351,6 +352,7 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
 }
 
 function arborcat_barcode_from_patron_id($patron_id) {
+  $return_val = "";
   $api_key = \Drupal::config('arborcat.settings')->get('api_key');
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
   $guzzle = \Drupal::httpClient();
@@ -359,18 +361,21 @@ function arborcat_barcode_from_patron_id($patron_id) {
   try {
     $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
   } catch (Exception $e) {
-    return "";
+    // Note no error message is not set here - check in made in calling methods for a valid barcode and
+    // an error message is displayed to the user there.
+
+    return $return_val;
   }
   if ($json) {
     $barcode =  $json->evg_user->card->barcode;
-
-    return $barcode;
-  } else {
-    return "";
+    $return_val = $barcode;
   }
+  
+  return $return_val;
 }
 
 function arborcat_patron_id_from_barcode($barcode) {
+  $return_val = "";
   $api_key = \Drupal::config('arborcat.settings')->get('api_key');
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
   $guzzle = \Drupal::httpClient();
@@ -378,18 +383,20 @@ function arborcat_patron_id_from_barcode($barcode) {
   try {
     $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
   } catch (Exception $e) {
-    return "";
+    // Note no error message is not set here - check in made in calling method for a valid patron_id and
+    // an error message is displayed to the user there.
+
+    return $return_val;
   }
+
   if ($json) {
     $patron_id =  $json->pid;
-
-    return $patron_id;
-  } else {
-    return "";
+    $return_val = $patron_id;
   }
+
+  return $return_val;
 }
 
-  
 function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_request_id) {
   $result_message = '';
   if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG') {
