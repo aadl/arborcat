@@ -496,14 +496,16 @@ class DefaultController extends ControllerBase {
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $self_check_api_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+      // check date is for tomorrow or later
+      $today = (new DateTime("now"));
+      $today->setTime(23, 50, 00);
+      $tomorrow = clone($today);
+      $tomorrow->modify('+1 day');
+      $pickup_time = new DateTime($cancel_record->pickupDate);
+      $pickup_time->setTime(23, 59, 59);
 
-      // check date is for tomorrow or later - NOTE this is overkill - the query inside 'find_record_to_cancel' method checks for date > todays date.
-      $today = (new DateTime("now", new DateTimeZone('UTC')));
-      $today->setTime(0, 0, 0);
-      $tomorrow = $today->modify('+1 day');
-      $pickup_time = new DateTime($cancel_record->pickupDate, new DateTimeZone('UTC'));
       if ($pickup_time >= $tomorrow) {
-        if ($patron_id == $cancel_record->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
+         if ($patron_id == $cancel_record->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
           // go ahead and cancel the record
           $num_deleted = $db->delete('arborcat_patron_pickup_request')
                             ->condition('id', $cancel_record->id, '=')
@@ -553,6 +555,7 @@ class DefaultController extends ControllerBase {
     // get all the pickupRequest records for the patron
     $today = (new DateTime("now"));
     $today_date_string = $today->format("Y-m-d");
+
     // lookup the pickup request record
     $db = \Drupal::database();
     $query = $db->select('arborcat_patron_pickup_request', 'appr');
