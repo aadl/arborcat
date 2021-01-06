@@ -505,7 +505,7 @@ class DefaultController extends ControllerBase {
       $pickup_time->setTime(23, 59, 59);
 
       if ($pickup_time >= $tomorrow) {
-         if ($patron_id == $cancel_record->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
+        if ($patron_id == $cancel_record->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
           // go ahead and cancel the record
           $num_deleted = $db->delete('arborcat_patron_pickup_request')
                             ->condition('id', $cancel_record->id, '=')
@@ -555,7 +555,6 @@ class DefaultController extends ControllerBase {
     // get all the pickupRequest records for the patron
     $today = (new DateTime("now"));
     $today_date_string = $today->format("Y-m-d");
-
     // lookup the pickup request record
     $db = \Drupal::database();
     $query = $db->select('arborcat_patron_pickup_request', 'appr');
