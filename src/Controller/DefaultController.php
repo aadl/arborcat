@@ -395,12 +395,12 @@ class DefaultController extends ControllerBase {
     }
 
     $render = [
-        '#theme' => 'pickup_helper_theme',
-        '#search_form' => $search_form,
-        '#location_urls' => $location_urls,
-        '#barcode' => $barcode,
-        '#scheduled_pickups' => $scheduled_pickups ?? NULL
-      ];
+      '#theme' => 'pickup_helper_theme',
+      '#search_form' => $search_form,
+      '#location_urls' => $location_urls,
+      '#barcode' => $barcode,
+      '#scheduled_pickups' => $scheduled_pickups ?? NULL
+    ];
 
     return $render;
   }
@@ -496,6 +496,7 @@ class DefaultController extends ControllerBase {
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $self_check_api_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+
       // check date is for tomorrow or later
       $today = (new DateTime("now"));
       $today->setTime(23, 50, 00);
