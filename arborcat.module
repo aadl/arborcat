@@ -244,10 +244,6 @@ function arborcat_load_patron_eligible_holds($patron_barcode, $request_location=
 
   try {
     $patron_holds = json_decode($guzzle->get("$api_url/patron/$self_check_api_key/holds")->getBody()->getContents(), TRUE);
-
-    // For debugging LWK
-    // $jsonData = file_get_contents('10005279_21621034452183_holds.txt');
-    // $patron_holds = json_decode($jsonData, TRUE);
   } catch (Exception $e) {
     $eligible_holds['error'] = 'Info not found';
 
@@ -280,14 +276,14 @@ function arborcat_load_patron_eligible_holds($patron_barcode, $request_location=
           $shelf_expire = date('Y-m-d', strtotime($hold['hold']['shelf_expire_time']));
           if (arborcat_eligible_for_locker($hold) && $shelf_expire >= date('Y-m-d')) {
             $eligible_holds[$i] = [
-                            'Title' => $hold['title'],
-                            'Status' => $hold['status'],
-                            'PickupLoc' => $hold['pickup'],
-                            'pickup_lib' => $hold['hold']['pickup_lib'],
-                            'holdId' => $hold['id'],
-                            'usr' => $hold['hold']['usr'],
-                            'artPrintTool' => ($hold['material'] == "Art Print" || $hold['material'] == "Tools") ? TRUE : FALSE
-                        ];
+              'Title' => $hold['title'],
+              'Status' => $hold['status'],
+              'PickupLoc' => $hold['pickup'],
+              'pickup_lib' => $hold['hold']['pickup_lib'],
+              'holdId' => $hold['id'],
+              'usr' => $hold['hold']['usr'],
+              'artPrintTool' => ($hold['material'] == "Art Print" || $hold['material'] == "Tools") ? TRUE : FALSE
+            ];
             $i++;
           }
         }
@@ -301,10 +297,10 @@ function arborcat_load_patron_eligible_holds($patron_barcode, $request_location=
 function arborcat_get_scheduled_pickups($barcode) {
   $guzzle = \Drupal::httpClient();
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-  $selfCheckApi_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
-  $selfCheckApi_key .= '-' .  $barcode;
+  $self_check_api_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+  $self_check_api_key .= '-' .  $barcode;
 
-  $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$selfCheckApi_key/scheduled-pickups?range=7")->getBody()->getContents(), TRUE);
+  $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$self_check_api_key/scheduled-pickups?range=7")->getBody()->getContents(), TRUE);
 
   return $scheduled_pickups;
 }
