@@ -158,20 +158,27 @@ class DefaultController extends ControllerBase {
             foreach ($gameterm_gamecodes as $gamecode) {
               $badges = $db->query(
                 'SELECT d.nid, d.title FROM node__field_badge_formula f, node_field_data d ' .
-                                    'WHERE f.entity_id = d.nid ' .
-                                    'AND f.field_badge_formula_value REGEXP :gamecode',
+                'WHERE f.entity_id = d.nid ' .
+                'AND f.field_badge_formula_value REGEXP :gamecode',
                 [':gamecode' => '[[:<:]]' . $gamecode . '[[:>:]]']
               )->fetchAll();
-
-              foreach ($badges as $badge) {
-                $gc_data = [
+              if (count($badges)) {
+                foreach ($badges as $badge) {
+                  $gc_data = [
+                    'text' => $gamecode,
+                    'badge' => [
+                      'id' => $badge->nid,
+                      'title' => $badge->title,
+                    ]
+                  ];
+                  $gamecodes[$gameterm][] = $gc_data;
+                }
+              }
+              else {
+                // Not part of a badge, just display code
+                $gamecodes[$gameterm][] = [
                   'text' => $gamecode,
-                  'badge' => [
-                    'id' => $badge->nid,
-                    'title' => $badge->title,
-                  ]
                 ];
-                $gamecodes[$gameterm][] = $gc_data;
               }
             }
           }
