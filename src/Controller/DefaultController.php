@@ -496,11 +496,15 @@ class DefaultController extends ControllerBase {
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $self_check_api_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
-      // check date is for tomorrow or later - NOTE this is overkill - the query inside 'find_record_to_cancel' method checks for date > todays date.
-      $today = (new DateTime("now", new DateTimeZone('UTC')));
-      $today->setTime(0, 0, 0);
-      $tomorrow = $today->modify('+1 day');
-      $pickup_time = new DateTime($cancel_record->pickupDate, new DateTimeZone('UTC'));
+
+      // check date is for tomorrow or later
+      $today = (new DateTime("now"));
+      $today->setTime(23, 50, 00);
+      $tomorrow = clone($today);
+      $tomorrow->modify('+1 day');
+      $pickup_time = new DateTime($cancel_record->pickupDate);
+      $pickup_time->setTime(23, 59, 59);
+
       if ($pickup_time >= $tomorrow) {
         if ($patron_id == $cancel_record->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
           // go ahead and cancel the record
