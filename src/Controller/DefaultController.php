@@ -370,6 +370,31 @@ class DefaultController extends ControllerBase {
     $barcode = \Drupal::request()->get('bcode');
     $location_urls = [];
     $scheduled_pickups = [];
+    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+    $guzzle = \Drupal::httpClient();
+    $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
+
+    // look up appointment exclusions
+    // only looking at daily closures right now, not periods
+    $db = \Drupal::database();
+    $tomorrow = date('Y-m-d', strtotime('+1 day'));
+    $week_out = date('Y-m-d', strtotime("$tomorrow +7 days"));
+    $exclusions = $db->query(
+      "SELECT * FROM arborcat_pickup_location_exclusion WHERE locationId < 110 AND dateStart >= :tmrw AND dateStart <= :wo ORDER BY dateStart ASC", [':tmrw' => $tomorrow, ':wo' => $week_out])
+      ->fetchAll();
+
+    if (count($exclusions)) {
+      $blocks = [];
+      $messenger = \Drupal::messenger();
+      foreach ($exclusions as $exclude) {
+        $blocks[$locations->{$exclude->locationId}][] = "$exclude->dateStart ($exclude->notes)";
+      }
+      foreach ($blocks as $key => $block) {
+        $blocks[$key] = implode(', ', $block);
+        $blocks_msg .= "<b>$key</b>: " . implode(', ', $block) . '<br>';
+      }
+      $messenger->addWarning(\Drupal\Core\Render\Markup::create("<b>Appointment Blocks</b><br>$blocks_msg"));
+    }
 
     if (isset($barcode)) {
       // grab pickup appointments to display on form
@@ -385,10 +410,6 @@ class DefaultController extends ControllerBase {
             array_push($hold_locations, $holdobj['pickup_lib']);
           }
           $hold_locations = array_unique($hold_locations);
-
-          $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-          $guzzle = \Drupal::httpClient();
-          $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
           foreach ($hold_locations as $loc) {
             $location_name = ($loc < 110) ? $locations->{$loc} : 'melcat';
@@ -472,9 +493,8 @@ class DefaultController extends ControllerBase {
   public function pickup_request($pnum, $encrypted_barcode, $loc) {
     $mode = \Drupal::request()->query->get('mode');
     $request_pickup_html = '';
-    $exclusion_marker_string = \Drupal::config('arborcat.settings')->get('exclusion_marker_string');
     if ($this->validate_transaction($pnum, $encrypted_barcode)) {
-      $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode, $exclusion_marker_string);
+      $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
     } else {
       drupal_set_message('The Pickup Request could not be processed', 'error');
     }
@@ -482,7 +502,6 @@ class DefaultController extends ControllerBase {
       '#theme' => 'pickup_request_form',
       '#formhtml' => $request_pickup_html,
       '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
-      '#exclusion_marker_string' => $exclusion_marker_string,
     ];
 
     return $render;
