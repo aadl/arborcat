@@ -13,8 +13,8 @@
           var options = $('#edit-pickup-date option');
           for (var index=0; index < options.length; index++) {
             var anOption = options[index];
-            var optionOuterText = anOption.outerText;
-            if (optionOuterText.includes(exclusionMarkerString)) {
+            var optionOuterText = anOption.text;
+            if (optionOuterText.includes('*')) {
               $(anOption).attr('disabled','disabled');
             }
           }
