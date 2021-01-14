@@ -530,10 +530,10 @@ function arborcat_get_pickup_locations($branch_location_id) {
 function _arborcat_create_appt_block() {
   $db = \Drupal::database();
   $tomorrow = date('Y-m-d', strtotime('+1 day'));
-  $branch_totals = $db->query('SELECT count(*) as total, branch FROM arborcat_pickup_request WHERE pickupDate = :tmrw', [':tmrw' => $tomorrow])
+  $branch_totals = $db->query('SELECT count(*) as total, branch FROM arborcat_patron_pickup_request WHERE pickupDate = :tmrw GROUP BY branch', [':tmrw' => $tomorrow])
     ->fetchAll();
   foreach ($branch_totals as $total) {
-    if ($total->total >= 900) {
+    if ((int) $total->total >= 900) {
       // check that a block is not already in place
       $exists = $db->query("SELECT * FROM arborcat_pickup_location_exclusion WHERE locationId = :lid AND dateStart = :tmrw AND notes = 'at capacity'", [':lid' => $total->branch, ':tmrw' => $tomorrow])
         ->fetch();
@@ -542,9 +542,9 @@ function _arborcat_create_appt_block() {
           ->fields([
             'locationId' => $total->branch,
             'dateStart' => $tomorrow,
-            'dateEnd' => $tomrrow,
+            'dateEnd' => $tomorrow,
             'notes' => 'at capacity',
-            'display_reason' => 'at capacity',
+            'display_reason' => 'There are no more available slots for appointments on this date.',
             'dropdown_display' => 'at capacity'
           ])
           ->execute();
