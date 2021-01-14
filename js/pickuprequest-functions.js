@@ -3,7 +3,6 @@
     attach: function (context, settings) {
       $(document, context).once('pickupRequestBehavior').each(function () {
         var maxLockerItemsCheck = drupalSettings.arborcat.max_locker_items_check;
-        var exclusionMarkerString = drupalSettings.arborcat.exclusion_marker_string;
 
         $(function () {
           // INITIALIZATION/SETUP
