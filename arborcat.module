@@ -546,7 +546,7 @@ function _arborcat_create_appt_block() {
             'dateEnd' => $tomorrow,
             'notes' => 'at capacity',
             'display_reason' => 'There are no more available slots for appointments on this date.',
-            'dropdown_display' => 'at capacity'
+            'dropdown_display' => 'Full'
           ])
           ->execute();
       }
