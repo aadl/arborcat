@@ -443,53 +443,6 @@ class DefaultController extends ControllerBase {
     return $link;
   }
 
-  // ----------------------------------
-  // ----------------------------------
-  public function pickup_test() {
-    $return_val = '';
-
-    $barcode = \Drupal::request()->query->get('barcode');
-    $patron_id = \Drupal::request()->query->get('patronid');
-    $location = \Drupal::request()->query->get('location');
-    $request_id = \Drupal::request()->query->get('requestid');
-
-    if (strlen($location) == 3) {
-      //$locations = pickupLocations($location);
-    } else {
-      $location = '102';
-    }
-
-    $pickup_requests_salt = \Drupal::config('arborcat.settings')->get('pickup_requests_salt');
-
-    if (strlen($request_id) > 0) {
-      $encrypted_request_id = md5($pickup_requests_salt . $request_id);
-      $return_val = '<p> Encrypting RequestId: ' . $request_id . ' -> ' . $encrypted_request_id . '<br>';
-      $return_val .= 'pickup_requests_salt: ' . $pickup_requests_salt . '</p><br>';
-    } elseif (strlen($patron_id) > 0) {
-      $barcode =  arborcat_barcode_from_patron_id($patron_id);
-    } else {
-      $patron_id = arborcat_patron_id_from_barcode($barcode);
-    }
-    if (14 === strlen($barcode)) {
-      if (strlen($row) > 0) {
-        $barcode = $row;
-      }
-      $encrypted_barcode = md5($pickup_requests_salt . $barcode);
-      $return_val = '<h2>' . $patron_id .' -> '. $barcode . ' -> ' . $encrypted_barcode . '</h2><br>';
-
-      $host = 'http://nginx.docker.localhost:8000';
-      $link = $host . '/pickuprequest/' . $patron_id . '/'. $encrypted_barcode . '/' . $location;
-      $html = '<br><a href="' . $link . '" target="_blank">' . $link  . '</a>';
-
-      $return_val .= $html;
-    }
-
-    return [
-      '#title' => 'pickup request test',
-      '#markup' => $return_val
-    ];
-  }
-
   public function pickup_request($pnum, $encrypted_barcode, $loc) {
     $mode = \Drupal::request()->query->get('mode');
     $request_pickup_html = '';
