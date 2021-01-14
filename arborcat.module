@@ -530,6 +530,7 @@ function arborcat_get_pickup_locations($branch_location_id) {
 function _arborcat_create_appt_block() {
   $db = \Drupal::database();
   $tomorrow = date('Y-m-d', strtotime('+1 day'));
+  // grab appt totals by branch for next day
   $branch_totals = $db->query('SELECT count(*) as total, branch FROM arborcat_patron_pickup_request WHERE pickupDate = :tmrw GROUP BY branch', [':tmrw' => $tomorrow])
     ->fetchAll();
   foreach ($branch_totals as $total) {

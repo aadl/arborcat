@@ -382,10 +382,11 @@ class DefaultController extends ControllerBase {
     $exclusions = $db->query(
       "SELECT * FROM arborcat_pickup_location_exclusion WHERE locationId < 110 AND dateStart >= :tmrw AND dateStart <= :wo ORDER BY dateStart ASC", [':tmrw' => $tomorrow, ':wo' => $week_out])
       ->fetchAll();
-
+    // set up display for staff to see any blocks at locations
     if (count($exclusions)) {
       $blocks = [];
       $messenger = \Drupal::messenger();
+      // outputs branch name, date, and reason for block
       foreach ($exclusions as $exclude) {
         $display_date = date('D n/d', strtotime($exclude->dateStart));
         $blocks[$locations->{$exclude->locationId}][] = "$display_date ($exclude->notes)";
