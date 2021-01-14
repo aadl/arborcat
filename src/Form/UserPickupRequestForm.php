@@ -15,7 +15,7 @@ class UserPickupRequestForm extends FormBase {
     return 'user_pickup_request_form';
   }
 
-  public function buildForm(array $form, FormStateInterface $form_state, string $patron_id = NULL, string $request_location = NULL, string $mode = NULL, string $exclusion_marker_string = NULL) {
+  public function buildForm(array $form, FormStateInterface $form_state, string $patron_id = NULL, string $request_location = NULL, string $mode = NULL) {
     $guzzle = \Drupal::httpClient();
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -144,7 +144,7 @@ class UserPickupRequestForm extends FormBase {
 
       $pickup_dates =[];
       foreach ($pickup_dates_data as $data_item_key => $data_item_value) {
-        $append_string =  ($data_item_value['date_exclusion_data'] != NULL) ? ' ' . $exclusion_marker_string : '';
+        $append_string = $data_item_value['date_exclusion_data'] != NULL ? ' * ' . $data_item_value['date_exclusion_data']->dropdown_display . ' *' : '';
         $pickup_dates[$data_item_key] = $data_item_value['display_date_string'] . $append_string;
       }
       $form['pickup_date'] = [

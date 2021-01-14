@@ -3,7 +3,6 @@
     attach: function (context, settings) {
       $(document, context).once('pickupRequestBehavior').each(function () {
         var maxLockerItemsCheck = drupalSettings.arborcat.max_locker_items_check;
-        var exclusionMarkerString = drupalSettings.arborcat.exclusion_marker_string;
 
         $(function () {
           // INITIALIZATION/SETUP
@@ -13,8 +12,8 @@
           var options = $('#edit-pickup-date option');
           for (var index=0; index < options.length; index++) {
             var anOption = options[index];
-            var optionOuterText = anOption.outerText;
-            if (optionOuterText.includes(exclusionMarkerString)) {
+            var optionOuterText = anOption.text;
+            if (optionOuterText.includes('*')) {
               $(anOption).attr('disabled','disabled');
             }
           }

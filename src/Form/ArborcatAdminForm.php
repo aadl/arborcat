@@ -140,13 +140,6 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#description' => t('Number of pickup dates that will be displayed to the user'),
     ];
 
-    $form['exclusion_marker_string'] = [
-      '#type' => 'textfield',
-      '#title' => t('Date Unavailable marker'),
-      '#default_value' => \Drupal::config('arborcat.settings')->get('exclusion_marker_string'),
-      '#description' => t('Marker string indicating that a pickup date in unavailable. This string is appended to pickup date options in the form select field'),
-    ];
-
     return parent::buildForm($form, $form_state);
   }
 }

@@ -68,8 +68,6 @@ function arborcat_preprocess_page(&$variables) {
   // get the max locker item check  from ArborCat module settings
   $max_locker_items = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
   $variables['#attached']['drupalSettings']['arborcat']['max_locker_items_check'] = $max_locker_items;
-  $exclusion_marker_string = \Drupal::config('arborcat.settings')->get('exclusion_marker_string');
-  $variables['#attached']['drupalSettings']['arborcat']['exclusion_marker_string'] = $exclusion_marker_string;
 }
 
 function arborcat_generate_api_key() {
@@ -478,7 +476,7 @@ function arborcat_get_pickup_dates($location, $start_date_ymd, $end_date_ymd) {
   while ($date_iterator <= $ending_date) {
     $db = \Drupal::database();
     $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
-    $query->fields('aple', ['locationId', 'dateStart', 'dateEnd','display_reason']);
+    $query->fields('aple', ['locationId', 'dateStart', 'dateEnd','display_reason', 'dropdown_display']);
 
     // array initialized with "library wide" location Id - 9999
     $query_location_ids = array(9999);
@@ -526,4 +524,32 @@ function arborcat_get_pickup_locations($branch_location_id) {
   $location_ids = $result->fetchCol();
 
   return $location_ids;
+}
+
+// cron to create appt blocks if a branch reaches 900
+function _arborcat_create_appt_block() {
+  $db = \Drupal::database();
+  $tomorrow = date('Y-m-d', strtotime('+1 day'));
+  // grab appt totals by branch for next day
+  $branch_totals = $db->query('SELECT count(*) as total, branch FROM arborcat_patron_pickup_request WHERE pickupDate = :tmrw GROUP BY branch', [':tmrw' => $tomorrow])
+    ->fetchAll();
+  foreach ($branch_totals as $total) {
+    if ((int) $total->total >= 900) {
+      // check that a block is not already in place
+      $exists = $db->query("SELECT * FROM arborcat_pickup_location_exclusion WHERE locationId = :lid AND dateStart = :tmrw AND notes = 'at capacity'", [':lid' => $total->branch, ':tmrw' => $tomorrow])
+        ->fetch();
+      if (!$exists) {
+        $db->insert('arborcat_pickup_location_exclusion')
+          ->fields([
+            'locationId' => $total->branch,
+            'dateStart' => $tomorrow,
+            'dateEnd' => $tomorrow,
+            'notes' => 'at capacity',
+            'display_reason' => 'There are no more available slots for appointments on this date.',
+            'dropdown_display' => 'at capacity'
+          ])
+          ->execute();
+      }
+    }
+  }
 }
