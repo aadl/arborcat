@@ -387,11 +387,12 @@ class DefaultController extends ControllerBase {
       $blocks = [];
       $messenger = \Drupal::messenger();
       foreach ($exclusions as $exclude) {
-        $blocks[$locations->{$exclude->locationId}][] = "$exclude->dateStart ($exclude->notes)";
+        $display_date = date('D n/d', strtotime($exclude->dateStart));
+        $blocks[$locations->{$exclude->locationId}][] = "$display_date ($exclude->notes)";
       }
       foreach ($blocks as $key => $block) {
         $blocks[$key] = implode(', ', $block);
-        $blocks_msg .= "<b>$key</b>: " . implode(', ', $block) . '<br>';
+        $blocks_msg .= "$key: " . implode(', ', $block) . '<br>';
       }
       $messenger->addWarning(\Drupal\Core\Render\Markup::create("<b>Appointment Blocks</b><br>$blocks_msg"));
     }
