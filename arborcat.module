@@ -537,7 +537,7 @@ function _arborcat_create_appt_block() {
       // check that a block is not already in place
       $exists = $db->query("SELECT * FROM arborcat_pickup_location_exclusion WHERE locationId = :lid AND dateStart = :tmrw AND notes = 'at capacity'", [':lid' => $total->branch, ':tmrw' => $tomorrow])
         ->fetch();
-      if (!isset($exists)) {
+      if (!$exists) {
         $db->insert('arborcat_pickup_location_exclusion')
           ->fields([
             'locationId' => $total->branch,
