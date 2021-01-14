@@ -174,7 +174,16 @@ function arborcat_schema() {
       ],
       'notes' => [
         'type' => 'text',
-        'description' => 'Deescription of exclusion',
+        'description' => 'Description of exclusion',
+      ],
+      'display_reason' => [
+        'type' => 'text',
+        'description' => 'Submit message exclusion reason',
+      ],
+      'dropdown_display' => [
+        'type' => 'varchar',
+        'length' => 50,
+        'description' => 'Display for options in dropdown when excluded'
       ],
     ],
     'primary key' => ['id']
