@@ -447,9 +447,9 @@ class DefaultController extends ControllerBase {
 
   public function pickup_request($pnum, $encrypted_barcode, $loc) {
       $mode = \Drupal::request()->query->get('mode');
-      $requestPickup_html = '';
-      if ($this->validateTransaction($pnum, $encrypted_barcode)) {
-          $requestPickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
+      $request_pickup_html = '';
+      if ($this->validate_transaction($pnum, $encrypted_barcode)) {
+          $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
       } else {
           drupal_set_message('The Pickup Request could not be processed');
       }
@@ -457,7 +457,7 @@ class DefaultController extends ControllerBase {
 
       $render[] = [
               '#theme' => 'pickup_request_form',
-              '#formhtml' => $requestPickup_html,
+              '#formhtml' => $request_pickup_html,
               '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
               '#user_logged_in' => $userLoggedIn
           ];

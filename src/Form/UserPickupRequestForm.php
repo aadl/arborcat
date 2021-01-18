@@ -373,9 +373,9 @@ class UserPickupRequestForm extends FormBase {
         $messenger->addMessage($submit_message);
 
         // redirect to the user's account page (if user is logged in) or to the front page
-        $currentUserId = \Drupal::currentUser()->id();
-        if ($currentUserId > 0) {
-            $user = \Drupal\user\Entity\User::load($currentUserId);
+        $current_user_id = \Drupal::currentUser()->id();
+        if ($current_user_id > 0) {
+            $user = \Drupal\user\Entity\User::load($current_user_id);
             $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
         }
         else {
