@@ -2,22 +2,32 @@
   Drupal.behaviors.pickupRequestBehavior = {
     attach: function (context, settings) {
       $(document, context).once('pickupRequestBehavior').each(function () {
-        var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check;
+        var maxLockerItemsCheck = drupalSettings.arborcat.max_locker_items_check;
 
         var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check;
         var user_logged_in = drupalSettings.arborcat.user_logged_in;
 
         $(function () {
           // INITIALIZATION/SETUP
+          var pickup_date_select_field = $("#edit-pickup-date");
+          // check each of the option display strngs for each date to see whether the exclusionMarkerString has been appended to the end of the date.
+          // If so, disable the menu item
+          var options = $('#edit-pickup-date option');
+          for (var index=0; index < options.length; index++) {
+            var anOption = options[index];
+            var optionOuterText = anOption.text;
+            if (optionOuterText.includes('*')) {
+              $(anOption).attr('disabled','disabled');
+            }
+          }
 
-          // helper methods
-          function checkedItems() {
-            var numitems = $("#edit-item-table tbody tr").length;
-            var numchecked = 0;
-            for (var i = numitems; i > 0; i--) {
+         function checkedItems() {
+            var numItems = $("#edit-item-table tbody tr").length;
+            var numChecked = 0;
+            for (var i = numItems; i > 0; i--) {
               var id = 'edit-item-table' + '-' + i;
-              var checkeditem = $('#' + id).is(':checked');
-              numchecked += (checkeditem) ? 1 : 0;
+              var checkedItem = $('#' + id).is(':checked');
+              numChecked += (checkedItem) ? 1 : 0;
             }
             return numchecked;
           }
@@ -83,20 +93,18 @@
           }
 
           function artPrintorToolChecked() {
-            var returnflag = false;
-            var numitems = $("#edit-item-table tbody tr").length;
-            for (var i = numitems; i > 0; i--) {
+            var returnFlag = false;
+            var numItems = $("#edit-item-table tbody tr").length;
+            for (var i = numItems; i > 0; i--) {
               var id = 'edit-item-table' + '-' + i;
-              var checkeditem = $('#' + id).is(':checked');
+              var checkedItem = $('#' + id).is(':checked');
               var currentRow = $("#edit-item-table tbody tr");
-              var name = currentRow.find("td:eq(0)").text(); // get current row 1st TD value
-              var branch = currentRow.find("td:eq(1)").text(); // get current row 2nd TD
-              var artPrintTool = currentRow.find("td:eq(2)").text(); // get current row 3rd TD
-              if (artPrintTool && checkeditem) {
-                returnflag = true;
+              var artPrintOrTool = currentRow.find("td:eq(3)").text(); // get current row 4th column
+              if (artPrintOrTool && checkedItem) {
+                returnFlag = true;
               }
             }
-            return returnflag;
+            return returnFlag;
           }
 
           function lockerSelected() {
@@ -143,7 +151,7 @@
           function selectedItemsCheck() {
             $('.status-messages').remove();
             var numItemsSelected = checkedItems();
-            if ((true == lockerSelected()) && (numItemsSelected > max_locker_items_check)) {
+            if ((true == lockerSelected()) && (numItemsSelected > maxLockerItemsCheck)) {
               // show the warning banner
               displayBanner('Please note, the ' + numItemsSelected + ' checked items may not fit in the selected locker pickup method. Any items that do not fit in the locker will be placed in the lobby', 'warning');
             }
