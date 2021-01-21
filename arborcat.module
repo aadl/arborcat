@@ -446,7 +446,6 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
           $time_slot,
           $pickup_location,
           $pickup_date,
-          $patron_email,
           (in_array('email', array_map('strtolower', $notification_options))) ? $patron_email : NULL,
           (in_array('text', array_map("strtolower", $notification_options))) ? $patron_phone : NULL,
           (in_array('phone call', array_map("strtolower", $notification_options))) ? $patron_phone : NULL,
