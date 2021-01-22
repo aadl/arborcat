@@ -47,8 +47,7 @@ function arborcat_theme($existing, $type, $theme, $path) {
     'pickup_request_form' => [
       'variables' => [
           'formhtml' => NULL,
-          'max_locker_items_check' => NULL,
-          'user_logged_in' => NULL
+          'max_locker_items_check' => NULL
       ] 
     ],
    'pickup_helper_theme' => [
@@ -70,8 +69,6 @@ function arborcat_preprocess_page(&$variables) {
     // get the max locker item check  from ArborCat module settings
     $max_locker_items = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
     $variables['#attached']['drupalSettings']['arborcat']['max_locker_items_check'] = $max_locker_items;
-    $user_logged_in = \Drupal::currentUser()->isAuthenticated();
-    $variables['#attached']['drupalSettings']['arborcat']['user_logged_in'] = $user_logged_in;
 }
 
 function arborcat_generate_api_key() {

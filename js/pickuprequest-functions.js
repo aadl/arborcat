@@ -4,9 +4,6 @@
       $(document, context).once('pickupRequestBehavior').each(function () {
         var maxLockerItemsCheck = drupalSettings.arborcat.max_locker_items_check;
 
-        var max_locker_items_check = drupalSettings.arborcat.max_locker_items_check;
-        var user_logged_in = drupalSettings.arborcat.user_logged_in;
-
         $(function () {
           // INITIALIZATION/SETUP
           var pickup_date_select_field = $("#edit-pickup-date");
@@ -63,7 +60,7 @@
             selectedText = $("#edit-pickup-type :selected").text();
             var lowercaseSelected = selectedText.toLowerCase();
             var numItemsSelected = checkedItems();
-            if (lowercaseSelected.includes('locker') && numItemsSelected > max_locker_items_check) {
+            if (lowercaseSelected.includes('locker') && numItemsSelected > maxLockerItemsCheck) {
               // show the warning banner
               displayBanner('Please note, the ' + numItemsSelected + ' checked items may not fit in the selected locker pickup method. Any items that do not fit in the locker will be placed in the lobby', 'warning');
             }
@@ -162,7 +159,7 @@
             }
           }
 
-           function submitForm() {
+          function submitForm() {
             $('#submitting').addClass('loading').css('position', 'relative'); // Shows the loading spinner
             $('#edit-submit').attr('disabled', true);
             $('#edit-submit').parents('form').submit();
@@ -195,22 +192,12 @@
             if (buttonName.startsWith('Schedule')) {
               // do validation on location, date and that items are checked in the list to be scheduled for pickup
               if (true == locationSelected() && true == dateSelected() && checkedItems() > 0) {
-                // check if the user is logged in to the drupal site
-                if (user_logged_in == false) {
-                  var d = $("#edit-pickup-date :selected").val();
-                  var dparts = d.split('-');
-                  var namePlusTimePeriodPlusDate = $("#edit-pickup-type :selected").text() + ', ' + dparts[1] + '/' + dparts[2];
-                  displayBanner('Your appointment has been scheduled for ' + namePlusTimePeriodPlusDate + '. Log in to see your scheduled pickup appointments.');
-                }
                 submitForm();
               }
-              else {
-                if (0 == checkedItems()) {
-                  displayBanner('At least one item must be checked to make a pickup appointment', 'warning');
-                }
-              } 
+              if (0 == checkedItems()) {
+                displayBanner('At least one item must be checked to make a pickup appointment', 'warning');
+              }
             }
-
             return false;
           });
         });

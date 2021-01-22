@@ -172,6 +172,7 @@ class UserPickupRequestForm extends FormBase {
         // concatenate the locationId and the timeslot into the key
         $pickup_options["$location_object->locationId-$location_object->timePeriod"] = $name_plus_time_period;
       }
+
       $form['pickup_type'] = [
         '#prefix' => '<div class="l-inline-b side-by-side-form">',
         '#type' => 'select',
@@ -369,11 +370,20 @@ class UserPickupRequestForm extends FormBase {
         }
       }
       if ($error_count == 0) {
-        $submit_message = ($cancel_holds ? 'Your requests were successfully canceled' : 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch});
-        $messenger->addMessage($submit_message);
+        $current_user_id = \Drupal::currentUser()->id();
+      
+        if (FALSE == $cancel_holds) {
+          $submit_message = 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch};
+          if ($current_user_id == 0) {
+            $submit_message .= '. <a href="/user/login">Sign In</a> to see your scheduled pickup appointments.';
+          }
+        }
+        else {
+           $submit_message = 'Your requests were successfully canceled';
+        }
+        $messenger->addMessage(['#markup' => $submit_message]);
 
         // redirect to the user's account page (if user is logged in) or to the front page
-        $current_user_id = \Drupal::currentUser()->id();
         if ($current_user_id > 0) {
             $user = \Drupal\user\Entity\User::load($current_user_id);
             $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);

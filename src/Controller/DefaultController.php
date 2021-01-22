@@ -453,13 +453,10 @@ class DefaultController extends ControllerBase {
       } else {
           drupal_set_message('The Pickup Request could not be processed');
       }
-      $userLoggedIn = \Drupal::config('arborcat.settings')->get('user_logged_in');
-
       $render[] = [
               '#theme' => 'pickup_request_form',
               '#formhtml' => $request_pickup_html,
-              '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
-              '#user_logged_in' => $userLoggedIn
+              '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check')
           ];
       return $render;
   } 
