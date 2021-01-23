@@ -61,7 +61,7 @@
                 <td>
                   {% if scheduled.completed == 1 %}
                     <span class="success-text">Ready for pickup at {{ scheduled.timePeriodStart|date('ga') }}!
-                      {% if 'locker' in scheduled.locationName|split(' ')[1]|lower %}
+                      {% if 'locker' in scheduled.locationName|lower %}
                         Use code <b>{{ scheduled.locker_code|slice(-7, 7) }}</b>
                       {% endif %}
                     </span>
