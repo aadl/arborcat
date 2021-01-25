@@ -446,21 +446,20 @@ class DefaultController extends ControllerBase {
   }
 
   public function pickup_request($pnum, $encrypted_barcode, $loc) {
-    $mode = \Drupal::request()->query->get('mode');
-    $request_pickup_html = '';
-    if ($this->validate_transaction($pnum, $encrypted_barcode)) {
-      $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
-    } else {
-      drupal_set_message('The Pickup Request could not be processed', 'error');
-    }
-    $render[] = [
-      '#theme' => 'pickup_request_form',
-      '#formhtml' => $request_pickup_html,
-      '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
-    ];
-
-    return $render;
-  }
+      $mode = \Drupal::request()->query->get('mode');
+      $request_pickup_html = '';
+      if ($this->validate_transaction($pnum, $encrypted_barcode)) {
+          $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
+      } else {
+          drupal_set_message('The Pickup Request could not be processed');
+      }
+      $render[] = [
+              '#theme' => 'pickup_request_form',
+              '#formhtml' => $request_pickup_html,
+              '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check')
+          ];
+      return $render;
+  } 
 
   public function custom_pickup_request($pickup_request_type, $overload_parameter) {
     $result_message = arborcat_custom_pickup_request($pickup_request_type, $overload_parameter);
