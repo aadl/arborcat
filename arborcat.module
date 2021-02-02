@@ -534,7 +534,7 @@ function _arborcat_create_appt_block() {
   $branch_totals = $db->query('SELECT count(*) as total, branch FROM arborcat_patron_pickup_request WHERE pickupDate = :tmrw GROUP BY branch', [':tmrw' => $tomorrow])
     ->fetchAll();
   foreach ($branch_totals as $total) {
-    if ((int) $total->total >= 900) {
+    if ((int) $total->total >= 950) {
       // check that a block is not already in place
       $exists = $db->query("SELECT * FROM arborcat_pickup_location_exclusion WHERE locationId = :lid AND dateStart = :tmrw AND notes = 'at capacity'", [':lid' => $total->branch, ':tmrw' => $tomorrow])
         ->fetch();
