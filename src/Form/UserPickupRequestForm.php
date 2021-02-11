@@ -365,19 +365,6 @@ class UserPickupRequestForm extends FormBase {
           $submit_message = 'You selected more than ' . $locker_item_max_count . ' items for locker pickup on ' . date('F j', strtotime($pickup_date)) . ' at the ' . $locations->{$branch} . '. ';
           $submit_message .= 'If all the items do not fit in the locker, the remaining items will be placed in the ' . $locations->{$branch} . ' lobby';
         }
-        // check if there are art prints or tools in the list of hold requests selected for scheduling a pickup request
-        $artprint_tool_found = FALSE;
-        ksm($holds);
-        foreach ($holds as $hold) {
-          if ($hold['artPrintTool']) {
-            $artprint_tool_found = TRUE;
-            break;
-          }
-        }
-        if ($artprint_tool_found) {
-          $submit_message = 'You selected a tool or art print for locker pickup on ' . date('F j', strtotime($pickup_date)) . ' at the ' . $locations->{$branch} . '. ';
-          $submit_message .= 'As the selected oversize item(s) will not fit in a locker, they will be placed in the ' . $locations->{$branch} . ' lobby';
-        }
         if (strlen($submit_message)) {
           $messenger->addWarning($submit_message);
         }
