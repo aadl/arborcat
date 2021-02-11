@@ -169,8 +169,9 @@ class UserPickupRequestForm extends FormBase {
           $time_period_formatted .= ' (overnight)';
         }
         $name_plus_time_period = $location_object->locationName . $time_period_formatted;
-        // concatenate the locationId and the timeslot into the key
-        $pickup_options["$location_object->locationId-$location_object->timePeriod"] = $name_plus_time_period;
+        // concatenate the locationId and the timeslot into the key - NOTE lobbies are all timePeriod 0
+        $concatenated_locationId_timeslot = $location_object->locationId . '-' . $location_object->timePeriod;
+        $pickup_options[$concatenated_locationId_timeslot] = $name_plus_time_period;
       }
 
       $form['pickup_type'] = [
@@ -230,12 +231,6 @@ class UserPickupRequestForm extends FormBase {
       $pickup_date =  $form_state->getValue('pickup_date');
       $pickup_point = (int) explode('-', $form_state->getValue('pickup_type'))[0];
 
-      // if ($pickup_date >= '2020-11-15') {
-      //     $form_state->setErrorByName('pickup_date', t('Due to positive COVID tests, all AADL Locations will be closed for at least 2 weeks starting Sunday, Nov. 15th.'));
-      // }
-      // if (($pickup_point == 1000 || $pickup_point == 1002 || $pickup_point == 1012) && $pickup_date == '2020-11-03') {
-      //   $form_state->setErrorByName('pickup_date', t('No appointments are available Downtown or at Pittsfield this day due to Election Day.'));
-
       // Check for exclusion dates
       $exclusion_data = $form_state->get('exclusionData');
       $exclusion_data_object = $exclusion_data[$pickup_date]['date_exclusion_data'];
@@ -269,6 +264,34 @@ class UserPickupRequestForm extends FormBase {
         // if no avail lockers, set form error
         if (!$avail) {
           $form_state->setErrorByName('pickup_type', t('All lockers are full during the selected time. Please try another time option or day'));
+        }
+        // check if an art print or tool is currently selected
+        $table_values = $form_state->getValue('item_table');
+        $locker_items= $form_state->getValue('lockeritems');
+        $selected_titles = array_filter($table_values);
+        $holds = [];
+        foreach ($selected_titles as $key=>$val) {
+          array_push($holds, $locker_items[$val]);
+        }
+        // check if there are art prints or tools in the list of hold selected for scheduling a pickup request
+        $tool_artprint_found = FALSE;
+        foreach ($holds as $hold) {
+          if ($hold['artPrintTool']) {
+            $tool_artprint_found = TRUE;
+            break;
+          }
+        }
+        if ($tool_artprint_found) {
+          $guzzle = \Drupal::httpClient();
+          $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+          $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+          $branch = $form_state->getValue('branch');
+          // Get the locations
+          $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
+
+          $oversize_locker_item_message = 'You selected a tool or art print that is too large to fit in the selected ' . $locations->{$branch} . ' locker for pickup.<br>';
+          $oversize_locker_item_message .= 'Please un-check the tool/art print item(s) OR change the pickup method to the '. $locations->{$branch} . ' lobby.';
+          $form_state->setErrorByName('lockeritems', t($oversize_locker_item_message));
         }
       }
       if ($form_state->getValue('notification_types')['email']) {
@@ -325,8 +348,6 @@ class UserPickupRequestForm extends FormBase {
     if (count($holds) == 0) {
       $messenger->addError(t("There are no request items selected."));
     } else {  // got at least one hold to be processed
-      // Check for the number of items and whether they will fit in the selected locker
-      $locker_item_max_count = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
       $guzzle = \Drupal::httpClient();
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -334,12 +355,33 @@ class UserPickupRequestForm extends FormBase {
 
       // Get the locations
       $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
-
-      if ($location_id_time_slot[1] > 0 && count($holds) > $locker_item_max_count) {
-        $submit_message = 'You selected more than ' . $locker_item_max_count . ' items for locker pickup on ' . date('F j', strtotime($pickup_date)) . ' at the ' . $locations->{$branch} . '. ';
-        $submit_message .= 'If all the items do not fit in the locker, the remaining items will be placed in the ' . $locations->{$branch} . ' lobby';
-        $messenger->addWarning($submit_message);
-      }
+      $time_slot = $location_id_time_slot[1];
+      // Check items if locker pickup has been selected  - NOTE time_slot must be a locker if it is not 0
+      if ($time_slot > 0) {
+        // Check for the number of items and whether they will fit in the selected locker
+        $locker_item_max_count = \Drupal::config('arborcat.settings')->get('max_locker_items_check');
+        $submit_message = '';
+        if (count($holds) > $locker_item_max_count) {
+          $submit_message = 'You selected more than ' . $locker_item_max_count . ' items for locker pickup on ' . date('F j', strtotime($pickup_date)) . ' at the ' . $locations->{$branch} . '. ';
+          $submit_message .= 'If all the items do not fit in the locker, the remaining items will be placed in the ' . $locations->{$branch} . ' lobby';
+        }
+        // check if there are art prints or tools in the list of hold requests selected for scheduling a pickup request
+        $artprint_tool_found = FALSE;
+        ksm($holds);
+        foreach ($holds as $hold) {
+          if ($hold['artPrintTool']) {
+            $artprint_tool_found = TRUE;
+            break;
+          }
+        }
+        if ($artprint_tool_found) {
+          $submit_message = 'You selected a tool or art print for locker pickup on ' . date('F j', strtotime($pickup_date)) . ' at the ' . $locations->{$branch} . '. ';
+          $submit_message .= 'As the selected oversize item(s) will not fit in a locker, they will be placed in the ' . $locations->{$branch} . ' lobby';
+        }
+        if (strlen($submit_message)) {
+          $messenger->addWarning($submit_message);
+        }
+      } 
       $error_count = 0;
       foreach ($holds as $hold) {
         if ($cancel_holds) {

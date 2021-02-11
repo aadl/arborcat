@@ -51,7 +51,7 @@
               .append(statusMsg);
             $(msgWrapper).insertBefore('.outer-wrapper[role="main"]');
             // make the view scroll so the banner is actually visible to the user
-            $('.status-messages')[0].scrollIntoView({ behavior: 'smooth' });
+            $('.status-messages')[0].scrollIntoView({ behavior: 'smooth', block: "center", inline: "nearest"});
 
           }
 
