@@ -47,6 +47,7 @@ class ArborcatAdminForm extends ConfigFormBase {
 
   public function buildForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
     $form = [];
+
     $form['api_url'] = [
       '#type' => 'textfield',
       '#title' => t('API URL'),
@@ -55,6 +56,7 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 64,
       '#description' => t('URL of the API server for Arborcat. (e.g. https://api.website.org)'),
     ];
+
     $form['api_key'] = [
       '#type' => 'textfield',
       '#title' => t('API Auth Key'),
@@ -71,6 +73,7 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 64,
       '#description' => t('Lockers URL for checking availability'),
     ];
+
     $form['pts_lockers'] = [
       '#type' => 'textfield',
       '#title' => t('PTS Lockers URL'),
@@ -79,6 +82,7 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 64,
       '#description' => t('Lockers URL for checking availability'),
     ];
+
     $form['pts_lockers_insert'] = [
       '#type' => 'textfield',
       '#title' => t('PTS Lockers Insert URL'),
@@ -87,6 +91,7 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 64,
       '#description' => t('Lockers URL for adding lockers'),
     ];
+
     $form['lockers_pass'] = [
       '#type' => 'textfield',
       '#title' => t('Lockers Interface Password'),
@@ -96,7 +101,45 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#description' => t('Password for accessing lockers interfaces'),
     ];
 
+    $form['pickup_requests_salt'] = [
+      '#type' => 'textfield',
+      '#title' => t('Salt for pickup requests'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('pickup_requests_salt'),
+      '#size' => 32,
+      '#maxlength' => 64,
+      '#description' => t('Salt string for unpacking barcode numbers for pickup requests'),
+    ];
+
+    $form['selfcheck_key'] = [
+      '#type' => 'textfield',
+      '#title' => t('Self-check key for patron api requests'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('selfcheck_key'),
+      '#size' => 32,
+      '#maxlength' => 64,
+      '#description' => t('self-check key for use with api requests pertaining to the patron data without the need to be signed in'),
+    ];
+ 
+    $form['max_locker_items_check'] = [
+      '#type' => 'number',
+      '#title' => t('Max Number of Items that should fit in a Locker'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('max_locker_items_check'),
+      '#description' => t('If more items that this number are selected for locker pickup, a warning will be displayed to the patron'),
+    ];
+
+    $form['starting_day_offset'] = [
+      '#type' => 'number',
+      '#title' => t('Starting Day Offset'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('starting_day_offset'),
+      '#description' => t('Number of days from today until the starting day of pickup dates that will be displayed to the user'),
+    ];
+
+    $form['number_of_pickup_days'] = [
+      '#type' => 'number',
+      '#title' => t('Number of Pickup Days'),
+      '#default_value' => \Drupal::config('arborcat.settings')->get('number_of_pickup_days'),
+      '#description' => t('Number of pickup dates that will be displayed to the user'),
+    ];
+
     return parent::buildForm($form, $form_state);
   }
-
 }

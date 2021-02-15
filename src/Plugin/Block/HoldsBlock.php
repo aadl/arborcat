@@ -54,14 +54,15 @@ class HoldsBlock extends BlockBase {
       $output .= '</tr></thead><tbody>';
 
       // used to cancel a hold by updating canceled_time field
-      $cur_time = date('Y-m-d');
+      $date_time_now = new DateTime('now');
+      $cur_time = $date_time_now->format('Y-m-d H:i:s');
       // build location change options for individual and modify selected
-      $locOptions = '';
+      $loc_options = '';
       foreach ($locations as $n => $loc) {
-        $locOptions .= "<option value=\"pickup_lib=$n\">Pickup: $loc</option>";
+        $loc_options .= "<option value=\"pickup_lib=$n\">Pickup: $loc</option>";
       }
       $count = 1;
-      $lockerLoc = false;
+      $locker_loc = false;
       foreach ($holds as $k => $hold) {
         // change display / value depending on if request is frozen
         if ($hold->hold->frozen == 'f') {
@@ -76,7 +77,7 @@ class HoldsBlock extends BlockBase {
         // show suspend and pickup options if hold isn't already in-transit or ready
         if ($hold->status != 'In-Transit' && $hold->status != 'Ready for Pickup') {
           $options .= "<option value=\"$opt_val\">$opt_display</option>";
-          $options .= $locOptions;
+          $options .= $loc_options;
         }
         $options .= "<option value=\"cancel_time=$cur_time\">Cancel Request</option>";
 
@@ -85,8 +86,8 @@ class HoldsBlock extends BlockBase {
         } elseif ($hold->status == 'Ready for Pickup') {
           $expire = strtotime($hold->hold->shelf_expire_time);
           $hold->status = "<span class=\"success-text\">$hold->status through: " . date('m-d-Y', $expire) . " <span class=\"no-tabdesk-display\">@ $hold->pickup</span>" . '</span>';
-          if (!$lockerLoc) {
-            $lockerLoc = true;
+          if (!$locker_loc) {
+            $locker_loc = true;
             if ($hold->pickup == 'Malletts Creek Branch') {
               $message = \Drupal\Core\Render\Markup::create('Need a locker? For now, just <a href="/contactus/renewal">contact us</a>!');
             } elseif ($hold->pickup == 'Pittsfield Branch') {
@@ -135,7 +136,7 @@ class HoldsBlock extends BlockBase {
                     <option value=\"\">Modify Selected Holds</option>
                     <option value=\"frozen=t\">Freeze</option>
                     <option value=\"frozen=f\">Unfreeze</option>
-                    $locOptions
+                    $loc_options
                     <option value=\"cancel_time=$cur_time\">Cancel Requests</option>
                  </select></div>";
     } else {

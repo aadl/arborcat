@@ -1,0 +1,7 @@
+pickuprequest-functions:
+  version: 1.x
+  js:
+    js/pickuprequest-functions.js: {}
+  dependencies:
+    - core/drupalSettings
+

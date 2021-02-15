@@ -8,11 +8,11 @@ use Predis\Client;
 
 class LockerRequestForm extends FormBase{
 
-	public function getFormId(){
+	public function getFormId() {
 		return 'locker_form_contents';
 	}
 
-	public function buildForm(array $form,FormStateInterface $form_state,$uid=NULL){
+	public function buildForm(array $form,FormStateInterface $form_state,$uid=NULL) {
 		$branch = $_GET["branch"];
 		if($branch=="mcb"){
 			$branch = "Malletts Creek Branch";
@@ -26,9 +26,9 @@ class LockerRequestForm extends FormBase{
 		$api_key = $account->get('field_api_key')->value;
 		$api_url = \Drupal::config('arborcat.settings')->get('api_url');
 		$patron_info = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents(),true);
-		$locker_holds = json_decode($guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents(),true);	
+		$locker_holds = json_decode($guzzle->get("$api_url/patron/$api_key/holds")->getBody()->getContents(),true);
 		$eligible_holds=[];
-		//start at 1 to avoid issue with eligible holds array not being zero-based 
+		//start at 1 to avoid issue with eligible holds array not being zero-based
 		$i=1;
 
 		if(count($locker_holds)){
@@ -63,7 +63,7 @@ class LockerRequestForm extends FormBase{
 				'#type'=>'value',
 				'#default_value'=>$uid
 			];
-		$form['explanation'] = [	
+		$form['explanation'] = [
 			'#markup'=>"<h2>$branch Locker Request Form</h2>" .
 			"Select items below to request that they be put into a locker:"
 		];
@@ -79,7 +79,7 @@ class LockerRequestForm extends FormBase{
 			'#multiple'=>'true',
 			'#empty'=>"You have no holds ready for pickup."
 		];
-		
+
 		$form['explanationcont']=[
 			'#markup'=>
 			"<div>" .
@@ -107,7 +107,7 @@ class LockerRequestForm extends FormBase{
 		  return $form;
 	}
 
-	function submitForm(array &$form, FormStateInterface $form_state){
+	function submitForm(array &$form, FormStateInterface $form_state) {
 		$messenger = \Drupal::messenger();
 		//parse telephone number into seven digit locker code
 		$lockercode = $form_state->getValue('lockercode');
@@ -144,7 +144,7 @@ class LockerRequestForm extends FormBase{
 			$time = strftime(time());
 			$redis_query = $time . "#" . $branch;
 			$redis->lPush('lockerRequests',$redis_query);
-			
+
 			//check for holidays
 			$easter_ts = easter_date();
     	$easter_date = date('md', $easter_ts);
@@ -219,7 +219,6 @@ class LockerRequestForm extends FormBase{
 			foreach($holds as $title){
 				$email_message = $email_message.$title['Title']."\r\n";
 			}
-			$mailManager = \Drupal::service('plugin.manager.mail');
 			mail($email_to,$email_subject,$email_message,$email_headers);
 		}
 	}
@@ -228,7 +227,7 @@ class LockerRequestForm extends FormBase{
   		if (!valid_email_address($form_state->getValue('email'))) {
     		$form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
   		}
-		}
+	}
 }
 
 ?>
