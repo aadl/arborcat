@@ -51,7 +51,7 @@
               .append(statusMsg);
             $(msgWrapper).insertBefore('.outer-wrapper[role="main"]');
             // make the view scroll so the banner is actually visible to the user
-            $('.status-messages')[0].scrollIntoView({ behavior: 'smooth' });
+            $('.status-messages')[0].scrollIntoView({ behavior: 'smooth', block: "center", inline: "nearest"});
 
           }
 
@@ -155,7 +155,7 @@
 
             if ((true == lockerSelected()) && (true == artPrintorToolChecked())) {
               // show the warning banner
-              displayBanner('Please note, the art print selected cannot be picked up from a locker', 'warning');
+              displayBanner('Please note, the selected art print or tool cannot be picked up from a locker', 'warning');
             }
           }
 
