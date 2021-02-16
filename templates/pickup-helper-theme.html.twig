@@ -1,0 +1,109 @@
+<h1 class="t-center ruled-heading "><span>Pickup Helper</span></h1>
+{{ search_form }}
+
+{% if barcode %}
+  {% if location_urls and not location_urls.error %}
+    <h3>Requests ready for action at:</h3>
+    <div class="l-overflow-clear">
+      <ul>
+        {% for item in location_urls %}
+          <li><a href="{{ item.url }}" target="_blank">{{ item.locname }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% elseif location_urls.error %}
+    <p><b>{{ location_urls.error }}</b></p>
+  {% else %}
+    <p><b>No requests eligible for pickup appointments</b></p>
+  {% endif %}
+  {% if not location_urls.error %}
+    <div>
+      {% set scheduled_count = scheduled_pickups|length ? ' (' ~ scheduled_pickups|length ~ ')' : '' %}
+      <h2 id="scheduled-pickups" class="no-margin-bottom">Scheduled Pickup Appointments for <span id="patron-barcode">{{ barcode }}</span></h2>
+      {% if scheduled_pickups %}
+        <table id="pickup-requests-table">
+          <thead>
+            <tr>
+              <th role="columnheader">Title</th>
+              <th class="no-mobile-display" role="columnheader">Author</th>
+              <th class="no-mobile-display no-tab-display" role="columnheader">Format</th>
+              <th class="no-sort" role="columnheader">Status</th>
+              <th data-sort-default role="columnheader">Pickup Date</th>
+              <th>Notification Type(s)</th>
+              <th>Cancel</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for scheduled in scheduled_pickups %}
+              <tr class="{{ scheduled.branchLocationId }}-scheduled" data-scheduled-id="{{ scheduled.requestId }}">
+                <td>
+                  {% if scheduled.requestType == 'GRAB_BAG' %}
+                    Shelf Service Request
+                  {% elseif scheduled.requestType == 'PRINT_JOB' %}
+                    Print Service Request
+                  {% elseif 'ILL' not in scheduled.material and 'MeLCat Book' not in scheduled.material %}
+                    <a href="/catalog/record/{{ scheduled.bnum }}">{{ scheduled.title }}</a>
+                  {% else %}
+                    {{ scheduled.title }}
+                  {% endif %}
+                </td>
+                <td class="no-mobile-display">
+                  {% if scheduled.requestType == 'HOLD_REQUEST' %}
+                    <a href="/search/catalog/author:&quot;{{ scheduled.author }}&quot;">{{ scheduled.author }}</a>
+                  {% endif %}
+                </td>
+                <td class="no-mobile-display no-tab-display">
+                  {% if scheduled.requestType == 'HOLD_REQUEST' %}
+                    {{ scheduled.material }}
+                  {% endif %}
+                </td>
+                {% set pickup_text = scheduled.locationDescription ~ ' from ' ~ scheduled.timePeriodStart|date('ga') ~ '-' ~ scheduled.timePeriodEnd|date('ga') ~ (scheduled.pickupLocation == 1012 or scheduled.pickupLocation == 1013 ? ' next day' : '') %}
+                <td>
+                  {% if scheduled.completed == 1 %}
+                    <span class="success-text">Ready for pickup at {{ scheduled.timePeriodStart|date('ga') }}!
+                      {% if 'locker' in scheduled.locationName|lower %}
+                        Use code <b>{{ scheduled.locker_code|slice(-7, 7) }}</b>
+                      {% endif %}
+                    </span>
+                  {% elseif scheduled.completed == 2 %}
+                    <span class="error-text">Unable to find item</span>
+                  {% else %}
+                    Scheduled
+                  {% endif %}
+                </td>
+                <td data-sort="{{ scheduled.pickupDate }}">{{ scheduled.pickupDate|date('D, n/j') }} at {{ pickup_text }}</td>
+                <td style="word-wrap: break-word;">
+                  {% if scheduled.contactEmail %}
+                    <b>Email:</b> {{ scheduled.contactEmail }}
+                  {% endif %}
+                  {% if scheduled.contactSMS %}
+                    <b>Text:</b> {{ scheduled.contactSMS }}
+                  {% endif %}
+                  {% if scheduled.contactPhone %}
+                    <b>Phone:</b> {{ scheduled.contactPhone }}
+                  {% endif %}
+                </td>
+                <td>
+                    {% set todaysDate = date() | date("U") %}
+                    {% set scheduledDate = scheduled.pickupDate|date("U") %}
+                    {# Only enable the cancel button on appointments that are tomorrow or later #}
+                    {% if scheduledDate > todaysDate %}
+                      <button class="cancel-pickup button" data-href="{{ base_path }}/cancelpickuprequest/" data-salt="{{ scheduled.hashed_id }}" data-cutoffdate="{{ scheduled.hold.shelf_time|date_modify('+7 days')|date('m-d-Y') }}">Cancel</button>
+                    {% else %}
+                      <button class="cancel-pickup button" data-href="{{ base_path }}/cancelpickuprequest/" data-salt="{{ scheduled.hashed_id }}" data-cutoffdate="{{ scheduled.hold.shelf_time|date_modify('+7 days')|date('m-d-Y') }}" disabled>Cancel</button>
+                    {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if scheduled_pickups|length > 50 %}
+          <a href="" data-target="#pickup-requests-table" data-state="hidden" class="show-table-rows l-block base-margin-bottom no-display" style="display: block;">View All</a>
+        {% endif %}
+      {% else %}
+        <p><em>No requests scheduled for pickup</em></p>
+      {% endif %}
+    </div>
+  {% endif %}
+{% endif %}
+{{ attach_library('aadl/aadl-tablesort') }}

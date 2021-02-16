@@ -17,9 +17,9 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 class DefaultController extends ControllerBase {
 
   public function user_lists($uid = NULL) {
-    $currentUid = \Drupal::currentUser()->id();
+    $current_uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-    if ($currentUid != $uid && !$user->hasPermission('administer users')) {
+    if ($current_uid != $uid && !$user->hasPermission('administer users')) {
       drupal_set_message('You are not authorized to view these lists', 'warning');
       return new RedirectResponse(\Drupal::url('user.page'));
     }
@@ -153,7 +153,7 @@ class DefaultController extends ControllerBase {
       $pager = pager_default_initialize($total, $per_page);
 
       $list_items = [];
-      $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('administer users') ? true : false);
+      $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('access accountfix') ? true : false);
       $list_items['title'] = $list->title;
       $list_items['id'] = $lid;
       if (count($items['hits']['hits'])) {
@@ -299,7 +299,7 @@ class DefaultController extends ControllerBase {
       [':lid' => $lid]);
     $result = $query->fetch();
 
-    if ($user->get('uid')->value == $result->uid || $user->hasRole('administrator')) {
+    if ($user->get('uid')->value == $result->uid || $user->hasRole('staff')) {
       $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid AND bib=:bib",
         [':lid' => $lid, ':bib' => $bib]);
       $row = $query->fetch();
