@@ -86,11 +86,13 @@
                 <td>
                     {% set todaysDate = date() | date("U") %}
                     {% set scheduledDate = scheduled.pickupDate|date("U") %}
+                    {# MelCat requests have 10 day expiration period #}
+                    {% set numberOfDaysTillExpire = (scheduled.hold.pickup_lib > 110) ? '+10 days' : '+7 days' %}
                     {# Only enable the cancel button on appointments that are tomorrow or later #}
                     {% if scheduledDate > todaysDate %}
-                      <button class="cancel-pickup button" data-href="{{ base_path }}/cancelpickuprequest/" data-salt="{{ scheduled.hashed_id }}" data-cutoffdate="{{ scheduled.hold.shelf_time|date_modify('+7 days')|date('m-d-Y') }}">Cancel</button>
+                      <button class="cancel-pickup button" data-href="{{ base_path }}/cancelpickuprequest/" data-salt="{{ scheduled.hashed_id }}" data-cutoffdate="{{ scheduled.hold.shelf_time|date_modify(numberOfDaysTillExpire)|date('Y-m-d') }}">Cancel</button>
                     {% else %}
-                      <button class="cancel-pickup button" data-href="{{ base_path }}/cancelpickuprequest/" data-salt="{{ scheduled.hashed_id }}" data-cutoffdate="{{ scheduled.hold.shelf_time|date_modify('+7 days')|date('m-d-Y') }}" disabled>Cancel</button>
+                      <button class="cancel-pickup button" data-href="{{ base_path }}/cancelpickuprequest/" data-salt="{{ scheduled.hashed_id }}" data-cutoffdate="{{ scheduled.hold.shelf_time|date_modify(numberOfDaysTillExpire)|date('Y-m-d') }}" disabled>Cancel</button>
                     {% endif %}
                 </td>
               </tr>
