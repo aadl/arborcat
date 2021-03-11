@@ -391,6 +391,7 @@ class DefaultController extends ControllerBase {
         $display_date = date('D n/d', strtotime($exclude->dateStart));
         $blocks[$locations->{$exclude->locationId}][] = "$display_date ($exclude->notes)";
       }
+      $blocks_msg = '';
       foreach ($blocks as $key => $block) {
         $blocks[$key] = implode(', ', $block);
         $blocks_msg .= "$key: " . implode(', ', $block) . '<br>';
@@ -486,6 +487,7 @@ class DefaultController extends ControllerBase {
       $pickup_time->setTime(23, 59, 59);
 
       if ($pickup_time >= $tomorrow) {
+        $user = \Drupal::currentUser();
         if ($patron_id == $cancel_record->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
           // go ahead and cancel the record
           $num_deleted = $db->delete('arborcat_patron_pickup_request')
