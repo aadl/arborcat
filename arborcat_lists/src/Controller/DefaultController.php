@@ -20,7 +20,7 @@ class DefaultController extends ControllerBase {
     $current_uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     if ($current_uid != $uid && !$user->hasPermission('administer users')) {
-      drupal_set_message('You are not authorized to view these lists', 'warning');
+      \Drupal::messenger()->addWarning('You are not authorized to view these lists');
       return new RedirectResponse(\Drupal::url('user.page'));
     }
 
@@ -51,7 +51,7 @@ class DefaultController extends ControllerBase {
   public function user_checkout_history() {
     $user = \Drupal::currentUser();
     if (!$user->isAuthenticated()) {
-      drupal_set_message("Sign in to see your checkout history.");
+      \Drupal::messenger()->addMessage("Sign in to see your checkout history.");
       return new RedirectResponse("/user/login?destination=" . $_SERVER['REQUEST_URI']);
     }
     $db = \Drupal::database();
@@ -59,7 +59,7 @@ class DefaultController extends ControllerBase {
     if ($checkout_list->id) {
       return new RedirectResponse("/user/lists/" . $checkout_list->id);
     } else {
-      drupal_set_message(['#markup' => 'You do not have a checkout history list. Enable checkout history in your <a href="/user/' . $user->id() . '/edit">preferences</a>.']);
+      \Drupal::messenger()->addMessage(['#markup' => 'You do not have a checkout history list. Enable checkout history in your <a href="/user/' . $user->id() . '/edit">preferences</a>.']);
       return new RedirectResponse("/user");
     }
   }
@@ -137,7 +137,7 @@ class DefaultController extends ControllerBase {
           arborcat_lists_update_user_history($list->uid);
         }
       }
-      
+
       $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC",
         [':lid' => $lid]);
 
@@ -356,7 +356,7 @@ class DefaultController extends ControllerBase {
           $rows[] = implode(',', $record);
         }
       }
-      
+
       $list = implode("\n", $rows);
       $response = new Response($list);
       $response->headers->set('Content-Type', 'text/csv');
@@ -364,7 +364,7 @@ class DefaultController extends ControllerBase {
 
       return $response;
     } else {
-      drupal_set_message('You do not have permission to download this list', 'warning');
+      \Drupal::messenger()->addWarning('You do not have permission to download this list');
       return new RedirectResponse(\Drupal::url('user.page'));
     }
   }

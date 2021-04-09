@@ -92,7 +92,7 @@ class DefaultController extends ControllerBase {
             $description = 'Downloaded ' . $bib_record->title . ' from our online catalog';
             $metadata = 'bnum:' . $bib_record->_id;
             $result = summergame_player_points($player['pid'], 50, $type, $description, $metadata);
-            drupal_set_message("You earned $result points for downloading $bib_record->title from the catalog");
+            \Drupal::messenger()->addMessage("You earned $result points for downloading $bib_record->title from the catalog");
           }
         }
       }
@@ -452,7 +452,7 @@ class DefaultController extends ControllerBase {
       if ($this->validate_transaction($pnum, $encrypted_barcode)) {
           $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
       } else {
-          drupal_set_message('The Pickup Request could not be processed');
+          \Drupal::messenger()->addMessage('The Pickup Request could not be processed');
       }
       $render[] = [
               '#theme' => 'pickup_request_form',

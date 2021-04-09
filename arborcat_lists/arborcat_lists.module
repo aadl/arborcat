@@ -25,7 +25,7 @@ function arborcat_lists_theme($existing, $type, $theme, $path) {
 function arborcat_lists_user_update($user) {
   if ($user->get('profile_cohist')->value &&
       !$user->original->get('profile_cohist')->value) {
-    drupal_set_message('Enabling Checkout History');
+    \Drupal::messenger()->addMessage('Enabling Checkout History');
     arborcat_lists_update_user_history($user->get('uid')->value);
   }
 }
@@ -106,7 +106,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
     }
     catch (\Exception $e) {
-      drupal_set_message('Error retrieving checkouts', 'error');
+      \Drupal::messenger()->addError('Error retrieving checkouts');
       return [
         'error' => 'Error retrieving checkouts',
         'message' => $e->getMessage()
@@ -182,12 +182,12 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
           $points = summergame_player_points($player['pid'], 10, 'Checkout History',
                                              'Item added from Checkout History', $metadata);
           $player_name = $player['nickname'] ? $player['nickname'] : $player['name'];
-          drupal_set_message("Player $player_name earned $points Summer Game points for a new checkout.");
+          \Drupal::messenger()->addMessage("Player $player_name earned $points Summer Game points for a new checkout.");
         }
       }
 
       if ($total = count($bnums_to_add)) {
-        drupal_set_message("Updated Checkout History with $total new checkouts");
+        \Drupal::messenger()->addMessage("Updated Checkout History with $total new checkouts");
       }
     }
 
