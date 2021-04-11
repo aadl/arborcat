@@ -287,17 +287,12 @@ function arborcat_lists_search_lists($term) {
 
   $db = \Drupal::database();
 
-  $orGroup = $query->orConditionGroup()
-  ->condition('promoted', 1)
-  ->condition('uid', [2,4,7,22], 'IN');
-
-
   $query = $db->select('arborcat_user_lists', 'lists')
     ->fields('lists', ['title', 'description', 'public', 'id', 'uid'])
-    ->orConditionGroup->condition('title', "%" . $db->escapeLike($term) . "%", 'LIKE')
-    ->condition('description', "%" . $db->escapeLike($term) . "%", 'LIKE'))
-    ->condition('public', '1');
-
+    ->condition('public', '1')
+    ->orConditionGroup()
+      ->condition('title', "%" . $db->escapeLike($term) . "%", 'LIKE')
+      ->condition('description', "%" . $db->escapeLike($term) . "%", 'LIKE');
 
   $lists['total'] = $query->execute()->fetchAll();
   $lists['lists'] = $query->range($offset, 20)->execute()->fetchAll();
