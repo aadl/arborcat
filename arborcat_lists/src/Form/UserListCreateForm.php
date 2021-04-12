@@ -26,7 +26,7 @@ class UserListCreateForm extends FormBase {
       $uid = \Drupal::currentUser()->id();
       $user = \Drupal\user\Entity\User::load($uid);
       if ($res->uid != $uid && !$user->hasPermission('administer users')) {
-        drupal_set_message("You cannot edit another user's list", 'error');
+        \Drupal::messenger()->addError("You cannot edit another user's list");
         return $this->redirect('arborcat_lists.user_lists', ['uid' => $uid]);
       }
     }
@@ -86,7 +86,7 @@ class UserListCreateForm extends FormBase {
         ])
         ->execute();
 
-      drupal_set_message('List edited!');
+      \Drupal::messenger()->addMessage('List edited!');
     } else {
       $connection->insert('arborcat_user_lists')
         ->fields([
@@ -98,7 +98,7 @@ class UserListCreateForm extends FormBase {
         ])
         ->execute();
 
-      drupal_set_message('List created!');
+      \Drupal::messenger()->addMessage('List created!');
     }
     $form_state->setRedirect('arborcat_lists.user_lists', ['uid' => $user->get('uid')->value]);
   }

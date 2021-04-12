@@ -4,7 +4,6 @@
     "type": "drupal-custom-module",
     "require": {
         "php": "^7.0",
-        "drupal/core": "^8.0",
         "aadl/arborelastic": "dev-master"
     }
 }

@@ -48,7 +48,7 @@ function arborcat_theme($existing, $type, $theme, $path) {
       'variables' => [
           'formhtml' => NULL,
           'max_locker_items_check' => NULL
-      ] 
+      ]
     ],
    'pickup_helper_theme' => [
       'variables' => [
@@ -342,7 +342,7 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
 
       return $id;
     } catch (Exception $e) {
-      drupal_set_message('An error occurred saving this pickup request. Please try again', 'error');
+      \Drupal::messenger()->addError('An error occurred saving this pickup request. Please try again');
       $txn->rollBack();
 
       return -1;
@@ -369,7 +369,7 @@ function arborcat_barcode_from_patron_id($patron_id) {
     $barcode =  $json->evg_user->card->barcode;
     $return_val = $barcode;
   }
-  
+
   return $return_val;
 }
 
@@ -452,7 +452,7 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
           (in_array('phone call', array_map("strtolower", $notification_options))) ? $patron_phone : NULL,
           $patron_phone ?? NULL
         );
-                                      
+
         if ($result > 0) {
           $result_message = 'SUCCESS';
         } else {

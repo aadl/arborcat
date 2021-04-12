@@ -78,7 +78,7 @@ class UserRecordReviewForm extends FormBase {
     $unique = $connection->query("SELECT * FROM arborcat_reviews WHERE uid=:uid AND review=:review",
       [':uid' => $user->get('uid')->value, ':review' => $form_state->getValue('review')])->fetch();
     if ($unique->id && !$form_state->getValue('id')) {
-      drupal_set_message("Sorry, you've already submitted that review for another item.", 'error');
+      \Drupal::messenger()->addError("Sorry, you've already submitted that review for another item.");
       return;
     }
 
@@ -94,7 +94,7 @@ class UserRecordReviewForm extends FormBase {
         ])
         ->execute();
 
-      drupal_set_message('Review updated!');
+      \Drupal::messenger()->addMessage('Review updated!');
     } else {
       $connection->insert('arborcat_reviews')
         ->fields([
@@ -109,7 +109,7 @@ class UserRecordReviewForm extends FormBase {
         ])
         ->execute();
 
-      drupal_set_message('Review created!');
+      \Drupal::messenger()->addMessage('Review created!');
 
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
         if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
@@ -118,7 +118,7 @@ class UserRecordReviewForm extends FormBase {
             $description = $form_state->getValue('bib_title');
             $metadata = 'bnum:' . $form_state->getValue('bib');
             $result = summergame_player_points($player['pid'], 100, $type, $description, $metadata);
-            drupal_set_message("You earned $result points for writing a review!");
+            \Drupal::messenger()->addMessage("You earned $result points for writing a review!");
           }
         }
       }

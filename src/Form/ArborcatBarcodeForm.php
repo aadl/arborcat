@@ -112,7 +112,7 @@ class ArborcatBarcodeForm extends FormBase {
             $patron = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
           }
           catch (\Exception $e) {
-            drupal_set_message('Error retrieving patron data for ' . $field_barcode, 'error');
+            \Drupal::messenger()->addError('Error retrieving patron data for ' . $field_barcode);
           }
 
           if ($patron) {
@@ -137,7 +137,7 @@ class ArborcatBarcodeForm extends FormBase {
       }
     }
     else {
-      drupal_set_message('Access Denied to User ID ' . $uid, 'error');
+      \Drupal::messenger()->addError('Access Denied to User ID ' . $uid);
       return $this->redirect('<front>');
     }
     return $form;
@@ -203,7 +203,7 @@ class ArborcatBarcodeForm extends FormBase {
     $account->field_api_key[] = arborcat_generate_api_key();
     $account->save();
 
-    drupal_set_message('Successfully added library card barcode to your website account');
+    \Drupal::messenger()->addMessage('Successfully added library card barcode to your website account');
 
     $form_state->setRedirect('entity.user.canonical', ['user' => $account->get('uid')->value]);
 
@@ -220,7 +220,7 @@ class ArborcatBarcodeForm extends FormBase {
     unset($account->field_api_key[$delta]);
     $account->save();
 
-    drupal_set_message('Successfully removed barcode from your website account');
+    \Drupal::messenger()->addMessage('Successfully removed barcode from your website account');
 
     $form_state->setRedirect('entity.user.canonical', ['user' => $account->get('uid')->value]);
 
@@ -274,7 +274,7 @@ class ArborcatBarcodeForm extends FormBase {
 
     $account->save();
 
-    drupal_set_message('Successfully reordered barcodes');
+    \Drupal::messenger()->addMessage('Successfully reordered barcodes');
 
     return;
   }

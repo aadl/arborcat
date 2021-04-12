@@ -28,7 +28,7 @@ class HoldsBlock extends BlockBase {
       $json = $guzzle->get("$api_url/patron/$api_key/holds", ['timeout' => 240])->getBody()->getContents();
     }
     catch (\Exception $e) {
-      drupal_set_message('Error retrieving requests', 'error');
+      \Drupal::messenger()->addError('Error retrieving requests');
       return [
         '#cache' => [
           'max-age' => 0, // Don't cache, always get fresh data
@@ -93,7 +93,7 @@ class HoldsBlock extends BlockBase {
             } elseif ($hold->pickup == 'Pittsfield Branch') {
               $message = \Drupal\Core\Render\Markup::create('Pittsfield lockers are now available! Need a locker? Just <a href="/contactus/renewal">contact us</a>!');
             }
-            drupal_set_message($message, 'status');
+            \Drupal::messenger()->addStatus($message);
           }
         } elseif ($hold->status != 'In-Transit') {
           $hold->status = $hold->queue->queue_position . ' of ' . $hold->queue->total_holds;

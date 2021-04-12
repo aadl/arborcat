@@ -31,7 +31,7 @@ class PatronBlock extends BlockBase {
       $fines = json_decode($guzzle->get("$api_url/patron/$api_key/fines")->getBody()->getContents());
     }
     catch (\Exception $e) {
-      drupal_set_message('Error retrieving patron data', 'error');
+      \Drupal::messenger()->addError('Error retrieving patron data');
       return [
         '#cache' => [
           'max-age' => 0, // Don't cache, always get fresh data
