@@ -21,16 +21,18 @@ class DefaultController extends ControllerBase {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     if ($current_uid != $uid && !$user->hasPermission('administer users')) {
       \Drupal::messenger()->addWarning('You are not authorized to view these lists');
-      return new RedirectResponse(\Drupal::url('user.page'));
+
+      return new RedirectResponse(\Drupal\Core\Url::fromRoute('user.page'));
     }
 
     $lists = arborcat_lists_get_lists($uid);
 
     // build the pager
-    $page = pager_find_page();
+    $pager_manager = \Drupal::service('pager.manager');
+    $page = $pager_manager->findPage();
     $per_page = 20;
     $offset = $per_page * $page;
-    $pager = pager_default_initialize(count($lists), $per_page);
+    $pager = $pager_manager->defaultInitialize(count($lists), $per_page);
 
     $lists = arborcat_lists_get_lists($uid, $offset, $per_page);
 
@@ -66,9 +68,12 @@ class DefaultController extends ControllerBase {
 
   public function view_public_lists() {
     $db = \Drupal::database();
-    $page = pager_find_page();
+
+    $pager_manager = \Drupal::service('pager.manager');
+    $page = $pager_manager->findPage();
     $per_page = 20;
     $offset = $per_page * $page;
+
     $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : '');
 
     // grab lists from DB
@@ -103,7 +108,7 @@ class DefaultController extends ControllerBase {
     }
 
     // build the pager
-    $pager = pager_default_initialize($total, $per_page);
+    $pager = $pager_manager->defaultInitialize(total, $per_page);
 
     return [
       [
@@ -147,10 +152,11 @@ class DefaultController extends ControllerBase {
 
       // build the pager
       $total = $items['hits']['total'];
-      $page = pager_find_page();
+      $pager_manager = \Drupal::service('pager.manager');
+      $page = $pager_manager->findPage();
       $per_page = 20;
       $offset = $per_page * $page;
-      $pager = pager_default_initialize($total, $per_page);
+      $pager = $pager_manager->defaultInitialize($total, $per_page);
 
       $list_items = [];
       $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('access accountfix') ? true : false);
@@ -365,7 +371,7 @@ class DefaultController extends ControllerBase {
       return $response;
     } else {
       \Drupal::messenger()->addWarning('You do not have permission to download this list');
-      return new RedirectResponse(\Drupal::url('user.page'));
+      return new RedirectResponse(\Drupal\Core\Url::fromRoute('user.page'));
     }
   }
 

@@ -202,9 +202,12 @@ class DefaultController extends ControllerBase {
 
   public function moderate_reviews() {
     $db = \Drupal::database();
-    $page = pager_find_page();
+
+    $pager_manager = \Drupal::service('pager.manager');
+    $page = $pager_manager->findPage();
     $per_page = 50;
     $offset = $per_page * $page;
+
     $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : '');
     $total = $db->query("SELECT COUNT(*) as total FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0")->fetch()->total;
     $reviews = $db->query("SELECT * FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0 ORDER BY id DESC $limit")->fetchAll();
@@ -213,7 +216,7 @@ class DefaultController extends ControllerBase {
       $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
     }
 
-    $pager = pager_default_initialize($total, $per_page);
+    $pager = $pager_manager->defaultInitialize($total, $per_page);
 
     return [
       '#theme' => 'moderate_reviews',
@@ -460,7 +463,7 @@ class DefaultController extends ControllerBase {
               '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check')
           ];
       return $render;
-  } 
+  }
 
   public function custom_pickup_request($pickup_request_type, $overload_parameter) {
     $result_message = arborcat_custom_pickup_request($pickup_request_type, $overload_parameter);
