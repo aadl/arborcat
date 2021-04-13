@@ -373,6 +373,7 @@ function arborcat_calculateLobbyPickupDates($holdPickupLocation) {
   // now loop for x days and create a date string for each day, preceded with the day name
   // create a human friendly version - 'formattedDate' for display purposes in the UI
   // and a basic verson 'date' for use in date db queries
+  dblog('arborcat_calculateLobbyPickupDates: $location_date_excludes = ', $tomorrow, $tomorrowPlusSevenDays);
 
   // Next 7 days exclusion date/locations
   $db = \Drupal::database();
@@ -383,30 +384,40 @@ function arborcat_calculateLobbyPickupDates($holdPickupLocation) {
               ->execute();
   $location_date_excludes = $query->fetchAll();
   $activePickupLocations = arborcat_pickupLocations($holdPickupLocation);
+  // Got the excludes based on pickupLocationIds and the pickupLocationIds for the current holds
+
+  // $date_exclude =  [
+  //     'Jun. 20',
+  //     'Jun. 21',
+  //     'Jul. 4'
+  // ];
+
 
   for ($x=0; $x < $numPickupDays; $x++) {
-    $theDate_mdY = $theDate->format('M. j');
-    $day_of_week = intval($theDate->format('w'));
-    $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
-    $datestring = $dayOfWeek . ', ' . $theDate_mdY;
-    $datestr_Ymd = $theDate->format('Y-m-d');
-    // Loop through exclusions looking for dates matching and that the exclusion pickupLocation is in the list of locations for the 
-    // hold request location
-    $exclusionLocations = [];
-    foreach($location_date_excludes as $oneLocDateExclude) {
-      if ($oneLocDateExclude->exclusionDate == $datestr_Ymd && in_array($oneLocDateExclude->locationId, $activePickupLocations)) {
-        array_push($exclusionLocations, $oneLocDateExclude->locationId);
+      $theDate_mdY = $theDate->format('M. j');
+      $day_of_week = intval($theDate->format('w'));
+      $dayOfWeek = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat',][$day_of_week];
+      $datestring = $dayOfWeek . ', ' . $theDate_mdY;
+      $datestr_Ymd = $theDate->format('Y-m-d');
+      // Loop through exclusions looking for dates matching and that the exclusion pickupLocation is in the list of locations for the 
+      // hold request location
+      $exclusionLocations = [];
+      dblog('arborcat_calculateLobbyPickupDates: === ' . $x . ' === location_date_excludes = ', json_encode($location_date_excludes));
+      foreach($location_date_excludes as $oneLocDateExcude) {
+        if ($oneLocDateExcude->exclusionDate == $datestr_Ymd && in_array($oneLocDateExcude->locationId, $activePickupLocations)) {
+          dblog('arborcat_calculateLobbyPickupDates: GOT EXCLUSION = ', $datestr_Ymd, $holdPickupLocation, $activePickupLocations);
+          array_push($exclusionLocations, $oneLocDateExcude->locationId);
+        }
       }
-    }
-    // The following line is if the exclusion locations are to be passedto thefront-endJS
-    //$dateLineData = array("date" => $datestr_Ymd, "formattedDate" => $datestring, "exclusions" => $exclusionLocations);
-    $dateLineData = array("date" => $datestr_Ymd, "formattedDate" => $datestring);
-    // only add the date if there are no exclusions for this location on this date
-    if (count($exclusionLocations) == 0) {
-      $arrayOfDates[$datestr_Ymd] = $dateLineData;
-    }
-    $theDate->modify('+1 day');
+
+      $twoDatesPlusExclusions = array("date" => $datestr_Ymd, "formattedDate" => $datestring, "exclusions" => $exclusionLocations);
+
+      if (count($exclusionLocations) == 0) {
+        $arrayOfDates[$datestr_Ymd] = $twoDatesPlusExclusions;
+      }
+      $theDate->modify('+1 day');
   }
+  dblog('arborcat_calculateLobbyPickupDates: RETURNING $arrayOfDates = ', json_encode($arrayOfDates));
   return $arrayOfDates;
 }
 
@@ -414,14 +425,7 @@ function dblog(...$thingsToLog)
 {
   $lineToLog = '';
   foreach ($thingsToLog as $item) {
-    $item2 = $item;
-    if (is_array($item)) {
-      $item2 = ' ARRAY: ' . json_encode($item);
-    }
-    else if (is_object($item)) {
-      $item2 = 'OBJECT: ' . json_encode($item);
-    }
-    $lineToLog .= ' ' . $item2;
+      $lineToLog = $lineToLog . ' ' . print_r($item, true);
   }
   // prepend date/time onto log line
   $nowDateTime = new DrupalDateTime();
