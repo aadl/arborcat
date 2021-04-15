@@ -466,17 +466,12 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
   return $result_message;
 }
 
-function arborcat_get_pickup_dates($location, $start_date_ymd, $end_date_ymd) {
+function arborcat_get_pickup_dates($location, $start_date_ymd, $number_of_days) {
   // Load exclusion dates for date range defined in the two params from the table: arborcat_pickup_location_exclusion
   // For all branches (locationId=9999)
   $db = \Drupal::database();
   $pickup_dates = [];
   $starting_date = new DateTime($start_date_ymd);
-  $ending_date = new DateTime($end_date_ymd);
-
-  // Calc Number of days being requested
-  $difference = $starting_date->diff($ending_date);
-  $number_of_days = $difference->d;
 
   $date_iterator = $starting_date;
   // loop until we have the required number of days without exclusions

@@ -135,11 +135,7 @@ class UserPickupRequestForm extends FormBase {
       //   $starting_day = $opening_date;
       // }
 
-      $starting_day_plus_pickup_days = clone $starting_day;
-      $modifystring = '+' . $number_of_pickup_days - 1 . ' day';
-      $starting_day_plus_pickup_days->modify($modifystring);
-
-      $pickup_dates_data = arborcat_get_pickup_dates($request_location, $starting_day->format('Y-m-d'), $starting_day_plus_pickup_days->format('Y-m-d'));
+      $pickup_dates_data = arborcat_get_pickup_dates($request_location, $starting_day->format('Y-m-d'), $number_of_pickup_days);
       $form_state->set('exclusionData', $pickup_dates_data);
 
       $pickup_dates =[];
