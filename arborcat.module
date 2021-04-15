@@ -469,12 +469,18 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
 function arborcat_get_pickup_dates($location, $start_date_ymd, $end_date_ymd) {
   // Load exclusion dates for date range defined in the two params from the table: arborcat_pickup_location_exclusion
   // For all branches (locationId=9999)
+  $db = \Drupal::database();
   $pickup_dates = [];
-  // Loop through each date, 1 day at a time, checking if there is an exclusion.
-  $date_iterator = new DateTime($start_date_ymd);
+  $starting_date = new DateTime($start_date_ymd);
   $ending_date = new DateTime($end_date_ymd);
-  while ($date_iterator <= $ending_date) {
-    $db = \Drupal::database();
+
+  // Calc Number of days being requested
+  $difference = $starting_date->diff($ending_date);
+  $number_of_days = $difference->d;
+
+  $date_iterator = $starting_date;
+  // loop until we have the required number of days without exclusions
+  while ($number_of_days >= 0) {
     $query = $db->select('arborcat_pickup_location_exclusion', 'aple');
     $query->fields('aple', ['locationId', 'dateStart', 'dateEnd','display_reason', 'dropdown_display']);
 
@@ -501,6 +507,10 @@ function arborcat_get_pickup_dates($location, $start_date_ymd, $end_date_ymd) {
     if (count($exclusion_data_array) > 0) {
       $exclusion_data = $exclusion_data_array[0];
     }
+    else {  // no exclusion data, this is a valid pickup date, so decrement the number of valid pickup days still to be identified
+      $number_of_days--;
+    }
+    
     // format the display string for the date that will be shown in the pickup dates dropdown menu
     $date_month_day = $date_iterator->format('M. j');
     $day_of_week = intval($date_iterator->format('w'));
