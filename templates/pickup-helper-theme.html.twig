@@ -42,7 +42,12 @@
                   {% elseif scheduled.requestType == 'PRINT_JOB' %}
                     Print Service Request
                   {% elseif 'ILL' not in scheduled.material and 'MeLCat Book' not in scheduled.material %}
-                    <a href="/catalog/record/{{ scheduled.bnum }}">{{ scheduled.title }}</a>
+                    <a href="/catalog/record/{{ scheduled.bnum }}">
+                      {{ scheduled.title }}
+                      {% if scheduled.mag_issue %}
+                        {{ scheduled.mag_issue }}
+                      {% endif %}
+                    </a>
                   {% else %}
                     {{ scheduled.title }}
                   {% endif %}
