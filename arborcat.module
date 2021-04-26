@@ -467,22 +467,26 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
 }
 
 function arborcat_is_date_location_valid($location, $pickup_date) {
-
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
   $guzzle = \Drupal::httpClient();
   $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
-  $pickup_location = 102;
+  $pickup_location = -1;  
   foreach ($locations as $index => $value) {
+  // perform 1st word comparison of the location string passed in and each of the branch locations
    if (strtok($value, " ") ==  strtok($location, " ")) {
       $pickup_location = $index;
 
       break;
     }
   }
-  $date_info = arborcat_get_pickup_dates($pickup_location, $pickup_date, 1);
-  $date_exclusion_info = $date_info[$pickup_date]['date_exclusion_data'];
+  $date_exclusion_info = NULL;
+  // only of the pickup_location is a valid location do we check for a valid date/location 
+  if (0 < $pickup_location) {
+    $date_info = arborcat_get_pickup_dates($pickup_location, $pickup_date, 1);
+    $date_exclusion_info = $date_info[$pickup_date]['date_exclusion_data'];
+  }
 
-  return (null == $date_exclusion_info) ? TRUE : FALSE;
+  return (NULL == $date_exclusion_info) ? TRUE : FALSE;
 }
 
 
