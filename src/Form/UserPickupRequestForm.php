@@ -135,6 +135,7 @@ class UserPickupRequestForm extends FormBase {
       //   $starting_day = $opening_date;
       // }
 
+ 
       $starting_day_plus_pickup_days = clone $starting_day;
       $modifystring = '+' . $number_of_pickup_days - 1 . ' day';
       $starting_day_plus_pickup_days->modify($modifystring);
