@@ -482,7 +482,7 @@ function arborcat_is_date_location_valid($location, $pickup_date) {
   $date_exclusion_info = NULL;
   // only of the pickup_location is a valid location do we check for a valid date/location 
   if (0 < $pickup_location) {
-    $date_info = arborcat_get_pickup_dates($pickup_location, $pickup_date, 1);
+    $date_info = arborcat_get_pickup_dates($pickup_location, $pickup_date, $pickup_date);
     $date_exclusion_info = $date_info[$pickup_date]['date_exclusion_data'];
   }
 
