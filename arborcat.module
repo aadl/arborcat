@@ -298,9 +298,15 @@ function arborcat_get_scheduled_pickups($barcode) {
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
   $self_check_api_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
   $self_check_api_key .= '-' .  $barcode;
+  $scheduled_pickups = [];
 
-  $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$self_check_api_key/scheduled-pickups?range=7")->getBody()->getContents(), TRUE);
-
+  try {
+    $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$self_check_api_key/scheduled-pickups?range=7")->getBody()->getContents(), TRUE);
+  } catch (Exception $e) {
+    $found_string = strpos($e->getMessage(), "Barcode Not Found");
+    $scheduled_pickups['error'] = ($found_string >=0) ? "Error Barcode not found" : "Error getting patron's scheduled pickups";
+  }
+  
   return $scheduled_pickups;
 }
 
