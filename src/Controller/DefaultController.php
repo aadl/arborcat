@@ -402,26 +402,31 @@ class DefaultController extends ControllerBase {
     if (isset($barcode)) {
       // grab pickup appointments to display on form
       $scheduled_pickups = arborcat_get_scheduled_pickups($barcode);
-      $eligible_holds = arborcat_load_patron_eligible_holds($barcode);
-      if (!isset($eligible_holds['error'])) {
-        if (count($eligible_holds) > 0) {
-          // Get the patron ID from the first hold object in $eligible_holds. NOTE - this starts at offset [1]
-          $patron_id = $eligible_holds[1]['usr'];
-          $hold_locations = [];
-          // spin through the eligible holds and get the locations
-          foreach ($eligible_holds as $holdobj) {
-            array_push($hold_locations, $holdobj['pickup_lib']);
-          }
-          $hold_locations = array_unique($hold_locations);
+      if (isset($scheduled_pickups['error'])) {
+        $location_urls['error'] = $scheduled_pickups['error'];
+      }
+      else {
+        $eligible_holds = arborcat_load_patron_eligible_holds($barcode);
+        if (!isset($eligible_holds['error'])) {
+          if (count($eligible_holds) > 0) {
+            // Get the patron ID from the first hold object in $eligible_holds. NOTE - this starts at offset [1]
+            $patron_id = $eligible_holds[1]['usr'];
+            $hold_locations = [];
+            // spin through the eligible holds and get the locations
+            foreach ($eligible_holds as $holdobj) {
+              array_push($hold_locations, $holdobj['pickup_lib']);
+            }
+            $hold_locations = array_unique($hold_locations);
 
-          foreach ($hold_locations as $loc) {
-            $location_name = ($loc < 110) ? $locations->{$loc} : 'melcat';
-            $url = $this->create_pickup_url($patron_id, $barcode, $loc);
-            array_push($location_urls, ['url'=>$url, 'loc'=>$loc, 'locname'=>$location_name]);
+            foreach ($hold_locations as $loc) {
+              $location_name = ($loc < 110) ? $locations->{$loc} : 'melcat';
+              $url = $this->create_pickup_url($patron_id, $barcode, $loc);
+              array_push($location_urls, ['url'=>$url, 'loc'=>$loc, 'locname'=>$location_name]);
+            }
           }
+        } else {
+          $location_urls['error'] = 'Error looking up patron requests. Is this a valid barcode?';
         }
-      } else {
-        $location_urls['error'] = 'Error looking up patron requests. Is this a valid barcode?';
       }
     }
 
