@@ -304,7 +304,7 @@ function arborcat_get_scheduled_pickups($barcode) {
     $scheduled_pickups = json_decode($guzzle->get("$api_url/patron/$self_check_api_key/scheduled-pickups?range=7")->getBody()->getContents(), TRUE);
   } catch (Exception $e) {
     $found_string = strpos($e->getMessage(), "Barcode Not Found");
-    $scheduled_pickups['error'] = ($found_string >=0) ? "Error Barcode not found" : "Error getting patron's scheduled pickups";
+    $scheduled_pickups['error'] = ($found_string >=0) ? "Error - Barcode Not Found" : "Error getting patron's scheduled pickups";
   }
   
   return $scheduled_pickups;
