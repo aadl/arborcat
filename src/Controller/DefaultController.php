@@ -74,11 +74,15 @@ class DefaultController extends ControllerBase {
       } elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
         $download_url = $guzzle->get("$api_url/download/$bib_record->_id/album/mp3")->getBody()->getContents();
         $bib_record->download_urls['mp3'] = json_decode($download_url)->download_url;
-      } elseif ($bib_record->mat_code == 'zm' && !in_array('ib-', $bib_record->_id)) {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/mp4")->getBody()->getContents();
-        $bib_record->download_urls['mp4'] = json_decode($download_url)->download_url;
+      } elseif ($bib_record->mat_code == 'zm') {
+        if (!(strncmp($bib_record->_id, "ib-", 3) === 0)) {
+          $download_url = $guzzle->get("$api_url/download/$bib_record->_id/mp4")->getBody()->getContents();
+          $bib_record->download_urls['mp4'] = json_decode($download_url)->download_url;
+        }
+        else {
+          $bib_record->download_urls = [];
+        }
       }
-
       if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
         if ($player = summergame_get_active_player()) {
           // Check for duplicate
