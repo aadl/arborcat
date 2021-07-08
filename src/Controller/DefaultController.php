@@ -20,6 +20,7 @@ use DateTimeHelper;
  * Default controller for the arborcat module.
  */
 class DefaultController extends ControllerBase {
+
   public function index() {
     return [
       '#theme' => 'catalog',
@@ -30,11 +31,14 @@ class DefaultController extends ControllerBase {
   }
 
   public function bibrecord_page($bnum) {
+    dblog("bibrecord_page:: ENTERED bnum: $bnum");
+
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
     try {
+      dblog("bibrecord_page:: guzzle: $api_url/record/$bnum/full");
       $json = json_decode($guzzle->get("$api_url/record/$bnum/full")->getBody()->getContents());
       $bib_record = $json;
       // Copy from Elasticsearch record id to same format as CouchDB _id
@@ -44,6 +48,9 @@ class DefaultController extends ControllerBase {
       $bib_record->_id = NULL;
     }
 
+    dblog("bibrecord_page:: returned bib_record: ", $bib_record);  
+
+    
     if (!$bib_record->_id) {
       $markup = "<p class=\"base-margin-top\">Sorry, the item you are looking for couldn't be found.</p>";
 
@@ -68,21 +75,25 @@ class DefaultController extends ControllerBase {
       //   }
       //   $bib_record->download_urls[$format] = json_decode($download_url)->download_url;
       // }
+
       if ($bib_record->mat_code == 'zb' || $bib_record->mat_code == 'zp') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/pdf")->getBody()->getContents();
-        $bib_record->download_urls['pdf'] = json_decode($download_url)->download_url;
-      } elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/album/mp3")->getBody()->getContents();
-        $bib_record->download_urls['mp3'] = json_decode($download_url)->download_url;
-      } elseif ($bib_record->mat_code == 'zm') {
+        $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/pdf");
+        $bib_record->download_urls['pdf'] = $guzzle_result->download_url;
+      } 
+      elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
+        $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/album/mp3");
+        $bib_record->download_urls['mp3'] = $guzzle_result->download_url;
+      } 
+      elseif ($bib_record->mat_code == 'zm') {
         if (!(strncmp($bib_record->_id, "ib-", 3) === 0)) {
-          $download_url = $guzzle->get("$api_url/download/$bib_record->_id/mp4")->getBody()->getContents();
-          $bib_record->download_urls['mp4'] = json_decode($download_url)->download_url;
+          $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/mp4");
+          $bib_record->download_urls['mp4'] = $guzzle_result->download_url;
         }
         else {
           $bib_record->download_urls = [];
         }
       }
+
       if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
         if ($player = summergame_get_active_player()) {
           // Check for duplicate
@@ -569,4 +580,21 @@ class DefaultController extends ControllerBase {
 
     return $return_record;
   }
+
+  private function try_guzzle_get($guzzle_param) {
+    $guzzle = \Drupal::httpClient();
+    $return_object = null;
+    try {
+      dblog("try_guzzle_get:: guzzle_param: $guzzle_param");
+      $json = json_decode($guzzle->get($guzzle_param)->getBody()->getContents());
+      $return_object = $json;
+    } 
+    catch (\Exception $e) {
+      dblog("try_guzzle_get:: EXCEPTION $e->getMessage()");
+    }
+
+    dblog("try_guzzle_get:: RETURNING: $return_object");
+    return $return_object;
+  }
+
 }
