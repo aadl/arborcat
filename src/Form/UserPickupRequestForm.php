@@ -16,6 +16,8 @@ class UserPickupRequestForm extends FormBase {
   }
 
   public function buildForm(array $form, FormStateInterface $form_state, string $patron_id = NULL, string $request_location = NULL, string $mode = NULL) {
+    $messenger = \Drupal::messenger();
+    $messenger->addStatus("No pickup days available? No worries! Pickup appointments end on July 9th. All items still waiting to be scheduled then will be on the holdshelves for checkout for a week when we reopen July 12th. Welcome Back!");
     $guzzle = \Drupal::httpClient();
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -99,7 +101,7 @@ class UserPickupRequestForm extends FormBase {
       }
     }
 
-    $title_string = (isset($cancel_holds)) ? 'Cancel requests for item' : 'Request Contactless Pickup for item';
+    $title_string = (isset($cancel_holds)) ? 'Cancel requests for item' : 'Request Locker Pickup for item';
     $title_string .= (count($eligible_holds) > 1) ? "s" : '';
     $direction_string = '';
     if (count($eligible_holds) > 0) {
@@ -178,9 +180,10 @@ class UserPickupRequestForm extends FormBase {
       $form['pickup_type'] = [
         '#prefix' => '<div class="l-inline-b side-by-side-form">',
         '#type' => 'select',
-        '#title' => t("Contactless Pickup Method for $location_name"),
+        '#title' => t("Locker Pickup for $location_name"),
         '#options' => $pickup_options,
-        '#description' => t('Select how you would like to pick up your requests. To use a locker, please choose an available timeslot'),
+        '#default_value' => array_keys($pickup_options)[0],
+        // '#description' => t('Select how you would like to pick up your requests. To use a locker, please choose an available timeslot'),
         '#required' => TRUE
       ];
 
