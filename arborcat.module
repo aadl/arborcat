@@ -152,11 +152,13 @@ function arborcat_lockers_available($branch) {
   * returns a list of request pickup locations.
   * If a branch location is passed in, that a filtered list of pickup locations is returned
   */
-function arborcat_pickup_locations($dest_location = NULL, $lookup_name = NULL, $front_back = NULL, $lobby_only = NULL) {
+function arborcat_pickup_locations($dest_location = NULL, $lookup_name = NULL, $front_back = NULL, $lobby_only = NULL, $inactive = NULL) {
   $db = \Drupal::database();
   $query = $db->select('arborcat_pickup_location', 'apl')
-    ->fields('apl', ['locationId', 'branchLocationId', 'timePeriod', 'timePeriodStart', 'timePeriodEnd', 'maxLockers', 'locationName', 'locationDescription'])
-    ->condition('active', 1, "=");
+    ->fields('apl', ['locationId', 'branchLocationId', 'timePeriod', 'timePeriodStart', 'timePeriodEnd', 'maxLockers', 'locationName', 'locationDescription']);
+  if (!$inactive) {
+    $query->condition('active', 1, "=");
+  }
 
   // if lookup_name supplied, get lib locations and lookup the branch number.
   // Then set the parameter $dest_location to the branch number. If set, the location filter will be applied
@@ -435,7 +437,7 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
         $result_message = 'SUCCESS';
       } else {
         $front_back = ($branch_name_array[1] == 'Back' || $branch_name_array[1] == 'Front') ? $branch_name_array[1] : NULL;
-        $pickup_locations = arborcat_pickup_locations(NULL, $branch_name_array[0], $front_back, TRUE);
+        $pickup_locations = arborcat_pickup_locations(NULL, $branch_name_array[0], $front_back, TRUE, TRUE);
         $branch = $pickup_locations[0]->branchLocationId;
         $pickup_location = $pickup_locations[0]->locationId;
 
