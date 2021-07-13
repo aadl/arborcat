@@ -16,8 +16,6 @@ class UserPickupRequestForm extends FormBase {
   }
 
   public function buildForm(array $form, FormStateInterface $form_state, string $patron_id = NULL, string $request_location = NULL, string $mode = NULL) {
-    $messenger = \Drupal::messenger();
-    $messenger->addStatus("No pickup days available? No worries! Pickup appointments end on July 9th. All items still waiting to be scheduled then will be on the holdshelves for checkout for a week when we reopen July 12th. Welcome Back!");
     $guzzle = \Drupal::httpClient();
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
