@@ -31,14 +31,11 @@ class DefaultController extends ControllerBase {
   }
 
   public function bibrecord_page($bnum) {
-    dblog("bibrecord_page:: ENTERED bnum: $bnum");
-
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
     try {
-      dblog("bibrecord_page:: guzzle: $api_url/record/$bnum/full");
       $json = json_decode($guzzle->get("$api_url/record/$bnum/full")->getBody()->getContents());
       $bib_record = $json;
       // Copy from Elasticsearch record id to same format as CouchDB _id
@@ -47,9 +44,6 @@ class DefaultController extends ControllerBase {
     } catch (\Exception $e) {
       $bib_record->_id = NULL;
     }
-
-    dblog("bibrecord_page:: returned bib_record: ", $bib_record);  
-
     
     if (!$bib_record->_id) {
       $markup = "<p class=\"base-margin-top\">Sorry, the item you are looking for couldn't be found.</p>";
@@ -585,15 +579,12 @@ class DefaultController extends ControllerBase {
     $guzzle = \Drupal::httpClient();
     $return_object = null;
     try {
-      dblog("try_guzzle_get:: guzzle_param: $guzzle_param");
       $json = json_decode($guzzle->get($guzzle_param)->getBody()->getContents());
       $return_object = $json;
     } 
     catch (\Exception $e) {
-      dblog("try_guzzle_get:: EXCEPTION $e->getMessage()");
     }
 
-    dblog("try_guzzle_get:: RETURNING: $return_object");
     return $return_object;
   }
 
