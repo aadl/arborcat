@@ -32,10 +32,13 @@ class DefaultController extends ControllerBase {
   public function bibrecord_page($bnum) {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
+    $get_record_selector = (strpos($api_url, 'evgtest') !== false) ? 'harvest' : 'full';
+
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
     try {
-      $json = json_decode($guzzle->get("$api_url/record/$bnum/full")->getBody()->getContents());
+
+      $json = json_decode($guzzle->get("$api_url/record/$bnum/$get_record_selector")->getBody()->getContents());
       $bib_record = $json;
       // Copy from Elasticsearch record id to same format as CouchDB _id
       //$bib_record->_id = $bib_record->id;
