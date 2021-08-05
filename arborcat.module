@@ -484,18 +484,22 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
   return $result_message;
 }
 
-function get_branch_location_id($location) {
-  $branch_location_id = null;
+  /*
+  * get_location_id - INPUT PARAM: $location - a location string name, a 3 digit branch location id or a 4 digit location id 
+  * see arborcat_pickup_location table for values
+  */
+function get_location_id($location) {
+  $location_id = NULL;
   if (strlen($location) > 4) {
+    // Get the list of branch locations from the API
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $guzzle = \Drupal::httpClient();
     $aadl_locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
-
-    $pickup_location = -1;
+    // loop through and search for the name of the branch passed in.
     foreach ($aadl_locations as $index => $value) {
       // perform 1st word comparison of the location string passed in and each of the branch locations
       if (strtok($value, " ") ==  strtok($location, " ")) {
-        $branch_location_id = $index;
+        $location_id = $index;
         break;
       }
     }
@@ -503,20 +507,20 @@ function get_branch_location_id($location) {
   else {  
     $location_int = intval($location);
     if ($location_int < 1000) {
-      $return_location_id = $location;
+      $location_id = $location;
       $branch_location_ids = arborcat_get_pickup_locations($location, TRUE);
-      $branch_location_id = (count($branch_location_ids) > 0) ? $branch_location_ids[0] : 0;
+      $location_id = (count($branch_location_ids) > 0) ? $branch_location_ids[0] : 0;
     }
     else {
-      $branch_location_id = $location;
+      $location_id = $location;
     }
   }
 
-  return $branch_location_id;    
+  return $location_id;    
 }
 
 function arborcat_is_date_location_valid($location, $pickup_date) {
-  $pickup_location = get_branch_location_id($location);
+  $pickup_location = get_location_id($location);
   $date_exclusion_info = NULL;
   // only if the pickup_location is a valid location do we check for a valid date/location
   if (0 < $pickup_location) {
