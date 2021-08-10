@@ -33,8 +33,11 @@ class DefaultController extends ControllerBase {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     // set the api get record request to use either the api record "full" or "harvest" call depending whether 
     // the api being called is the development/testing version of the api located on pinkeye
-    $get_record_selector = (strpos($api_url, 'pinkeye') !== false) ? 'harvest' : 'full';
+    $use_harvest_option = \Drupal::config('arborcat.settings')->get('api_use_harvest_option_for_bib');
+    dblog('use_harvest_option =', $use_harvest_option);
+    $get_record_selector = ($use_harvest_option == true) ? 'harvest' : 'full';
     $get_url = "$api_url/record/$bnum/$get_record_selector";
+    dblog($get_url);
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
     try {
