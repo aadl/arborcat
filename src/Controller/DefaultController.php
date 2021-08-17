@@ -12,6 +12,7 @@ use Drupal\Core\Url;
 use DateTime;
 use DateTimeZone;
 use DateTimeHelper;
+use Drupal\ezproxy\Controller\EzproxyTicketController;
 
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
@@ -32,6 +33,9 @@ class DefaultController extends ControllerBase {
 
   public function bibrecord_page($bnum) {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+
+    // grab user for later processing
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
 
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
@@ -85,6 +89,13 @@ class DefaultController extends ControllerBase {
         }
         else {
           $bib_record->download_urls = [];
+          if ($user->hasPermission('access ezproxy content')) {
+            $ez_secret = \Drupal::config('ezproxy.settings')->get('ticket_secret');
+            $ez_url = \Drupal::config('ezproxy.settings')->get('ezproxy_url');
+            $ez_ticket = new EzproxyTicketController();
+            $ez_ticket->EZproxyTicket($ez_url, $ez_secret, $user->get('name')->value, 'patron');
+            $bib_record->ez_auth = $ez_ticket->EZproxyStartingPointURL;
+          }
         }
       }
 
@@ -121,7 +132,6 @@ class DefaultController extends ControllerBase {
     }
 
     // grab user api key for account actions
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $user_api_key = $user->field_api_key->value;
 
     $lists = arborcat_lists_get_lists($user->get('uid')->value);
