@@ -94,7 +94,7 @@ class DefaultController extends ControllerBase {
             $ez_url = \Drupal::config('ezproxy.settings')->get('ezproxy_url');
             $ez_ticket = new EzproxyTicketController();
             $ez_ticket->EZproxyTicket($ez_url, $ez_secret, $user->get('name')->value, 'patron');
-            $bib_record->ez_auth = $ez_ticket->EZproxyStartingPointURL;
+            $bib_record->ez_auth = $ez_ticket->url("https://avod.infobase.com/OnDemandEmbed.aspx?token=$bib_record->stream_token&wID=245638&plt=AVOD&loid=0&w=640&h=480&fWidth=660&fHeight=530");
           }
         }
       }
