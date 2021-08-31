@@ -38,12 +38,14 @@ class DefaultController extends ControllerBase {
     $get_url = "$api_url/record/$bnum/$get_record_selector";
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
+    dblog($get_url);
     try {
       $json = json_decode($guzzle->get($get_url)->getBody()->getContents());
+      dblog('try:' ,$json);
 
       if ($get_record_selector == 'harvest') {
         $bib_record = $json->bib;
-        $bib_record->_id = $json->bnum;
+        $bib_record->_id = $json->_id;
       }
       else {
         $bib_record = $json;
@@ -55,7 +57,9 @@ class DefaultController extends ControllerBase {
       $bib_record->_id = NULL;
     }
 
-    if (!$bib_record->_id) {
+      dblog('bib_record:' ,$bib_record);
+
+      if (!$bib_record->_id) {
       $markup = "<p class=\"base-margin-top\">Sorry, the item you are looking for couldn't be found.</p>";
 
       return [
