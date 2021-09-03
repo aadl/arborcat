@@ -12,6 +12,7 @@ use Drupal\Core\Url;
 use DateTime;
 use DateTimeZone;
 use DateTimeHelper;
+use Drupal\ezproxy\Controller\EzproxyTicketController;
 
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
@@ -20,6 +21,7 @@ use DateTimeHelper;
  * Default controller for the arborcat module.
  */
 class DefaultController extends ControllerBase {
+
   public function index() {
     return [
       '#theme' => 'catalog',
@@ -32,6 +34,9 @@ class DefaultController extends ControllerBase {
   public function bibrecord_page($bnum) {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
+    // grab user for later processing
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
     try {
@@ -43,7 +48,7 @@ class DefaultController extends ControllerBase {
     } catch (\Exception $e) {
       $bib_record->_id = NULL;
     }
-
+    
     if (!$bib_record->_id) {
       $markup = "<p class=\"base-margin-top\">Sorry, the item you are looking for couldn't be found.</p>";
 
@@ -68,15 +73,30 @@ class DefaultController extends ControllerBase {
       //   }
       //   $bib_record->download_urls[$format] = json_decode($download_url)->download_url;
       // }
+
       if ($bib_record->mat_code == 'zb' || $bib_record->mat_code == 'zp') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/pdf")->getBody()->getContents();
-        $bib_record->download_urls['pdf'] = json_decode($download_url)->download_url;
-      } elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/album/mp3")->getBody()->getContents();
-        $bib_record->download_urls['mp3'] = json_decode($download_url)->download_url;
-      } elseif ($bib_record->mat_code == 'zm') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/mp4")->getBody()->getContents();
-        $bib_record->download_urls['mp4'] = json_decode($download_url)->download_url;
+        $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/pdf");
+        $bib_record->download_urls['pdf'] = $guzzle_result->download_url;
+      } 
+      elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
+        $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/album/mp3");
+        $bib_record->download_urls['mp3'] = $guzzle_result->download_url;
+      } 
+      elseif ($bib_record->mat_code == 'zm') {
+        if (!(strncmp($bib_record->_id, "ib-", 3) === 0)) {
+          $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/mp4");
+          $bib_record->download_urls['mp4'] = $guzzle_result->download_url;
+        }
+        else {
+          $bib_record->download_urls = [];
+          if ($user->hasPermission('access ezproxy content')) {
+            $ez_secret = \Drupal::config('ezproxy.settings')->get('ticket_secret');
+            $ez_url = \Drupal::config('ezproxy.settings')->get('ezproxy_url');
+            $ez_ticket = new EzproxyTicketController();
+            $ez_ticket->EZproxyTicket($ez_url, $ez_secret, $user->get('name')->value, 'patron');
+            $bib_record->ez_auth = $ez_ticket->EZproxyStartingPointURL;
+          }
+        }
       }
 
       if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
@@ -112,7 +132,6 @@ class DefaultController extends ControllerBase {
     }
 
     // grab user api key for account actions
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $user_api_key = $user->field_api_key->value;
 
     $lists = arborcat_lists_get_lists($user->get('uid')->value);
@@ -565,4 +584,18 @@ class DefaultController extends ControllerBase {
 
     return $return_record;
   }
+
+  private function try_guzzle_get($guzzle_param) {
+    $guzzle = \Drupal::httpClient();
+    $return_object = null;
+    try {
+      $json = json_decode($guzzle->get($guzzle_param)->getBody()->getContents());
+      $return_object = $json;
+    } 
+    catch (\Exception $e) {
+    }
+
+    return $return_object;
+  }
+
 }
