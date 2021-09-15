@@ -61,7 +61,7 @@ class ArborcatNotificationForm extends FormBase {
             $patron = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
           }
           catch (\Exception $e) {
-            drupal_set_message('Error retrieving patron data for ' . $field_barcode, 'error');
+            \Drupal::messenger()->addError('Error retrieving patron data for ' . $field_barcode);
           }
 
           if ($patron) {
@@ -87,12 +87,12 @@ class ArborcatNotificationForm extends FormBase {
         ];
       }
       else {
-        drupal_set_message('No Library Cards associated with this account', 'error');
+        \Drupal::messenger()->addError('No Library Cards associated with this account');
         return $this->redirect('entity.user.canonical', ['user' => $uid]);
       }
     }
     else {
-      drupal_set_message('Access Denied to User ID ' . $uid, 'error');
+      \Drupal::messenger()->addError('Access Denied to User ID ' . $uid);
       return $this->redirect('<front>');
     }
 
@@ -119,7 +119,7 @@ class ArborcatNotificationForm extends FormBase {
 
         $response = $guzzle->request('GET', "$api_url/patron/$api_key/set", ['query' => $query]);
 
-        drupal_set_message('Set ' . $values['email_' . $delta] .
+        \Drupal::messenger()->addMessage('Set ' . $values['email_' . $delta] .
                            ' as notification email for Library Card #' . $barcodes[$delta]['value']);
       }
     }

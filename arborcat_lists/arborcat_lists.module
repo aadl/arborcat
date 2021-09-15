@@ -25,7 +25,7 @@ function arborcat_lists_theme($existing, $type, $theme, $path) {
 function arborcat_lists_user_update($user) {
   if ($user->get('profile_cohist')->value &&
       !$user->original->get('profile_cohist')->value) {
-    drupal_set_message('Enabling Checkout History');
+    \Drupal::messenger()->addMessage('Enabling Checkout History');
     arborcat_lists_update_user_history($user->get('uid')->value);
   }
 }
@@ -106,7 +106,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
     }
     catch (\Exception $e) {
-      drupal_set_message('Error retrieving checkouts', 'error');
+      \Drupal::messenger()->addError('Error retrieving checkouts');
       return [
         'error' => 'Error retrieving checkouts',
         'message' => $e->getMessage()
@@ -180,12 +180,12 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
           $points = summergame_player_points($player['pid'], 10, 'Checkout History',
                                              'Item added from Checkout History', $metadata);
           $player_name = $player['nickname'] ? $player['nickname'] : $player['name'];
-          drupal_set_message("Player $player_name earned $points Summer Game points for a new checkout.");
+          \Drupal::messenger()->addMessage("Player $player_name earned $points Summer Game points for a new checkout.");
         }
       }
 
       if ($total = count($bnums_to_add)) {
-        drupal_set_message("Updated Checkout History with $total new checkouts");
+        \Drupal::messenger()->addMessage("Updated Checkout History with $total new checkouts");
       }
     }
 
@@ -284,11 +284,13 @@ function arborcat_lists_search_lists($term) {
   $offset = ($_GET['page'] ?? 0) * 20;
 
   $db = \Drupal::database();
+
   $query = $db->select('arborcat_user_lists', 'lists')
     ->fields('lists', ['title', 'description', 'public', 'id', 'uid'])
-    ->condition(db_or()->condition('title', "%" . $db->escapeLike($term) . "%", 'LIKE')
-      ->condition('description', "%" . $db->escapeLike($term) . "%", 'LIKE'))
-    ->condition('public', '1');
+    ->condition('public', '1')
+    ->orConditionGroup()
+      ->condition('title', "%" . $db->escapeLike($term) . "%", 'LIKE')
+      ->condition('description', "%" . $db->escapeLike($term) . "%", 'LIKE');
 
   $lists['total'] = $query->execute()->fetchAll();
   $lists['lists'] = $query->range($offset, 20)->execute()->fetchAll();

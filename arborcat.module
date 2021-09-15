@@ -350,7 +350,7 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
 
       return $id;
     } catch (Exception $e) {
-      drupal_set_message('An error occurred saving this pickup request. Please try again', 'error');
+      \Drupal::messenger()->addError('An error occurred saving this pickup request. Please try again');
       $txn->rollBack();
 
       return -1;
