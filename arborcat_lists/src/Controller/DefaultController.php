@@ -155,10 +155,11 @@ class DefaultController extends ControllerBase {
       // build the pager
       $total = $items['hits']['total'];
       $pager_manager = \Drupal::service('pager.manager');
-      $page = $pager_manager->findPage();
+      $pager_params = \Drupal::service('pager.parameters');
+      $page = $pager_params->findPage();
       $per_page = 20;
       $offset = $per_page * $page;
-      $pager = $pager_manager->defaultInitialize($total, $per_page);
+      $pager = $pager_manager->createPager($total, $per_page);
 
       $list_items = [];
       $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('access accountfix') ? true : false);
