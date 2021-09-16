@@ -128,7 +128,7 @@ class UserPickupRequestForm extends FormBase {
       $starting_day_offset = \Drupal::config('arborcat.settings')->get('starting_day_offset');
       $number_of_pickup_days = \Drupal::config('arborcat.settings')->get('number_of_pickup_days');
       $starting_day = new DateTime();
-      $starting_day->modify("+$starting_day_offset day");    
+      $starting_day->modify("+$starting_day_offset day");
 
       // SPECIAL CASE for library-wide closure in order to force starting date to be the first day after the closure if
       // this form is being opened whilst the closure is in operation
@@ -140,7 +140,7 @@ class UserPickupRequestForm extends FormBase {
 
  
       $starting_day_plus_pickup_days = clone $starting_day;
-      $modifystring = '+' . $number_of_pickup_days - 1 . ' day';
+      $modifystring = '+' . ($number_of_pickup_days - 1) . ' day';
       $starting_day_plus_pickup_days->modify($modifystring);
 
       $pickup_dates_data = arborcat_get_pickup_dates($request_location, $starting_day->format('Y-m-d'), $starting_day_plus_pickup_days->format('Y-m-d'));
@@ -302,7 +302,7 @@ class UserPickupRequestForm extends FormBase {
       if ($form_state->getValue('notification_types')['email']) {
         if (!$form_state->getValue('email')) {
           $form_state->setErrorByName('email', t('No email is set, but you requested an email notification.'));
-        } elseif (!valid_email_address($form_state->getValue('email'))) {
+        } elseif (!Drupal::service('email.validator')->isValid($form_state->getValue('email'))) {
           $form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
         }
       }
@@ -373,7 +373,7 @@ class UserPickupRequestForm extends FormBase {
         if (strlen($submit_message)) {
           $messenger->addWarning($submit_message);
         }
-      } 
+      }
       $error_count = 0;
       foreach ($holds as $hold) {
         if ($cancel_holds) {
@@ -405,7 +405,7 @@ class UserPickupRequestForm extends FormBase {
       }
       if ($error_count == 0) {
         $current_user_id = \Drupal::currentUser()->id();
-      
+
         if (FALSE == $cancel_holds) {
           $submit_message = 'Pickup appointment scheduled for ' . date('F j', strtotime($pickup_date)) . ' at ' . $locations->{$branch};
           if ($current_user_id == 0) {

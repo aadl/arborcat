@@ -28,7 +28,7 @@ class CheckoutsBlock extends BlockBase {
       $json = $guzzle->get("$api_url/patron/$api_key/checkouts", ['timeout' => 180])->getBody()->getContents();
     }
     catch (\Exception $e) {
-      drupal_set_message('Error retrieving checkouts', 'error');
+      \Drupal::messenger()->addError('Error retrieving checkouts');
       return [
         '#cache' => [
           'max-age' => 0, // Don't cache, always get fresh data
