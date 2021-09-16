@@ -29,10 +29,11 @@ class DefaultController extends ControllerBase {
 
     // build the pager
     $pager_manager = \Drupal::service('pager.manager');
-    $page = $pager_manager->findPage();
+    $pager_params = \Drupal::service('pager.parameters');
+    $page = $pager_params->findPage();
     $per_page = 20;
     $offset = $per_page * $page;
-    $pager = $pager_manager->defaultInitialize(count($lists), $per_page);
+    $pager = $pager_manager->createPager(count($lists), $per_page);
 
     $lists = arborcat_lists_get_lists($uid, $offset, $per_page);
 
@@ -70,7 +71,8 @@ class DefaultController extends ControllerBase {
     $db = \Drupal::database();
 
     $pager_manager = \Drupal::service('pager.manager');
-    $page = $pager_manager->findPage();
+    $pager_params = \Drupal::service('pager.parameters');
+    $page = $pager_params->findPage();
     $per_page = 20;
     $offset = $per_page * $page;
 
@@ -108,7 +110,7 @@ class DefaultController extends ControllerBase {
     }
 
     // build the pager
-    $pager = $pager_manager->defaultInitialize(total, $per_page);
+    $pager = $pager_manager->createPager($total, $per_page);
 
     return [
       [
