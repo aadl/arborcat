@@ -223,7 +223,9 @@ class DefaultController extends ControllerBase {
     $db = \Drupal::database();
 
     $pager_manager = \Drupal::service('pager.manager');
-    $page = $pager_manager->findPage();
+    $pager_params = \Drupal::service('pager.parameters');
+    $page = $pager_params->findPage();
+
     $per_page = 50;
     $offset = $per_page * $page;
 
@@ -235,8 +237,8 @@ class DefaultController extends ControllerBase {
       $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
     }
 
-    $pager = $pager_manager->defaultInitialize($total, $per_page);
-
+    $pager = $pager_manager->createPager($total, $per_page);
+    
     return [
       '#theme' => 'moderate_reviews',
       '#reviews' => $reviews,
