@@ -302,7 +302,7 @@ class UserPickupRequestForm extends FormBase {
       if ($form_state->getValue('notification_types')['email']) {
         if (!$form_state->getValue('email')) {
           $form_state->setErrorByName('email', t('No email is set, but you requested an email notification.'));
-        } elseif (!Drupal::service('email.validator')->isValid($form_state->getValue('email'))) {
+        } elseif (!\Drupal::service('email.validator')->isValid($form_state->getValue('email'))) {
           $form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
         }
       }
