@@ -12,6 +12,7 @@ use Drupal\Core\Url;
 use DateTime;
 use DateTimeZone;
 use DateTimeHelper;
+use Drupal\ezproxy\Controller\EzproxyTicketController;
 
 //use Drupal\Core\Database\Database;
 //use Drupal\Core\Url;
@@ -20,6 +21,7 @@ use DateTimeHelper;
  * Default controller for the arborcat module.
  */
 class DefaultController extends ControllerBase {
+
   public function index() {
     return [
       '#theme' => 'catalog',
@@ -31,18 +33,20 @@ class DefaultController extends ControllerBase {
 
   public function bibrecord_page($bnum) {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+
     // set the api get record request to use either the api record "full" or "harvest" call depending whether 
     // the api being called is the development/testing version of the api located on pinkeye
     $use_harvest_option = \Drupal::config('arborcat.settings')->get('api_use_harvest_option_for_bib');
     $get_record_selector = ($use_harvest_option == true) ? 'harvest' : 'full';
     $get_url = "$api_url/record/$bnum/$get_record_selector";
+
+    // grab user for later processing
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
-    dblog($get_url);
     try {
       $json = json_decode($guzzle->get($get_url)->getBody()->getContents());
-      dblog('try:' ,$json);
-
       if ($get_record_selector == 'harvest') {
         $bib_record = $json->bib;
         $bib_record->_id = $json->_id;
@@ -56,10 +60,8 @@ class DefaultController extends ControllerBase {
     } catch (\Exception $e) {
       $bib_record->_id = NULL;
     }
-
-      dblog('bib_record:' ,$bib_record);
-
-      if (!$bib_record->_id) {
+    
+    if (!$bib_record->_id) {
       $markup = "<p class=\"base-margin-top\">Sorry, the item you are looking for couldn't be found.</p>";
 
       return [
@@ -83,15 +85,30 @@ class DefaultController extends ControllerBase {
       //   }
       //   $bib_record->download_urls[$format] = json_decode($download_url)->download_url;
       // }
+
       if ($bib_record->mat_code == 'zb' || $bib_record->mat_code == 'zp') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/pdf")->getBody()->getContents();
-        $bib_record->download_urls['pdf'] = json_decode($download_url)->download_url;
-      } elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/album/mp3")->getBody()->getContents();
-        $bib_record->download_urls['mp3'] = json_decode($download_url)->download_url;
-      } elseif ($bib_record->mat_code == 'zm') {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/mp4")->getBody()->getContents();
-        $bib_record->download_urls['mp4'] = json_decode($download_url)->download_url;
+        $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/pdf");
+        $bib_record->download_urls['pdf'] = $guzzle_result->download_url;
+      } 
+      elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
+        $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/album/mp3");
+        $bib_record->download_urls['mp3'] = $guzzle_result->download_url;
+      } 
+      elseif ($bib_record->mat_code == 'zm') {
+        if (!(strncmp($bib_record->_id, "ib-", 3) === 0)) {
+          $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/mp4");
+          $bib_record->download_urls['mp4'] = $guzzle_result->download_url;
+        }
+        else {
+          $bib_record->download_urls = [];
+          if ($user->hasPermission('access ezproxy content')) {
+            $ez_secret = \Drupal::config('ezproxy.settings')->get('ticket_secret');
+            $ez_url = \Drupal::config('ezproxy.settings')->get('ezproxy_url');
+            $ez_ticket = new EzproxyTicketController();
+            $ez_ticket->EZproxyTicket($ez_url, $ez_secret, $user->get('name')->value, 'patron');
+            $bib_record->ez_auth = $ez_ticket->EZproxyStartingPointURL;
+          }
+        }
       }
 
       if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
@@ -107,7 +124,7 @@ class DefaultController extends ControllerBase {
             $description = 'Downloaded ' . $bib_record->title . ' from our online catalog';
             $metadata = 'bnum:' . $bib_record->_id;
             $result = summergame_player_points($player['pid'], 50, $type, $description, $metadata);
-            drupal_set_message("You earned $result points for downloading $bib_record->title from the catalog");
+            \Drupal::messenger()->addMessage("You earned $result points for downloading $bib_record->title from the catalog");
           }
         }
       }
@@ -127,7 +144,6 @@ class DefaultController extends ControllerBase {
     }
 
     // grab user api key for account actions
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $user_api_key = $user->field_api_key->value;
 
     $lists = arborcat_lists_get_lists($user->get('uid')->value);
@@ -217,9 +233,14 @@ class DefaultController extends ControllerBase {
 
   public function moderate_reviews() {
     $db = \Drupal::database();
-    $page = pager_find_page();
+
+    $pager_manager = \Drupal::service('pager.manager');
+    $pager_params = \Drupal::service('pager.parameters');
+    $page = $pager_params->findPage();
+
     $per_page = 50;
     $offset = $per_page * $page;
+
     $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : '');
     $total = $db->query("SELECT COUNT(*) as total FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0")->fetch()->total;
     $reviews = $db->query("SELECT * FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0 ORDER BY id DESC $limit")->fetchAll();
@@ -228,8 +249,8 @@ class DefaultController extends ControllerBase {
       $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
     }
 
-    $pager = pager_default_initialize($total, $per_page);
-
+    $pager = $pager_manager->createPager($total, $per_page);
+    
     return [
       '#theme' => 'moderate_reviews',
       '#reviews' => $reviews,
@@ -472,7 +493,7 @@ class DefaultController extends ControllerBase {
       if ($this->validate_transaction($pnum, $encrypted_barcode)) {
           $request_pickup_html = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserPickupRequestForm', $pnum, $loc, $mode);
       } else {
-          drupal_set_message('The Pickup Request could not be processed');
+          \Drupal::messenger()->addMessage('The Pickup Request could not be processed');
       }
       $render[] = [
               '#theme' => 'pickup_request_form',
@@ -480,7 +501,7 @@ class DefaultController extends ControllerBase {
               '#max_locker_items_check' => \Drupal::config('arborcat.settings')->get('max_locker_items_check')
           ];
       return $render;
-  } 
+  }
 
   public function custom_pickup_request($pickup_request_type, $overload_parameter) {
     $result_message = arborcat_custom_pickup_request($pickup_request_type, $overload_parameter);
@@ -580,4 +601,18 @@ class DefaultController extends ControllerBase {
 
     return $return_record;
   }
+
+  private function try_guzzle_get($guzzle_param) {
+    $guzzle = \Drupal::httpClient();
+    $return_object = null;
+    try {
+      $json = json_decode($guzzle->get($guzzle_param)->getBody()->getContents());
+      $return_object = $json;
+    } 
+    catch (\Exception $e) {
+    }
+
+    return $return_object;
+  }
+
 }

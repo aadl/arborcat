@@ -224,7 +224,7 @@ class LockerRequestForm extends FormBase{
 	}
 
 	function validateForm(array &$form, FormStateInterface $form_state) {
-  		if (!valid_email_address($form_state->getValue('email'))) {
+  		if (!\Drupal::service('email.validator')->isValid($form_state->getValue('email'))) {
     		$form_state->setErrorByName('email', t('You must enter a valid e-mail address.'));
   		}
 	}
