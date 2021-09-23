@@ -287,10 +287,11 @@ function arborcat_lists_search_lists($term) {
 
   $query = $db->select('arborcat_user_lists', 'lists')
     ->fields('lists', ['title', 'description', 'public', 'id', 'uid'])
-    ->condition('public', '1')
-    ->orConditionGroup()
+    ->condition('public', '1');
+  $cond_group = $query->orConditionGroup()
       ->condition('title', "%" . $db->escapeLike($term) . "%", 'LIKE')
       ->condition('description', "%" . $db->escapeLike($term) . "%", 'LIKE');
+  $query->condition($cond_group);
 
   $lists['total'] = $query->execute()->fetchAll();
   $lists['lists'] = $query->range($offset, 20)->execute()->fetchAll();
