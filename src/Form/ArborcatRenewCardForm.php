@@ -139,15 +139,16 @@ class ArborcatRenewCardForm extends FormBase {
     $uid = $form_state->getValue('uid');
     $patron = $form_state->getValue('patron');
     $api_key = $form_state->getValue('api_key');
-    $expire_date = date('Y-m-d', strtotime('+2 years'));
+    $expire_ts = strtotime('+2 years');
 
     $guzzle = \Drupal::httpClient();
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-    $query = ['expire_date' => $expire_date . 'T00:00:00-0400'];
+    $query = ['expire_date' => date('Y-m-d', $expire_ts) . 'T00:00:00'];
 
     $response = $guzzle->request('GET', "$api_url/patron/$api_key/set", ['query' => $query]);
 
-    \Drupal::messenger()->addMessage("Set $expire_date as new expiration date for Library Card #$patron->card");
+    $expire_text = date('F j, Y', $expire_ts);
+    \Drupal::messenger()->addMessage("Renewal is successful! Library Card #$patron->card will now expire on $expire_text");
 
     $form_state->setRedirect('entity.user.canonical', ['user' => $uid]);
 
