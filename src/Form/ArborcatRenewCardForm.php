@@ -116,10 +116,18 @@ class ArborcatRenewCardForm extends FormBase {
       $form_state->setErrorByName('zip', $this->t('Zip Code does not match record on file'));
     }
 
-    $patron_street = preg_replace('/[^A-Z0-9]/', '', strtoupper($patron->evg_user->addresses[0]->street1));
-    $entered_street = preg_replace('/[^A-Z0-9]/', '', strtoupper($form_state->getValue('street')));
-    if ($patron_street != $entered_street) {
-      $form_state->setErrorByName('street', $this->t('Street address does not match record on file'));
+    // Check string street match
+    $patron_street_compressed = preg_replace('/[^A-Z0-9]/', '', strtoupper($patron->evg_user->addresses[0]->street1));
+    $entered_street_compressed = preg_replace('/[^A-Z0-9]/', '', strtoupper($form_state->getValue('street')));
+    if ($patron_street_compressed != $entered_street_compressed) {
+      // String match failed, try geocode normalization
+      $patron_geocode_address = $this->geocode_lookup($patron->evg_user->addresses[0]->street1,
+                                                      $patron->evg_user->addresses[0]->post_code);
+      $entered_geocode_address = $this->geocode_lookup($form_state->getValue('street'), $form_state->getValue('zip'));
+
+      if ($patron_geocode_address != $entered_geocode_address) {
+        $form_state->setErrorByName('street', $this->t('Street address does not match record on file'));
+      }
     }
   }
 
@@ -144,5 +152,34 @@ class ArborcatRenewCardForm extends FormBase {
     $form_state->setRedirect('entity.user.canonical', ['user' => $uid]);
 
     return;
+  }
+
+  private function geocode_lookup($street, $zip) {
+    $address = FALSE;
+    $guzzle = \Drupal::httpClient();
+    $geocode_search_url = \Drupal::config('summergame.settings')->get('summergame_homecode_geocode_url');
+
+    $query = [
+      'street' => $street,
+      'postalcode' => $zip,
+      'country' => 'United States of America',
+      'addressdetails' => 1,
+      'format' => 'json',
+    ];
+    try {
+      $response = $guzzle->request('GET', $geocode_search_url, ['query' => $query]);
+    }
+    catch (\Exception $e) {
+      \Drupal::messenger()->addError('Unable to lookup address');
+    }
+    if ($response) {
+      $response_body = json_decode($response->getBody()->getContents());
+      $address = $response_body[0]->address;
+    }
+    else {
+      \Drupal::messenger()->addError('Empty response on address lookup');
+    }
+
+    return $address;
   }
 }
