@@ -157,25 +157,27 @@ class ArborcatRenewCardForm extends FormBase {
   private function geocode_lookup($street, $zip) {
     $address = FALSE;
     $guzzle = \Drupal::httpClient();
-    $geocode_search_url = \Drupal::config('summergame.settings')->get('summergame_homecode_geocode_url');
+    $geocode_url =  \Drupal::config('arborcat.settings')->get('geocode_url');
 
     $query = [
-      'street' => $street,
-      'postalcode' => $zip,
-      'country' => 'United States of America',
-      'addressdetails' => 1,
-      'format' => 'json',
+      'q' =>  $street . ' ' . $zip,
+      'key' => \Drupal::config('arborcat.settings')->get('geocode_key'),
+      'proximity' => '42.2781923,-83.7459068',
+      //'bounds' => '-84.73618,41.59193,-82.72568,42.94440',
+      'no_record' => 1,
     ];
     try {
-      $response = $guzzle->request('GET', $geocode_search_url, ['query' => $query]);
+      $response = $guzzle->request('GET', $geocode_url, ['query' => $query]);
     }
     catch (\Exception $e) {
       \Drupal::messenger()->addError('Unable to lookup address');
     }
+
     if ($response) {
       $response_body = json_decode($response->getBody()->getContents());
-      if (isset($response_body[0]->address)) {
-        $address = $response_body[0]->address;
+
+      if (isset($response_body->results[0]->formatted)) {
+        $address = $response_body->results[0]->formatted;
       }
       else {
         \Drupal::messenger()->addError('Unable to find entered address');

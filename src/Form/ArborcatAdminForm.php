@@ -118,7 +118,7 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 64,
       '#description' => t('self-check key for use with api requests pertaining to the patron data without the need to be signed in'),
     ];
- 
+
     $form['max_locker_items_check'] = [
       '#type' => 'number',
       '#title' => t('Max Number of Items that should fit in a Locker'),
@@ -138,6 +138,23 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#title' => t('Number of Pickup Days'),
       '#default_value' => \Drupal::config('arborcat.settings')->get('number_of_pickup_days'),
       '#description' => t('Number of pickup dates that will be displayed to the user'),
+    ];
+
+    $form['geocode_url'] = [
+      '#type' => 'textfield',
+      '#title' => 'Home Code Geocode URL',
+      '#default_value' => \Drupal::config('arborcat.settings')->get('geocode_url'),
+      '#size' => 64,
+      '#maxlength' => 128,
+      '#description' => 'URL Address of Geocoding Service for address lookup (e.g. https://nominatim.openstreetmap.org/search)',
+    ];
+    $form['geocode_key'] = [
+      '#type' => 'textfield',
+      '#title' => 'Home Code Geocode API Key',
+      '#default_value' => \Drupal::config('arborcat.settings')->get('geocode_key'),
+      '#size' => 64,
+      '#maxlength' => 128,
+      '#description' => 'API Key to access Geocoding Service for address lookup',
     ];
 
     return parent::buildForm($form, $form_state);
