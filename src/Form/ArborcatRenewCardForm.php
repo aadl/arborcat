@@ -174,7 +174,12 @@ class ArborcatRenewCardForm extends FormBase {
     }
     if ($response) {
       $response_body = json_decode($response->getBody()->getContents());
-      $address = $response_body[0]->address;
+      if (isset($response_body[0]->address)) {
+        $address = $response_body[0]->address;
+      }
+      else {
+        \Drupal::messenger()->addError('Unable to find entered address');
+      }
     }
     else {
       \Drupal::messenger()->addError('Empty response on address lookup');
