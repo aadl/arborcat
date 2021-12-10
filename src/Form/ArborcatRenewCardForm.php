@@ -129,6 +129,10 @@ class ArborcatRenewCardForm extends FormBase {
         $form_state->setErrorByName('street', $this->t('Street address does not match record on file'));
       }
     }
+
+    if ($form_state->hasAnyErrors()) {
+      \Drupal::messenger()->addMessage(['#markup' => 'Having issues renewing your card online? <a href="/contactus">Contact Us</a> with your information to renew your card.']);
+    }
   }
 
   /**
