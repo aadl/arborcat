@@ -55,8 +55,7 @@ class ArborcatRenewCardForm extends FormBase {
         if ($patron) {
           // Check for Non Resident profiles
           if (in_array($patron->evg_user->profile, [25, 26, 27])) {
-            \Drupal::messenger()->addError('This account is not eligible for online renewal');
-            \Drupal::messenger()->addMessage(['#markup' => '<a href="/contactus">Contact Us</a> with your information or visit us in person to renew your card.']);
+            \Drupal::messenger()->addWarning(['#markup' => 'This account is not eligible for online renewal. <a href="/contactus">Contact Us</a> with your information or visit us in person to renew your card.']);
             return $this->redirect('entity.user.canonical', ['user' => $uid]);
           }
 
@@ -138,7 +137,7 @@ class ArborcatRenewCardForm extends FormBase {
     }
 
     if ($form_state->hasAnyErrors()) {
-      \Drupal::messenger()->addMessage(['#markup' => 'Having issues renewing your card online? <a href="/contactus">Contact Us</a> with your information to renew your card.']);
+      \Drupal::messenger()->addWarning(['#markup' => 'Having issues renewing your card online? <a href="/contactus">Contact Us</a> with your information to renew your card.']);
     }
   }
 
