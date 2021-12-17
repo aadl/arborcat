@@ -132,7 +132,7 @@ class ArborcatRenewCardForm extends FormBase {
       $entered_geocode_address = $this->geocode_lookup($form_state->getValue('street'), $form_state->getValue('zip'));
 
       if ($patron_geocode_address != $entered_geocode_address) {
-        $form_state->setErrorByName('street', $this->t('Street address does not match record on file'));
+        $form_state->setErrorByName('street', $this->t('Street address does not match record on file. Is your address entered correctly?'));
       }
     }
 
