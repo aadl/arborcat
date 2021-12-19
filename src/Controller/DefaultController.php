@@ -34,14 +34,26 @@ class DefaultController extends ControllerBase {
   public function bibrecord_page($bnum) {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
+    // set the api get record request to use either the api record "full" or "harvest" call depending whether 
+    // the api being called is the development/testing version of the api located on pinkeye
+    $use_harvest_option = \Drupal::config('arborcat.settings')->get('api_use_harvest_option_for_bib');
+    $get_record_selector = ($use_harvest_option == true) ? 'harvest' : 'full';
+    $get_url = "$api_url/record/$bnum/$get_record_selector";
+
     // grab user for later processing
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
 
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
     try {
-      $json = json_decode($guzzle->get("$api_url/record/$bnum/full")->getBody()->getContents());
-      $bib_record = $json;
+      $json = json_decode($guzzle->get($get_url)->getBody()->getContents());
+      if ($get_record_selector == 'harvest') {
+        $bib_record = $json->bib;
+        $bib_record->_id = $json->_id;
+      }
+      else {
+        $bib_record = $json;
+      }
       // Copy from Elasticsearch record id to same format as CouchDB _id
       //$bib_record->_id = $bib_record->id;
       $bib_record->id = $bib_record->_id;
