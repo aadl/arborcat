@@ -54,6 +54,14 @@ arborcat.barcode_form:
     _form: '\Drupal\arborcat\Form\ArborcatBarcodeForm'
   requirements:
     _permission: 'access arborcat'
+arborcat.renew_card_form:
+  path: /user/{uid}/edit/renewcard/{subaccount}
+  defaults:
+    _title: 'Renew Library Card Form'
+    _form: '\Drupal\arborcat\Form\ArborcatRenewCardForm'
+    subaccount: 0
+  requirements:
+    _permission: 'access arborcat'
 arborcat.notification_form:
   path: /user/{uid}/edit/notification
   defaults:
@@ -90,7 +98,7 @@ arborcat.custom_pickup_request:
   requirements:
     _title: 'Custom Request Pickup Options'
     _permission: 'access arborcat'
-    
+
 arborcat.cancel_pickup_request:
   path: /cancelpickuprequest/{patron_barcode}/{encrypted_request_id}/{hold_shelf_expire_date}
   defaults:
@@ -106,4 +114,3 @@ arborcat.pickup_locations_lookup:
     _controller: '\Drupal\arborcat\Controller\DefaultController::pickup_helper'
   requirements:
     _permission: 'access accountfix'
-  
