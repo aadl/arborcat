@@ -406,7 +406,7 @@ function arborcat_patron_id_from_barcode($barcode) {
 
 function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_request_id) {
   $result_message = '';
-  if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG') {
+  if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG' || $pickup_request_type == 'SEEDS') {
     // Extract fields from the printJob request form
     $db = \Drupal::database();
     $query = $db->select('webform_submission_data', 'wsd');
