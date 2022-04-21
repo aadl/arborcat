@@ -88,7 +88,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
     $patron_clean = FALSE;
   }
   if (strtotime($patron->expires) < time()) {
-    $message = \Drupal\Core\Render\Markup::create("We're sorry, but your card has expired! Details on how to <a href=\"https://aadl.org/node/569959\">renew online here</a>.");
+    $message = \Drupal\Core\Render\Markup::create("We're sorry, but your card has expired! Details on how to <a href=\"https://aadl.org/lcards\">renew online here</a>.");
     $messenger->addError($message);
     $patron_clean = FALSE;
   }
