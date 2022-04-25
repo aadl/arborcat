@@ -433,7 +433,8 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
       $bar_code = $assoc_results['barcode'];
       $patron_id = (strlen($bar_code) == 14) ? arborcat_patron_id_from_barcode($bar_code) : NULL;
       $branch_name_array = explode(" ", $assoc_results['delivery_method']);
-      if ($branch_name_array[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
+      $pickup_options = $assoc_results['pickup_options']; //No pickup created for seed library orders
+      if ($branch_name_array[0] == 'Mail' || $pickup_options == 'Mail') {  // Mail to Patron option - no pickup request should be created
         $result_message = 'SUCCESS';
       } else {
         $front_back = ($branch_name_array[1] == 'Back' || $branch_name_array[1] == 'Front') ? $branch_name_array[1] : NULL;
