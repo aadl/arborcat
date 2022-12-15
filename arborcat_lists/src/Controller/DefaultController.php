@@ -52,14 +52,20 @@ class DefaultController extends ControllerBase {
   }
 
   public function user_checkout_history() {
+    dblog('user_checkout_history ENTERED');
     $user = \Drupal::currentUser();
     if (!$user->isAuthenticated()) {
       \Drupal::messenger()->addMessage("Sign in to see your checkout history.");
       return new RedirectResponse("/user/login?destination=" . $_SERVER['REQUEST_URI']);
     }
+    dblog('user_checkout_history: After authenticated check');
+    $userID = $user->id();
+    $pid = $user->pid;
+    
+    dblog('userid = ' . $userID . 'pid = ' . $pid);
     $db = \Drupal::database();
-    $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title='Checkout History' AND uid=:uid", [':uid' => $user->id()])->fetch();
-    if ($checkout_list->id) {
+    $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title='Checkout History' AND uid=:uid", [':uid' => $userID])->fetch();
+    if ($checkout_list && $checkout_list->id) {
       return new RedirectResponse("/user/lists/" . $checkout_list->id);
     } else {
       \Drupal::messenger()->addMessage(['#markup' => 'You do not have a checkout history list. Enable checkout history in your <a href="/user/' . $user->id() . '/edit">preferences</a>.']);
