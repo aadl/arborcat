@@ -27,6 +27,7 @@ class PatronBlock extends BlockBase {
     // Get patron info from API
     $guzzle = \Drupal::httpClient();
     try {
+      dblog("patronBlock::build: API request: $api_url/patron/$api_key/get);
       $patron = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
       $fines = json_decode($guzzle->get("$api_url/patron/$api_key/fines")->getBody()->getContents());
     }
