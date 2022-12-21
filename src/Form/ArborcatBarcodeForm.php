@@ -111,7 +111,6 @@ class ArborcatBarcodeForm extends FormBase {
             $patron = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
           }
           catch (\Exception $e) {
-            dblog("ArborcatBarcodeForm; BUILD FORM: Patron data Exception", $e->getMessage());
             \Drupal::messenger()->addError('Error retrieving patron data for ' . $field_barcode);
           }
 
