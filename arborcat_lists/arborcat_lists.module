@@ -98,10 +98,15 @@ function arborcat_lists_add_list_item($list_id, $bib, $timestamp = NULL) {
 function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
   // Get user's checkouts
   $account = \Drupal\user\Entity\User::load($uid);
-  if ($api_key = $account->get('field_api_key')->value) {
-    // Get Checkouts from API
-    $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-    $guzzle = \Drupal::httpClient();
+  $additional_accounts = arborcat_additional_accounts($account);
+
+  $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+  $guzzle = \Drupal::httpClient();
+  // Loop through each of the evg accounts  
+  // - the first one (and maybe the only one) will be the primary account 
+  // - followed by any additional accounts
+  foreach ($additional_accounts as $evg_account) {
+    $api_key = $evg_account['api_key'];
     try {
       $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
     }
@@ -111,10 +116,8 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
         'error' => 'Error retrieving checkouts',
         'message' => $e->getMessage()
       ];
-    }
-
+    }  
     $checkouts = json_decode($json);
-
     $co_bnums = array();
     if (isset($checkouts->out)) {
       foreach ($checkouts->out as $checkout) {
@@ -129,8 +132,10 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       $bnums_to_add = [];
 
       // Find user's checkout history list
+      $pnum = $evg_account['patronId'];
       $db = \Drupal::database();
-      $ch = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' LIMIT 1", [':uid' => $uid])->fetch();
+      $ch = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' AND pnum = :pnum LIMIT 1", 
+                        [':uid' => $uid, 'pnum' => $pnum])->fetch();
       if ($ch->id) {
         $list_id = $ch->id;
 
@@ -152,7 +157,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       else {
         // Create a new Checkout History list
         $list_id = $db->insert('arborcat_user_lists')
-          ->fields(['uid' => $uid, 'title' => 'Checkout History', 'description' => 'My Checkout History'])
+          ->fields(['uid' => $uid, 'pnum' => $pnum, 'title' => 'Checkout History', 'description' => 'My Checkout History'])
           ->execute();
         // Add all current checkouts into Checkout History
         $bnums_to_add = $co_bnums;

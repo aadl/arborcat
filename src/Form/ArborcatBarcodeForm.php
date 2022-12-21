@@ -31,8 +31,6 @@ class ArborcatBarcodeForm extends FormBase {
         $user->hasPermission('administer users')) {
 
       $account = \Drupal\user\Entity\User::load($uid);
-      dblog("ArborcatBarcodeForm:buildForm: account = " . json_encode($account, JSON_PRETTY_PRINT));
-
       $form['account'] = [
         '#type' => 'value',
         '#value' => $account,
@@ -92,8 +90,6 @@ class ArborcatBarcodeForm extends FormBase {
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
         $api_keys = $account->get('field_api_key')->getValue();
 
-        dblog('buildForm:   api_keys: ' . json_encode($api_keys, JSON_PRETTY_PRINT));
-
         $form['existing_barcodes'] = [
           '#prefix' => '<div class="barcode-form"><h2>Existing Barcodes</h2>',
           '#suffix' => '</div>',
@@ -102,7 +98,6 @@ class ArborcatBarcodeForm extends FormBase {
           ]
         ];
 
-        dblog("ArborcatBarcodeForm:build: API request: " . json_encode($field_barcodes));
         // Check for existing barcodes and list with option to remove
         foreach ($field_barcodes as $delta => $field_barcode) {
           $field_barcode = $field_barcode['value'];
@@ -110,14 +105,13 @@ class ArborcatBarcodeForm extends FormBase {
           // Get corresponding API Key
           $api_key = $api_keys[$delta]['value'];
 
-          dblog("ArborcatBarcodeForm:build: api_key: " . $api_key);
           // Pull Patron Data
           $patron = FALSE;
-          dblog("ArborcatBarcodeForm:build: API request: $api_url/patron/$api_key/get");
           try {
             $patron = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
           }
           catch (\Exception $e) {
+            dblog("ArborcatBarcodeForm; BUILD FORM: Patron data Exception", $e->getMessage());
             \Drupal::messenger()->addError('Error retrieving patron data for ' . $field_barcode);
           }
 
@@ -203,17 +197,10 @@ class ArborcatBarcodeForm extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     // Set Barcode and Patron ID fields, generate API Key
-    dblog("ArborcatBarcodeForm:submitForm:BEFORE SAVE account: " . json_encode($form_state->getValue('account'), JSON_PRETTY_PRINT));
     $account = $form_state->getValue('account');
     $account->field_barcode[] = $form_state->getValue('barcode');
     $account->field_patron_id[] = $form_state->getValue('patron_id');
-    $account->field_api_key[] = arborcat_generate_api_key();
-
-    dblog('submitForm:   field_barcode: '. json_encode($account->get('field_barcode')->getValue(), JSON_PRETTY_PRINT));
-    dblog('submitForm: field_patron_id: '. json_encode($account->get('field_patron_id')->getValue(), JSON_PRETTY_PRINT));
-    dblog('submitForm:   field_api_key: '. json_encode($account->get('field_api_key')->getValue(), JSON_PRETTY_PRINT));
-    dblog("ArborcatBarcodeForm:submitForm:BEFORE SAVE account: " . json_encode($account));
-    
+    $account->field_api_key[] = arborcat_generate_api_key();    
     $account->save();
 
     \Drupal::messenger()->addMessage('Successfully added library card barcode to your website account');
@@ -228,18 +215,9 @@ class ArborcatBarcodeForm extends FormBase {
     $delta = str_replace('edit-remove-barcode-', '', $te['#id']);
 
     $account = $form_state->getValue('account');
-    dblog('removeBarcodeSubmit:   field_barcode: '. json_encode($account->get('field_barcode')->getValue(), JSON_PRETTY_PRINT));
-    dblog('removeBarcodeSubmit: field_patron_id: '. json_encode($account->get('field_patron_id')->getValue(), JSON_PRETTY_PRINT));
-    dblog('removeBarcodeSubmit:   field_api_key: '. json_encode($account->get('field_api_key')->getValue(), JSON_PRETTY_PRINT));
-
     unset($account->field_barcode[$delta]);
     unset($account->field_patron_id[$delta]);
     unset($account->field_api_key[$delta]);
-
-    dblog('removeBarcodeSubmit:   field_barcode: '. json_encode($account->get('field_barcode')->getValue(), JSON_PRETTY_PRINT));
-    dblog('removeBarcodeSubmit: field_patron_id: '. json_encode($account->get('field_patron_id')->getValue(), JSON_PRETTY_PRINT));
-    dblog('removeBarcodeSubmit:   field_api_key: '. json_encode($account->get('field_api_key')->getValue(), JSON_PRETTY_PRINT));
-
     $account->save();
 
     \Drupal::messenger()->addMessage('Successfully removed barcode from your website account');
@@ -293,11 +271,6 @@ class ArborcatBarcodeForm extends FormBase {
     foreach ($new_field_api_keys as $new_field_api_key) {
       $account->field_api_key[] = $new_field_api_key;
     }
-
-    dblog('primaryBarcodeSubmit:   field_barcode: '. json_encode($account->get('field_barcode')->getValue(), JSON_PRETTY_PRINT));
-    dblog('primaryBarcodeSubmit: field_patron_id: '. json_encode($account->get('field_patron_id')->getValue(), JSON_PRETTY_PRINT));
-    dblog('primaryBarcodeSubmit:   field_api_key: '. json_encode($account->get('field_api_key')->getValue(), JSON_PRETTY_PRINT));
-
     $account->save();
 
     \Drupal::messenger()->addMessage('Successfully reordered barcodes');

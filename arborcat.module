@@ -629,3 +629,25 @@ function _arborcat_create_appt_block() {
     }
   }
 }
+
+function arborcat_additional_accounts($user) {
+  $additional_accounts = [];
+  $guzzle = \Drupal::httpClient();
+  $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+  $addl_barcodes = $user->get('field_barcode');
+  if ($addl_barcodes) {
+    foreach ($addl_barcodes as $k => $addl_barcode) {
+      $api_key = $user->field_api_key[$k]->value;
+      $patron_id = $user->field_patron_id[$k]->value;
+      $barcode = $user->field_barcode[$k]->value;
+      $addl_account = [ 'delta' => $k, 
+                        'barcode' => $barcode, 
+                        'patronId' => $patron_id, 
+                        'api_key' => $api_key,
+                        'subaccount' => json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents())
+                      ];
+      $additional_accounts[] = $addl_account;
+    }
+  }
+  return $additional_accounts;
+}
