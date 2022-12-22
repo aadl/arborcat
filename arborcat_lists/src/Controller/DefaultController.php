@@ -131,7 +131,7 @@ class DefaultController extends ControllerBase {
   public function view_user_list($lid = NULL) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
-
+    $patron_display_name = '';
     // grab list uid
     $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid",
       [':lid' => $lid]);
@@ -143,6 +143,16 @@ class DefaultController extends ControllerBase {
         $list_user = \Drupal\user\Entity\User::load($list->uid);
         if ($list_user->get('profile_cohist')->value) {
           arborcat_lists_update_user_history($list->uid);
+          // get the display name for the Checkout History list
+
+          // get the patron's name for use when displaying the "Checkout History" list titles in the theme
+          $additional_accounts = arborcat_additional_accounts($list_user);
+          foreach ($additional_accounts as $evg_account) {
+            if ($evg_account['patron_id'] == $list->pnum) {
+              $patron_display_name = $evg_account['subaccount']->name;
+              break;
+            }
+          }
         }
       }
 
@@ -165,6 +175,7 @@ class DefaultController extends ControllerBase {
       $list_items = [];
       $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('access accountfix') ? true : false);
       $list_items['title'] = $list->title;
+      $list_items['patron_display_name'] = $patron_display_name;
       $list_items['id'] = $lid;
       if (count($items['hits']['hits'])) {
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
@@ -208,7 +219,6 @@ class DefaultController extends ControllerBase {
         '#markup' => t('You do not have permission to view this list')
       ];
     }
-
   }
 
   public function delete_list($lid) {
