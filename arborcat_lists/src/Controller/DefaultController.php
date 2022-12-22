@@ -384,4 +384,13 @@ class DefaultController extends ControllerBase {
     }
   }
 
+  public function manual_update_user_checkout_history($uid) {
+    $user = \Drupal::currentUser();
+    $uid = $user->id();
+    arborcat_lists_update_user_history($uid);
+    $response['success'] = 'Updated checkout history for ' . $uid;
+
+    return new JsonResponse($response);
+
+  }
 }

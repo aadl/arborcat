@@ -45,7 +45,6 @@ function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL) {
   // grab lists from DB
   $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid $public $limit", [':uid' => $uid]);
   $lists = $query->fetchAll();
-
   for ($i = 0; $i < count($lists); $i++) {
     $query = $connection->query("SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC LIMIT 1",
       [':lid' => $lists[$i]->id]);
@@ -96,12 +95,11 @@ function arborcat_lists_add_list_item($list_id, $bib, $timestamp = NULL) {
 }
 
 function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
-  // Get user's checkouts
-  $account = \Drupal\user\Entity\User::load($uid);
-  $additional_accounts = arborcat_additional_accounts($account);
-
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-  $guzzle = \Drupal::httpClient();
+  $guzzle = \Drupal::httpClient();  // Get user's checkouts
+  $account = \Drupal\user\Entity\User::load($uid);
+  // get all the evg accounts associated with this account
+  $additional_accounts = arborcat_additional_accounts($account);
   // Loop through each of the evg accounts  
   // - the first one (and maybe the only one) will be the primary account 
   // - followed by any additional accounts
@@ -132,7 +130,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       $bnums_to_add = [];
 
       // Find user's checkout history list
-      $pnum = $evg_account['patronId'];
+      $pnum = $evg_account['patron_id'];
       $db = \Drupal::database();
       $ch = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' AND pnum = :pnum LIMIT 1", 
                         [':uid' => $uid, 'pnum' => $pnum])->fetch();
@@ -145,7 +143,6 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
         foreach ($list_items as $list_item) {
           $ch_bnums[$list_item->bib] = $list_item->bib;
         }
-
         // Grab cache from last Checkout History check
         $cc_bnums = \Drupal::service('user.data')->get('arborcat_lists', $uid, 'cc_bnums');
         foreach ($co_bnums as $co_bnum) {
@@ -156,8 +153,9 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       }
       else {
         // Create a new Checkout History list
+        $description_text = ($evg_account['delta'] > 0) ? $evg_account['subaccount']->name . "'s Checkout History" : "My Checkout History";
         $list_id = $db->insert('arborcat_user_lists')
-          ->fields(['uid' => $uid, 'pnum' => $pnum, 'title' => 'Checkout History', 'description' => 'My Checkout History'])
+          ->fields(['uid' => $uid, 'pnum' => $pnum, 'title' => 'Checkout History', 'description' => $description_text])
           ->execute();
         // Add all current checkouts into Checkout History
         $bnums_to_add = $co_bnums;
