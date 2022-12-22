@@ -40,8 +40,9 @@ function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL) {
     $public = " AND public = 1";
   }
 
-  $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : '');
+  $additional_accounts = arborcat_additional_accounts($user);
 
+  $limit = (isset($offset) && isset($per_page) ? " LIMIT $offset, $per_page" : '');
   // grab lists from DB
   $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid $public $limit", [':uid' => $uid]);
   $lists = $query->fetchAll();
@@ -52,8 +53,15 @@ function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL) {
     if (isset($res->bib)) {
       $lists[$i]->bib = $res->bib;
     }
-  }
 
+    // get the patron's name for use when displaying the "Checkout History" list titles in the theme
+    foreach ($additional_accounts as $evg_account) {
+      if ($evg_account['patron_id'] == $lists[$i]->pnum) {
+        $lists[$i]->patron_name = $evg_account['subaccount']->name;
+        break;
+      }
+    }
+  }
   return $lists;
 }
 
