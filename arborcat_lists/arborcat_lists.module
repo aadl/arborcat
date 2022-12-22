@@ -132,14 +132,14 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       // Find user's checkout history list
       $pnum = $evg_account['patron_id'];
       $db = \Drupal::database();
-      $ch = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' AND pnum = :pnum LIMIT 1", 
+      $ch_list = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' AND pnum = :pnum LIMIT 1", 
                         [':uid' => $uid, 'pnum' => $pnum])->fetch();
-      if ($ch->id) {
-        $list_id = $ch->id;
+      if ($ch_list != null && property_exists($ch_list, 'id')) {
+        $list_id = $ch_list->id;
 
         // Grab current items in Checkout History
         $ch_bnums = [];
-        $list_items = $db->query("SELECT bib FROM {arborcat_user_list_items} WHERE list_id = :lid", [':lid' => $ch->id])->fetchAll();
+        $list_items = $db->query("SELECT bib FROM {arborcat_user_list_items} WHERE list_id = :lid", [':lid' => $ch_list->id])->fetchAll();
         foreach ($list_items as $list_item) {
           $ch_bnums[$list_item->bib] = $list_item->bib;
         }
@@ -242,9 +242,9 @@ function _arborcat_lists_import_sopac_history($uid) {
     echo "Import History for User: $uid";
 
     // Find Checkout History List
-    $ch = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' LIMIT 1", [':uid' => $uid])->fetch();
-    if ($ch->id) {
-      $list_id = $ch->id;
+    $ch_list = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' LIMIT 1", [':uid' => $uid])->fetch();
+    if ($ch_list->id) {
+      $list_id = $ch_list->id;
       echo " Existing List: $list_id";
     }
     else {
