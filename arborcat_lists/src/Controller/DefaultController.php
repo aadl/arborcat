@@ -162,7 +162,6 @@ class DefaultController extends ControllerBase {
       $term = (!empty($_GET['search']) ? $_GET['search'] : '*');
       $sort = ($_GET['sort'] ?? 'list_order_desc');
       $items = arborcat_lists_search_list_items($lid, $term, $sort);
-
       // build the pager
       $total = $items['hits']['total'];
       $pager_manager = \Drupal::service('pager.manager');
@@ -177,7 +176,7 @@ class DefaultController extends ControllerBase {
       $list_items['title'] = $list->title;
       $list_items['patron_display_name'] = $patron_display_name;
       $list_items['id'] = $lid;
-      if (count($items['hits']['hits'])) {
+      if ($items != null && count($items['hits']['hits'])) {
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
         $guzzle = \Drupal::httpClient();
 
