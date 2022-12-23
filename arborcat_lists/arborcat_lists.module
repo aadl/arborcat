@@ -196,7 +196,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       }
 
       if ($total = count($bnums_to_add)) {
-        \Drupal::messenger()->addMessage("Updated Checkout History with $total new checkouts");
+        \Drupal::messenger()->addMessage("Updated Checkout History with $total new checkout" . ($total > 1) ? 's' : '');
       }
     }
 
