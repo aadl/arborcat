@@ -202,26 +202,85 @@ class ArborcatBarcodeForm extends FormBase {
     $account->field_api_key[] = arborcat_generate_api_key();    
     $account->save();
 
+    $uid = $account->get('uid')->value;
+
+    $user = \Drupal\user\Entity\User::load($uid);
+    $additional_accounts = arborcat_additional_accounts($user);
+    $last_account = end($additional_accounts);
+    dblog('retrieved additional accounts, delta = ' . $last_account['delta']);
+    dblog('retrieved additional accounts, barcode = ' . $last_account['barcode']);
+    dblog('retrieving additional accounts, api_key = ' . $last_account['api_key']);
+    dblog('retrieving additional accounts, patron_id = ' . $last_account['patron_id']);
+
+    $db = \Drupal::database();
+    // Create a new Checkout History list
+    $description_text = ($last_account['delta'] > 0) ? $last_account['subaccount']->name . "'s Checkout History" : "My Checkout History";
+    $list_id = $db->insert('arborcat_user_lists')
+      ->fields(['uid' => $uid, 'pnum' => $last_account['patron_id'], 'title' => 'Checkout History', 'description' => $description_text])
+      ->execute();
+    dblog('After insert, list_id = ', $list_id , '----', $uid, $last_account['patron_id'], $description_text);
+
     \Drupal::messenger()->addMessage('Successfully added library card barcode to your website account');
 
-    $form_state->setRedirect('entity.user.canonical', ['user' => $account->get('uid')->value]);
+    $form_state->setRedirect('entity.user.canonical', ['user' => $uid]);
 
     return;
   }
 
   public function removeBarcodeSubmit(array &$form, FormStateInterface $form_state) {
+    dblog('ENTERED');
     $te = $form_state->getTriggeringElement();
     $delta = str_replace('edit-remove-barcode-', '', $te['#id']);
+    dblog('delta = ', $delta);
 
     $account = $form_state->getValue('account');
+    dblog('count = ', count($account->field_patron_id));
+
+    $field_barcodes = $account->get('field_barcode')->getValue();
+    $field_patron_ids = $account->get('field_patron_id')->getValue();
+    $field_api_keys = $account->get('field_api_key')->getValue();
+
+    for ($i=0; $i<count($account->field_patron_id); $i++) {
+      dblog("$i -   barcode: " . $field_barcodes[$i]['value']);
+      dblog("   - patron_id: " . $field_patron_ids[$i]['value']);
+      dblog("   -   api_key: " . $field_api_keys[$i]['value']);
+    }
+    
+    $account_uid = $account->get('uid')->value;
+    $additional_pnum = $field_patron_ids[$delta]['value'];
+
+    dblog('account_uid = ', $account_uid);
+    dblog('additional_pnum = ', $additional_pnum);
+
+
+
     unset($account->field_barcode[$delta]);
     unset($account->field_patron_id[$delta]);
     unset($account->field_api_key[$delta]);
     $account->save();
 
+    dblog('After updating account fields');
+
+    $field_barcodes = $account->get('field_barcode')->getValue();
+    $field_patron_ids = $account->get('field_patron_id')->getValue();
+    $field_api_keys = $account->get('field_api_key')->getValue();
+    for ($i=0; $i<count($account->field_patron_id); $i++) {
+      dblog("$i -   barcode: " . $field_barcodes[$i]['value']);
+      dblog("   - patron_id: " . $field_patron_ids[$i]['value']);
+      dblog("   -   api_key: " . $field_api_keys[$i]['value']);
+    }
+
     \Drupal::messenger()->addMessage('Successfully removed barcode from your website account');
 
-    $form_state->setRedirect('entity.user.canonical', ['user' => $account->get('uid')->value]);
+    dblog('Calling arborcat_remove_checkout_history with: ', $account_uid, $additional_pnum);
+    $guzzle_param = "$api_url/user/lists/$account_uid/$additional_pnum/remove_checkout_history";
+    $guzzle = \Drupal::httpClient();
+    try {
+      $guzzle_result = json_decode($guzzle->get($guzzle_param)->getBody()->getContents());
+    } 
+    catch (\Exception $e) {
+    }
+    $form_state->setRedirect('entity.user.canonical', ['user' => $account_uid]);
 
     return;
   }
