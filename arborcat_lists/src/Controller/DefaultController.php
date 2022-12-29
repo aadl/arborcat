@@ -223,7 +223,6 @@ class DefaultController extends ControllerBase {
   public function delete_list($lid) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
-
     // grab list uid
     $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid",
       [':lid' => $lid]);
@@ -241,7 +240,6 @@ class DefaultController extends ControllerBase {
     } else {
       $response['error'] = "You don't have permission to delete this list";
     }
-
     return new JsonResponse($response);
   }
 
@@ -393,36 +391,24 @@ class DefaultController extends ControllerBase {
     }
   }
 
-  public function manual_update_user_checkout_history($uid) {
-    $start_time = time();
-    arborcat_lists_update_user_history($uid);
-    $end_time = time();
-    $elapsed_time = $end_time - $start_time;
-    $response['success'] = "Updated checkout history for $uid, took $elapsed_time seconds";
-
-    return new JsonResponse($response);
-  }
-
   public function remove_checkout_history($uid, $pnum) {
-    dblog('ENTERED ', $uid, $pnum);
-    return new JsonResponse(['success' => true]);
-
     $db = \Drupal::database();
-    $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title='Checkout History' AND uid=:uid AND pnum=:pnum", 
+    $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title like '%Checkout History' AND uid=:uid AND pnum=:pnum", 
                       [':uid' => $uid, ':pnum' => $pnum])->fetch();
     if ($checkout_list && $checkout_list->id) {
       $response = $this->delete_list($checkout_list->id);
-    } else {
+    } 
+    else {
       $response['error'] = "No list found for $uid, $pnum";
+      $response['success'] = false;
     }
-    dblog('After delete_list call, response = ', json_encode($response));
-    if ($response['success']) {
+
+    if (array_key_exists('success', $response)) {
       $response['success'] = "Deleted checkout history list for $pnum";
     }
     else {
       \Drupal::messenger()->add($response['error']);
     }
-    dblog('RETURNING, response = ', json_encode($response));
     return new JsonResponse($response);
   }
 }

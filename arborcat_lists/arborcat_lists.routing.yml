@@ -70,11 +70,3 @@ arborcat_lists.remove_checkout_history:
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::remove_checkout_history'
   requirements:
     _permission: 'access arborcat'
-
-arborcat_lists.manual_update_checkout_history:
-  path: /user/lists/{uid}/manual_update
-  defaults:
-    _controller: '\Drupal\arborcat_lists\Controller\DefaultController::manual_update_user_checkout_history'
-  requirements:
-    _permission: 'access arborcat'
-
