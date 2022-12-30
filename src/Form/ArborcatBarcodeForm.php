@@ -209,12 +209,15 @@ class ArborcatBarcodeForm extends FormBase {
     $additional_accounts = arborcat_additional_accounts($user);
     $last_account = end($additional_accounts);
 
-    $db = \Drupal::database();
-    // Create a new Checkout History list
-    $description_text = ($last_account['delta'] > 0) ? $last_account['subaccount']->name . "'s Checkout History" : "My Checkout History";
-    $list_id = $db->insert('arborcat_user_lists')
-      ->fields(['uid' => $uid, 'pnum' => $last_account['patron_id'], 'title' => 'Checkout History', 'description' => $description_text])
-      ->execute();
+    // only create an empty list for Checkout History if the primary account has "Record Checkouts" checked in preferences
+    if ($user->get('profile_cohist')->value) {
+      $db = \Drupal::database();
+      // Create a new Checkout History list
+      $description_text = ($last_account['delta'] > 0) ? $last_account['subaccount']->name . "'s Checkout History" : "My Checkout History";
+      $list_id = $db->insert('arborcat_user_lists')
+        ->fields(['uid' => $uid, 'pnum' => $last_account['patron_id'], 'title' => 'Checkout History', 'description' => $description_text])
+        ->execute();
+    }
 
     \Drupal::messenger()->addMessage('Successfully added library card barcode to your website account');
 
