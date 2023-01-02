@@ -57,6 +57,7 @@ class DefaultController extends ControllerBase {
       \Drupal::messenger()->addMessage("Sign in to see your checkout history.");
       return new RedirectResponse("/user/login?destination=" . $_SERVER['REQUEST_URI']);
     }
+    
     $db = \Drupal::database();
     $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title='Checkout History' AND uid=:uid", [':uid' => $user->id()])->fetch();
     if ($checkout_list->id) {
@@ -130,7 +131,7 @@ class DefaultController extends ControllerBase {
   public function view_user_list($lid = NULL) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
-
+    $patron_display_name = '';
     // grab list uid
     $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid",
       [':lid' => $lid]);
@@ -142,6 +143,16 @@ class DefaultController extends ControllerBase {
         $list_user = \Drupal\user\Entity\User::load($list->uid);
         if ($list_user->get('profile_cohist')->value) {
           arborcat_lists_update_user_history($list->uid);
+          // get the display name for the Checkout History list
+
+          // get the patron's name for use when displaying the "Checkout History" list titles in the theme
+          $additional_accounts = arborcat_additional_accounts($list_user);
+          foreach ($additional_accounts as $evg_account) {
+            if ($evg_account['patron_id'] == $list->pnum) {
+              $patron_display_name = $evg_account['subaccount']->name;
+              break;
+            }
+          }
         }
       }
 
@@ -151,9 +162,8 @@ class DefaultController extends ControllerBase {
       $term = (!empty($_GET['search']) ? $_GET['search'] : '*');
       $sort = ($_GET['sort'] ?? 'list_order_desc');
       $items = arborcat_lists_search_list_items($lid, $term, $sort);
-
       // build the pager
-      $total = $items['hits']['total'];
+      $total = ($items != null) ? $items['hits']['total'] : 0;
       $pager_manager = \Drupal::service('pager.manager');
       $pager_params = \Drupal::service('pager.parameters');
       $page = $pager_params->findPage();
@@ -164,8 +174,9 @@ class DefaultController extends ControllerBase {
       $list_items = [];
       $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('access accountfix') ? true : false);
       $list_items['title'] = $list->title;
+      $list_items['patron_display_name'] = $patron_display_name;
       $list_items['id'] = $lid;
-      if (count($items['hits']['hits'])) {
+      if ($items != null && count($items['hits']['hits'])) {
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
         $guzzle = \Drupal::httpClient();
 
@@ -207,13 +218,11 @@ class DefaultController extends ControllerBase {
         '#markup' => t('You do not have permission to view this list')
       ];
     }
-
   }
 
   public function delete_list($lid) {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
-
     // grab list uid
     $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid",
       [':lid' => $lid]);
@@ -231,7 +240,6 @@ class DefaultController extends ControllerBase {
     } else {
       $response['error'] = "You don't have permission to delete this list";
     }
-
     return new JsonResponse($response);
   }
 
@@ -383,4 +391,24 @@ class DefaultController extends ControllerBase {
     }
   }
 
+  public function remove_checkout_history($uid, $pnum) {
+    $db = \Drupal::database();
+    $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title like '%Checkout History' AND uid=:uid AND pnum=:pnum", 
+                      [':uid' => $uid, ':pnum' => $pnum])->fetch();
+    if ($checkout_list && $checkout_list->id) {
+      $response = $this->delete_list($checkout_list->id);
+    } 
+    else {
+      $response['error'] = "No list found for $uid, $pnum";
+      $response['success'] = false;
+    }
+
+    if (array_key_exists('success', $response)) {
+      $response['success'] = "Deleted checkout history list for $pnum";
+    }
+    else {
+      \Drupal::messenger()->add($response['error']);
+    }
+    return new JsonResponse($response);
+  }
 }

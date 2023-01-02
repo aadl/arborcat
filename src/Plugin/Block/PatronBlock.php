@@ -45,8 +45,8 @@ class PatronBlock extends BlockBase {
     $payment_link = ($fines->total ? " (<a href=\"/fees-payment?subaccount=$delta\">pay fees</a>)" : '');
     $card_is_current = $this->currentPatron($user, $patron->expires);
 
-    $addl_barcodes = $user->get('field_barcode');
-    $display_name = (count($addl_barcodes) > 1 ? ": $patron->name" : '');
+    $patron->additional_accounts = arborcat_additional_accounts($user);
+    $display_name = (count($patron->additional_accounts) > 1 ? ": $patron->name" : '');
 
     $output = "<h2 id=\"account-sum\" class=\"no-margin\">Account Summary$display_name</h2>";
     $output .= "<img id=\"bcode-img\" src=\"$api_url/patron/$api_key/barcode\" alt=\"Image of barcode for scanning at selfchecks\">";
@@ -57,17 +57,15 @@ class PatronBlock extends BlockBase {
     $output .= "<tr><th scope=\"row\">Account Email</th><td>$email</a></td></tr>";
     $output .= "<tr><th scope=\"row\">Notifications Sent To</th><td>$patron->email</a></td></tr>";
     $output .= '</tbody></table>';
-
-    if ($addl_barcodes) {
+    if (count($patron->additional_accounts) > 0) {
       $output .= "<h2>Additional Library Cards (<a href=\"/user/$uid/edit/barcode\">Add or Edit</a>)</td></h2>";
-      if (count($addl_barcodes) > 1) {
+      if (count($patron->additional_accounts) > 1) {
         $output .= '<table><thead><tr>';
         $output .= '
           <th>Name</th><th>Library Card Number</th></tr></thead><tbody>
         ';
-        foreach ($addl_barcodes as $k => $addl_barcode) {
-          $api_key = $user->field_api_key[$k]->value;
-          $subaccount = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents());
+        foreach ($patron->additional_accounts as $addl_account) {
+          $subaccount = $addl_account['subaccount'];
           $output .= "<tr>";
           if ($k == $delta) {
             $output .= "<td>$subaccount->name</td>";
