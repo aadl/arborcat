@@ -390,25 +390,4 @@ class DefaultController extends ControllerBase {
       return new RedirectResponse(\Drupal\Core\Url::fromRoute('user.page'));
     }
   }
-
-  public function remove_checkout_history($uid, $pnum) {
-    $db = \Drupal::database();
-    $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title like '%Checkout History' AND uid=:uid AND pnum=:pnum", 
-                      [':uid' => $uid, ':pnum' => $pnum])->fetch();
-    if ($checkout_list && $checkout_list->id) {
-      $response = $this->delete_list($checkout_list->id);
-    } 
-    else {
-      $response['error'] = "No list found for $uid, $pnum";
-      $response['success'] = false;
-    }
-
-    if (array_key_exists('success', $response)) {
-      $response['success'] = "Deleted checkout history list for $pnum";
-    }
-    else {
-      \Drupal::messenger()->add($response['error']);
-    }
-    return new JsonResponse($response);
-  }
 }
