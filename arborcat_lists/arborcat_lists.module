@@ -139,7 +139,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       $bnums_to_add = [];
 
       // Find user's checkout history list
-      $pnum = $evg_account['patron_id'];
+      $pnum = ($evg_account['delta'] == 0) ? 0 : $evg_account['patron_id'];
       $db = \Drupal::database();
       $ch_list = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' AND pnum = :pnum LIMIT 1", 
                         [':uid' => $uid, 'pnum' => $pnum])->fetch();
@@ -197,7 +197,9 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       }
 
       if ($total = count($bnums_to_add)) {
-        \Drupal::messenger()->addMessage("Updated Checkout History with $total new checkout" . ($total > 1) ? 's' : '');
+        $message = "Updated Checkout History with $total new checkout";
+        $message .= ($total > 1) ? 's' : '';
+        \Drupal::messenger()->addMessage($message);
       }
     }
 
@@ -439,8 +441,10 @@ function arborcat_lists_remove_checkout_history($uid, $pnum) {
           ->condition('id', $checkout_list->id)
           ->execute();
 
-        $response['success'] = 'List deleted';
-      } else {
+        $response['success'] = true;
+      } 
+      else {
+        $response['success'] = false;
         $response['error'] = "You don't have permission to delete this list";
       }
     } 
@@ -449,8 +453,8 @@ function arborcat_lists_remove_checkout_history($uid, $pnum) {
       $response['success'] = false;
     }
 
-    if (array_key_exists('success', $response)) {
-      $response['success'] = "Deleted checkout history list for $pnum";
+    if ($response['success'] == true ) {
+      $response['message'] = "Deleted checkout history list for $pnum";
     }
     else {
       \Drupal::messenger()->add($response['error']);

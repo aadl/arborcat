@@ -240,18 +240,12 @@ class ArborcatBarcodeForm extends FormBase {
     unset($account->field_api_key[$delta]);
     $account->save();
 
-    \Drupal::messenger()->addMessage('Successfully removed barcode from your website account');
+    $info_message = 'Successfully removed barcode from your website account';
     $result = arborcat_lists_remove_checkout_history($account_uid, $additional_pnum);
-    // $guzzle = \Drupal::httpClient();
-    // $host = \Drupal::request()->getHost();
-    // $link = "https://$host/user/lists/$account_uid/$additional_pnum/remove_checkout_history";
-    // $guzzle_result = '';
-    // try {
-    //   $guzzle_result = json_decode($guzzle->get($link)->getBody()->getContents());
-    // } 
-    // catch (\Exception $e) {
-    //   \Drupal::messenger()->addMessage('Issue removing Checkout History list, message = ' . $e->getMessage());
-    // }
+
+    $info_message .= ($result['success'] == true) ? ' and the associated Checkout History list' : '';
+
+    \Drupal::messenger()->addMessage($info_message);
 
     $form_state->setRedirect('entity.user.canonical', ['user' => $account_uid]);
 
