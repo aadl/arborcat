@@ -390,4 +390,11 @@ class DefaultController extends ControllerBase {
       return new RedirectResponse(\Drupal\Core\Url::fromRoute('user.page'));
     }
   }
+
+  public function fix_checkout_history($action) {
+    dblog('action = ', $action);
+    $result = arborcat_fix_checkout_history($action);
+
+    return new JsonResponse($result);
+  }
 }
