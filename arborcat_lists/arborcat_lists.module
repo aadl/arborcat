@@ -529,9 +529,12 @@ dblog('starting pnum=0 query');
 
   dblog("match_count = $match_count, no_match_count = $no_match_count");
   dblog("multiple_matches# = " . count($multiple_matches). ", no_matches# = " . count($no_matches));
+  dblog(json_encode($multiple_matches));
+  dblog(json_encode($no_matches));
   $response['match_count'] = $match_count;
   $response['no_match_count'] = $no_match_count;
-  //$response['multiple_matches'] = $multiple_matches;
+  $response['multiple_matches_count'] = count($multiple_matches);
+  $response['multiple_matches'] = $multiple_matches;
   $response['no_matches'] = $no_matches;
   return $response;
 }
