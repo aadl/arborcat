@@ -471,164 +471,67 @@ function arborcat_fix_checkout_history($action) {
   $query .= "join user__field_patron_id ufpi on ufpi.entity_id = aul.uid ";
   //$query .= "where (pnum=0 or pnum=ufpi.field_patron_id_value) and title='Checkout History' and description='My Checkout History' order by uid";
   $query .= "where (pnum=ufpi.field_patron_id_value) and title='Checkout History' and description='My Checkout History' order by uid";
-  $checkout_lists = $db->query($query)->fetchAll();
-  dblog('checkout_lists count = ', count($checkout_lists));
-  $response = (count($checkout_lists) > 0) ? ['count_pnum_patronId' => count($checkout_lists), 'success' => true] : ['success' => false];
+  $checkout_lists_1 = $db->query($query)->fetchAll();
+  dblog('checkout_lists count = ', count($checkout_lists_1));
+  $response = (count($checkout_lists_1) > 0) ? ['count_pnum_patronId' => count($checkout_lists_1), 'success' => true] : ['success' => false];
 
-  $query = "SELECT * FROM arborcat_user_lists aul ";
+dblog('starting pnum=0 query');
+  $query = "SELECT aul.* FROM arborcat_user_lists aul ";
   $query .= "join user__field_patron_id ufpi on ufpi.entity_id = aul.uid ";
-  $query .= "where (pnum=0) and ufpi.delta = 0 and title='checkout history'  order by uid";   //and description not like 'Migrated%'
+  $query .= "where (pnum=0) and ufpi.delta = 0 and title='Checkout History' order by uid asc"; // and (description='' or description like '%checkout history%') 
   $checkout_lists_pnum_0 = $db->query($query)->fetchAll();
   dblog('checkout_lists_pnum_0 count = ', count($checkout_lists_pnum_0));
   $response['count_pnum_0'] = count($checkout_lists_pnum_0);
+
+// , (select from_unixtime(timestamp) from arborcat_user_list_items auli where auli.list_id=aul.id order by auli.timestamp desc limit 1) as timestamp";
+  
+  dblog('Finished pnum=0 query');
 
   // Now loop through all the checkout lists with  pnum=patron_id and see if there is a matching checkout history with pnum=0 (and a lower id#)
   $list_ids = [];
   $count = 0;
   $match_count = 0;
-  $nomatch_count = 0;
+  $no_match_count = 0;
 
-  foreach($checkout_lists as $co_list) {
+  $multiple_matches = [];
+  $no_matches = [];
+  // ==================================== MAIN LOOP ==================================
+  foreach($checkout_lists_1 as $co_list) {
     $count += 1;
     $list_id = $co_list->id;
-    // Lookup list in the onum=0 object of lists
     $match_list_ids = [];
-    $match_list_titles = [];
-    $match_list_descriptions = [];
+    $match_stuff = [];
     foreach($checkout_lists_pnum_0 as $co_list_pnum_0) {
-      if ($co_list->entity_id == $co_list_pnum_0->entity_id) {
-        $match_count += 1;
+      if ($co_list->uid == $co_list_pnum_0->uid) {
         $match_list_ids[] = $co_list_pnum_0->id;
-        $match_list_titles[] = $co_list_pnum_0->title;
-        $match_list_descriptions[] = $co_list_pnum_0->description;
+        $match_stuff[] = $co_list_pnum_0->title;
+        $match_stuff[] = $co_list_pnum_0->description;
       }
     }
-    if (count($match_list_ids) > 1) {
-      $matching = (count(array_unique($match_list_ids)) === 1) ? 'TRUE': 'FALSE';
-    }
-    else {
-      $matching = '';
-    }
+
     if (count($match_list_ids) > 0) {
-      dblog($count, 'MATCH', $match_count, ', entity_id = ', $co_list->entity_id, ', listId = ', $list_id ', $match_list_ids = ', $matching, json_encode($match_list_ids), json_encode($match_list_titles),json_encode($match_list_descriptions));
+      $match_count += 1;
+      $logline = $list_id . ', ' . count($match_list_ids) . ', ' . json_encode($match_list_ids) . ', ' . json_encode($match_stuff);
+      dblog("#$count |+|", $logline);
+      if (count($match_list_ids) > 1) {
+        $multiple_matches[] = $logline;
+      }
     }
     else {
-      $nomatch_count += 1;
-      dblog($count, 'NO MATCH for entity_id: ', $co_list->entity_id, 'list_id = ', $list_id);
+      $no_match_count += 1;
+      dblog("#$count |-|", $list_id);
+      $no_matches[] = $list_id;
     }
-    $list_ids[] = $list_id;
+    // if ($count >= 1000) {
+    //   break;
+    // }
   }
-  
-  dblog("match count = $match_count, nomatch count = $nomatch_count");
+
+  dblog("match_count = $match_count, no_match_count = $no_match_count");
+  dblog("multiple_matches# = " . count($multiple_matches). ", no_matches# = " . count($no_matches));
   $response['match_count'] = $match_count;
-  $response['nomatch_count'] = $nomatch_count;
-
+  $response['no_match_count'] = $no_match_count;
+  //$response['multiple_matches'] = $multiple_matches;
+  $response['no_matches'] = $no_matches;
   return $response;
-}
-
-function arborcat_fix_one_user_checkout_history_worker($uid) {
-  $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-  $guzzle = \Drupal::httpClient();  // Get user's checkouts
-  $account = \Drupal\user\Entity\User::load($uid);
-  // get all the evg accounts associated with this account
-  $additional_accounts = arborcat_additional_accounts($account);
-  // Loop through each of the evg accounts  
-  // - the first one (and maybe the only one) will be the primary account 
-  // - followed by any additional accounts
-  foreach ($additional_accounts as $evg_account) {
-    $api_key = $evg_account['api_key'];
-    try {
-      $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
-    }
-    catch (\Exception $e) {
-      \Drupal::messenger()->addError('Error retrieving checkouts');
-      return [
-        'error' => 'Error retrieving checkouts',
-        'message' => $e->getMessage()
-      ];
-    }  
-    $checkouts = json_decode($json);
-    $co_bnums = array();
-    if (isset($checkouts->out)) {
-      foreach ($checkouts->out as $checkout) {
-        // Ignore MelCat items for Checkout History
-        if (stripos($checkout->material, 'melcat') !== 0) {
-          $co_bnums[$checkout->bnum] = $checkout->bnum;
-        }
-      }
-    }
-
-    if (count($co_bnums) && !$seed_only) {
-      $bnums_to_add = [];
-
-      // Find user's checkout history list
-      $pnum = ($evg_account['delta'] == 0) ? 0 : $evg_account['patron_id'];
-      $db = \Drupal::database();
-      $ch_list = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' AND pnum = :pnum LIMIT 1", 
-                        [':uid' => $uid, 'pnum' => $pnum])->fetch();
-      if ($ch_list != null && property_exists($ch_list, 'id')) {
-        $list_id = $ch_list->id;
-
-        // Grab current items in Checkout History
-        $ch_bnums = [];
-        $list_items = $db->query("SELECT bib FROM {arborcat_user_list_items} WHERE list_id = :lid", [':lid' => $ch_list->id])->fetchAll();
-        foreach ($list_items as $list_item) {
-          $ch_bnums[$list_item->bib] = $list_item->bib;
-        }
-        // Grab cache from last Checkout History check
-        $cc_bnums = \Drupal::service('user.data')->get('arborcat_lists', $uid, 'cc_bnums');
-        foreach ($co_bnums as $co_bnum) {
-          if (!isset($ch_bnums[$co_bnum]) && !isset($cc_bnums[$co_bnum])) {
-            $bnums_to_add[] = $co_bnum;
-          }
-        }
-      }
-      else {
-        // Create a new Checkout History list
-        $description_text = ($evg_account['delta'] > 0) ? $evg_account['subaccount']->name . "'s Checkout History" : "My Checkout History";
-        $list_id = $db->insert('arborcat_user_lists')
-          ->fields(['uid' => $uid, 'pnum' => $pnum, 'title' => 'Checkout History', 'description' => $description_text])
-          ->execute();
-        // Add all current checkouts into Checkout History
-        $bnums_to_add = $co_bnums;
-      }
-
-      // Summer Game
-      if (\Drupal::moduleHandler()->moduleExists('summergame')) {
-        if (\Drupal::config('summergame.settings')->get('summergame_points_enabled')) {
-          $user_data = \Drupal::service('user.data');
-          if ($sg_active_pid = $user_data->get('summergame', $uid, 'sg_active_pid')) {
-            $player = summergame_player_load($sg_active_pid);
-          }
-          else {
-            $player = summergame_player_load(['uid' => $uid]);
-          }
-        }
-      }
-
-      $timestamp = mktime(0, 0, 0); // Make checkout date midnight
-      // add the bnums in checkouts not present in checkout history
-      foreach ($bnums_to_add as $bnum) {
-        arborcat_lists_add_list_item($list_id, $bnum, $timestamp);
-        if ($player) {
-          $metadata = array('bnum' => $bnum);
-          $points = summergame_player_points($player['pid'], 10, 'Checkout History',
-                                             'Item added from Checkout History', $metadata);
-          $player_name = $player['nickname'] ? $player['nickname'] : $player['name'];
-          \Drupal::messenger()->addMessage("Player $player_name earned $points Summer Game points for a new checkout.");
-        }
-      }
-
-      if ($total = count($bnums_to_add)) {
-        $message = "Updated Checkout History with $total new checkout";
-        $message .= ($total > 1) ? 's' : '';
-        \Drupal::messenger()->addMessage($message);
-      }
-    }
-
-    // Save checkouts to checkout cache
-    $user_data = \Drupal::service('user.data');
-    $user_data->delete('arborcat_lists', $uid, 'cc_bnums');
-    $user_data->set('arborcat_lists', $uid, 'cc_bnums', $co_bnums);
-  }
 }
