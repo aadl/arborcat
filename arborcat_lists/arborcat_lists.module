@@ -456,10 +456,6 @@ function arborcat_lists_remove_checkout_history($uid, $pnum) {
     return new JsonResponse($response);
 }
 
-// ===================================================================================================
-// ===================================================================================================
-// ===================================================================================================
-
 function arborcat_lists_delete_list($list_id) {
   $connection = \Drupal::database();
   $connection->delete('arborcat_user_list_items')
