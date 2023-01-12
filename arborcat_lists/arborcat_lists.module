@@ -518,8 +518,7 @@ function arborcat_fix_checkout_history() {
       $match_count += 1;
       if (count($match_list_ids) == 1) {
         $target_cohist_list_id = $match_list_ids[0];
-
-            // get the problem list items for the problem list
+        // get the problem list items for the problem list
         $db = \Drupal::database();
         $query = $db->select('arborcat_user_list_items', 'auli')
                     ->fields('auli', ['bib'])
@@ -527,19 +526,17 @@ function arborcat_fix_checkout_history() {
         $problem_list_items = $query->execute()->fetchAll();
         $num_problem_list_items += count($problem_list_items);
 
-        //dblog("[$count] ---- √√√ 1 MATCH ", $problem_co_list->id, $num_problem_list_items);
-
         // Loop through each of the items in the problem list and try addiing them to the "correct" list
         // Checking for more than one "correct" Checkout History list before adding the items.
-
         foreach($problem_list_items as $problem_item){
           // process the 1 to 1 matching Checkout Histories
           $result = arborcat_lists_add_list_item($target_cohist_list_id, $problem_item->bib);
           $processed_successfully_count += 1;
+
+          arborcat_lists_delete_list($problem_co_list->id);
         }
       }
       else {
-        //dblog("[$count] ----    MORE THAN 1 MATCH:", count($match_list_ids));
         $multiple_matches_count += 1;
         $multiple_matches[] = ['uid: ' . $problem_co_list->uid, $match_list_ids];
       }
