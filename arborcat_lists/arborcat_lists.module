@@ -431,16 +431,9 @@ function arborcat_lists_remove_checkout_history($uid, $pnum) {
     if ($checkout_list && $checkout_list->id) {
 
       $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
-      $connection = \Drupal::database();
 
       if ($user->get('uid')->value == $checkout_list->uid || $user->hasRole('administrator')) {
-        $connection->delete('arborcat_user_list_items')
-          ->condition('list_id', $checkout_list->id)
-          ->execute();
-        $connection->delete('arborcat_user_lists')
-          ->condition('id', $checkout_list->id)
-          ->execute();
-
+        arborcat_lists_delete_list($checkout_list->id);
         $response['success'] = true;
       } 
       else {
@@ -463,78 +456,114 @@ function arborcat_lists_remove_checkout_history($uid, $pnum) {
     return new JsonResponse($response);
 }
 
-function arborcat_fix_checkout_history($action) {
-  dblog('ENTERED', $action);
+// ===================================================================================================
+// ===================================================================================================
+// ===================================================================================================
 
+function arborcat_lists_delete_list($list_id) {
+  $connection = \Drupal::database();
+  $connection->delete('arborcat_user_list_items')
+    ->condition('list_id', $list_id)
+    ->execute();
+  $connection->delete('arborcat_user_lists')
+    ->condition('id', $list_id)
+    ->execute();
+}
+
+function arborcat_fix_checkout_history() {
+  $response = [];
   $db = \Drupal::database();
+  // Retrieve all the "problem" COH records (pnum = patron_id)
   $query = "SELECT * FROM arborcat_user_lists aul ";
   $query .= "join user__field_patron_id ufpi on ufpi.entity_id = aul.uid ";
-  //$query .= "where (pnum=0 or pnum=ufpi.field_patron_id_value) and title='Checkout History' and description='My Checkout History' order by uid";
   $query .= "where (pnum=ufpi.field_patron_id_value) and title='Checkout History' and description='My Checkout History' order by uid";
-  $checkout_lists_1 = $db->query($query)->fetchAll();
-  dblog('checkout_lists count = ', count($checkout_lists_1));
-  $response = (count($checkout_lists_1) > 0) ? ['count_pnum_patronId' => count($checkout_lists_1), 'success' => true] : ['success' => false];
+  $problem_checkout_lists = $db->query($query)->fetchAll();
 
-dblog('starting pnum=0 query');
-  $query = "SELECT aul.* FROM arborcat_user_lists aul ";
+  $response = (count($problem_checkout_lists) > 0) ? ['problem_coh_lists_count' => count($problem_checkout_lists), 'success' => true] : ['success' => false];
+
+  $db = \Drupal::database();
+  // Retrieve all the "correct" COH records (pnum=0)
+  $query = "SELECT * FROM arborcat_user_lists aul ";
   $query .= "join user__field_patron_id ufpi on ufpi.entity_id = aul.uid ";
   $query .= "where (pnum=0) and ufpi.delta = 0 and title='Checkout History' order by uid asc"; // and (description='' or description like '%checkout history%') 
   $checkout_lists_pnum_0 = $db->query($query)->fetchAll();
-  dblog('checkout_lists_pnum_0 count = ', count($checkout_lists_pnum_0));
-  $response['count_pnum_0'] = count($checkout_lists_pnum_0);
+  $response['correct_coh_lists_count'] = count($checkout_lists_pnum_0);
 
-// , (select from_unixtime(timestamp) from arborcat_user_list_items auli where auli.list_id=aul.id order by auli.timestamp desc limit 1) as timestamp";
-  
-  dblog('Finished pnum=0 query');
-
-  // Now loop through all the checkout lists with  pnum=patron_id and see if there is a matching checkout history with pnum=0 (and a lower id#)
-  $list_ids = [];
+  // Now loop through the problem checkout lists and see if there is a matching correct checkout history
   $count = 0;
   $match_count = 0;
   $no_match_count = 0;
 
   $multiple_matches = [];
   $no_matches = [];
+  $num_problem_list_items = 0;
+
+  $multiple_matches_count = 0;
+
+  $processed_successfully = [];
+  $processed_unsuccessfully = [];
+  $processed_successfully_count = 0;
+
   // ==================================== MAIN LOOP ==================================
-  foreach($checkout_lists_1 as $co_list) {
-    $count += 1;
-    $list_id = $co_list->id;
+  foreach($problem_checkout_lists as $problem_co_list) {
+
+
     $match_list_ids = [];
-    $match_stuff = [];
+    // build up an array of matching "correct" list ids that match uid with problem list uid
     foreach($checkout_lists_pnum_0 as $co_list_pnum_0) {
-      if ($co_list->uid == $co_list_pnum_0->uid) {
+      if ($problem_co_list->uid == $co_list_pnum_0->uid) {
         $match_list_ids[] = $co_list_pnum_0->id;
-        $match_stuff[] = $co_list_pnum_0->title;
-        $match_stuff[] = $co_list_pnum_0->description;
+        //$match_stuff[] = $co_list_pnum_0->title;
+        //$match_stuff[] = $co_list_pnum_0->description;
       }
     }
-
+    
     if (count($match_list_ids) > 0) {
       $match_count += 1;
-      $logline = $list_id . ', ' . count($match_list_ids) . ', ' . json_encode($match_list_ids) . ', ' . json_encode($match_stuff);
-      dblog("#$count |+|", $logline);
-      if (count($match_list_ids) > 1) {
-        $multiple_matches[] = $logline;
+      if (count($match_list_ids) == 1) {
+        $target_cohist_list_id = $match_list_ids[0];
+
+            // get the problem list items for the problem list
+        $db = \Drupal::database();
+        $query = $db->select('arborcat_user_list_items', 'auli')
+                    ->fields('auli', ['bib'])
+                    ->condition('list_id', $problem_co_list->id);
+        $problem_list_items = $query->execute()->fetchAll();
+        $num_problem_list_items += count($problem_list_items);
+
+        //dblog("[$count] ---- √√√ 1 MATCH ", $problem_co_list->id, $num_problem_list_items);
+
+        // Loop through each of the items in the problem list and try addiing them to the "correct" list
+        // Checking for more than one "correct" Checkout History list before adding the items.
+
+        foreach($problem_list_items as $problem_item){
+          // process the 1 to 1 matching Checkout Histories
+          $result = arborcat_lists_add_list_item($target_cohist_list_id, $problem_item->bib);
+          $processed_successfully_count += 1;
+        }
+      }
+      else {
+        //dblog("[$count] ----    MORE THAN 1 MATCH:", count($match_list_ids));
+        $multiple_matches_count += 1;
+        $multiple_matches[] = ['uid: ' . $problem_co_list->uid, $match_list_ids];
       }
     }
     else {
       $no_match_count += 1;
-      dblog("#$count |-|", $list_id);
-      $no_matches[] = $list_id;
-    }
-    // if ($count >= 1000) {
-    //   break;
-    // }
+      //$logline = "#$count |-| " . $problem_co_list->id;
+      $no_matches[] = $problem_co_list->id;
+    }  
+
+    $count += 1;
   }
 
-  dblog("match_count = $match_count, no_match_count = $no_match_count");
-  dblog("multiple_matches# = " . count($multiple_matches). ", no_matches# = " . count($no_matches));
-  dblog(json_encode($multiple_matches));
-  dblog(json_encode($no_matches));
   $response['match_count'] = $match_count;
   $response['no_match_count'] = $no_match_count;
   $response['multiple_matches_count'] = count($multiple_matches);
   $response['multiple_matches'] = $multiple_matches;
   $response['no_matches'] = $no_matches;
+  $response['processed_successfully_count'] = $processed_successfully_count;
+  $response['processed_unsuccessfully_count'] = count($processed_unsuccessfully);
+  $response['processed_unsuccessfully'] = $processed_unsuccessfully;
   return $response;
 }

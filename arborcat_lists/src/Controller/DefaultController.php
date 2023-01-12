@@ -391,10 +391,8 @@ class DefaultController extends ControllerBase {
     }
   }
 
-  public function fix_checkout_history($action) {
-    dblog('action = ', $action);
-    $result = arborcat_fix_checkout_history($action);
-
+  public function fix_checkout_history() {
+    $result = arborcat_fix_checkout_history();
     return new JsonResponse($result);
   }
 }

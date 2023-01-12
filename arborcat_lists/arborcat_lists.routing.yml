@@ -65,7 +65,7 @@ arborcat_lists.download_list:
   requirements:
     _permission: 'access arborcat'
 arborcat_lists.fix_checkout_history:
-  path: /user/lists/fix_checkout_history/{action}
+  path: /user/lists/fix_checkout_history
   defaults:
     _controller: '\Drupal\arborcat_lists\Controller\DefaultController::fix_checkout_history'
   requirements:
