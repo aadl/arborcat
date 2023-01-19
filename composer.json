@@ -3,6 +3,6 @@
     "description": "Drupal module for building blocks for image sliders and providing staff interfaces",
     "type": "drupal-custom-module",
     "require": {
-        "php": "^7.0"
+        "php": "^7.0 || ^8.0"
     }
 }
