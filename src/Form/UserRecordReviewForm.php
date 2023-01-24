@@ -60,7 +60,7 @@ class UserRecordReviewForm extends FormBase {
 
     // honeypot to hopefully stop spam
     if (\Drupal::moduleHandler()->moduleExists('honeypot')) {
-      honeypot_add_form_protection($form, $form_state, ['honeypot', 'time_restriction']);
+      \Drupal::service('honeypot') ->addFormProtection($form, $form_state, ['honeypot', 'time_restriction']);
     }
 
     return $form;

@@ -217,7 +217,7 @@ function _arborcat_lists_batch_update_user_history($offset = 0, $limit = 0) {
     $limit = ($limit ? $limit : 9999999);
     $query->range($offset, $limit);
   }
-  $uids = $query->execute();
+  $uids = $query->accessCheck(TRUE)->execute();
 
   $message = date('[Y-m-d H:i:s]') . ' Checkout History Start for ' . count($uids) . " Lists\n";
   echo $message;
@@ -287,7 +287,7 @@ function _arborcat_lists_sopac_history_worker($start = 0, $length = 0) {
   if ($start || $length) {
     $query->range($start, $length);
   }
-  $uids = $query->execute();
+  $uids = $query->accessCheck(TRUE)->execute();
 
   foreach ($uids as $uid) {
     _arborcat_lists_import_sopac_history($uid);
