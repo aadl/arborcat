@@ -321,7 +321,7 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
   try {
     $query = $db->select('arborcat_patron_pickup_request', 'appr')
       ->fields('appr', ['id'])
-      ->condition('requestId', $custom_id, '=');
+      ->condition('requestId', $custom_id, '=')
       ->condition('requestType', $pickup_request_type, '=');
     $results = $query->execute()->fetchCol();
   } catch (Exception $e) {
