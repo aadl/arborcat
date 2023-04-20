@@ -322,12 +322,15 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
     $query = $db->select('arborcat_patron_pickup_request', 'appr')
       ->fields('appr', ['id'])
       ->condition('requestId', $custom_id, '=');
+      ->condition('requestType', $pickup_request_type, '=');
     $results = $query->execute()->fetchCol();
   } catch (Exception $e) {
+      \Drupal::messenger()->addError('An error occurred Duplicate record!');
     return -1;
   }
   // If a record exists containing the $custom_id, just return the id of the record, otherwise insert a new record with the custom_id and return the $id of the new record
   if (count($results) > 0) {
+      \Drupal::messenger()->addError('An error occurred - duplicate record, id = ' . $results[0]);
     return $results[0];
   } else {
     $txn = $db->startTransaction();
