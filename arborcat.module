@@ -409,7 +409,7 @@ function arborcat_patron_id_from_barcode($barcode) {
 
 function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_request_id) {
   $result_message = '';
-  if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG' || $pickup_request_type == 'SEEDS') {
+  if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG') {
     // Extract fields from the printJob request form
     $db = \Drupal::database();
     $query = $db->select('webform_submission_data', 'wsd');
@@ -431,13 +431,12 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
         $assoc_results[$key_name] = $entry->value;
       }
     }
-    
+
     if (count($assoc_results) > 0) {
       $bar_code = $assoc_results['barcode'];
       $patron_id = (strlen($bar_code) == 14) ? arborcat_patron_id_from_barcode($bar_code) : NULL;
       $branch_name_array = explode(" ", $assoc_results['delivery_method']);
-      $pickup_options = $assoc_results['pickup_options']; //No pickup created for seed library orders
-      if ($branch_name_array[0] == 'Mail' || $pickup_options == 'Mail') {  // Mail to Patron option - no pickup request should be created
+      if ($branch_name_array[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
         $result_message = 'SUCCESS';
       } else {
         $front_back = ($branch_name_array[1] == 'Back' || $branch_name_array[1] == 'Front') ? $branch_name_array[1] : NULL;
@@ -489,7 +488,7 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
 }
 
   /*
-  * get_location_id - INPUT PARAM: $location - a location string name, a 3 digit branch location id or a 4 digit location id 
+  * get_location_id - INPUT PARAM: $location - a location string name, a 3 digit branch location id or a 4 digit location id
   * see arborcat_pickup_location table for values
   */
 function get_location_id($location) {
@@ -508,7 +507,7 @@ function get_location_id($location) {
       }
     }
   }
-  else {  
+  else {
     $location_int = intval($location);
     if ($location_int < 1000) {
       $location_id = $location;
@@ -520,7 +519,7 @@ function get_location_id($location) {
     }
   }
 
-  return $location_id;    
+  return $location_id;
 }
 
 function arborcat_is_date_location_valid($location, $pickup_date) {
@@ -643,9 +642,9 @@ function arborcat_additional_accounts($user) {
       $api_key = $user->field_api_key[$k]->value;
       $patron_id = $user->field_patron_id[$k]->value;
       $barcode = $user->field_barcode[$k]->value;
-      $addl_account = [ 'delta' => $k, 
-                        'barcode' => $barcode, 
-                        'patron_id' => $patron_id, 
+      $addl_account = [ 'delta' => $k,
+                        'barcode' => $barcode,
+                        'patron_id' => $patron_id,
                         'api_key' => $api_key,
                         'subaccount' => json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents())
                       ];
