@@ -345,7 +345,8 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
         'contactEmail'  => $contact_email,
         'contactSMS'    => $contact_sms,
         'contactPhone'  => $contact_phone,
-        'locker_code'   => $locker_code
+        'locker_code'   => $locker_code,
+        'completed'     => ($pickup_request_type == 'GRAB_BAG' || $pickup_request_type == 'PRINT_JOB') ? 1 : 0
       ]);
     
     $transaction = $db->startTransaction();
@@ -375,7 +376,8 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
       'contactSMS'    => $contact_sms,
       'contactPhone'  => $contact_phone,
       'created'       => time(),
-      'locker_code'   => $locker_code
+      'locker_code'   => $locker_code,
+      'completed'     => ($pickup_request_type == 'GRAB_BAG' || $pickup_request_type == 'PRINT_JOB') ? 1 : 0
     ]);
     
     $transaction = $db->startTransaction();
