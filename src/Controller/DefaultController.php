@@ -370,7 +370,7 @@ class DefaultController extends ControllerBase {
               $type = 'Rated an Item';
               $description = 'Added a Rating to the Catalog';
               $metadata = 'bnum:' . $bib;
-              $points = summergame_player_points($player['pid'], 50, $type, $description, $metadata);
+              $points = summergame_player_points($player['pid'], 10, $type, $description, $metadata);
               $result['summergame'] = "You earned $points points for rating an item!";
             }
           }
