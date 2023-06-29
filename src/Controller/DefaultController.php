@@ -145,7 +145,6 @@ class DefaultController extends ControllerBase {
 
     // grab user api key for account actions
     $user_api_key = $user->field_api_key->value;
-    dblog('BEFORE arborcat_lists_get_lists',$user_api_key);
     $lists = arborcat_lists_get_lists($user->get('uid')->value);
 
     // get community reviews
