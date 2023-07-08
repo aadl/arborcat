@@ -156,7 +156,7 @@ class ArborcatBarcodeForm extends FormBase {
       }
       else {
         // Make sure barcode isn't already attached to Account
-        if (in_array($barcode, $form_state->getValue('barcodes'))) {
+        if (is_array($form_state->getValue('barcodes')) && in_array($barcode, $form_state->getValue('barcodes'))) {
           $form_state->setErrorByName('barcode', $this->t('Barcode already attached to account'));
         }
         else {
