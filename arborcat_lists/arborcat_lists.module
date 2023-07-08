@@ -450,7 +450,7 @@ function arborcat_lists_remove_checkout_history($uid, $pnum) {
       $response['message'] = "Deleted checkout history list for $pnum";
     }
     else {
-      \Drupal::messenger()->add($response['error']);
+      \Drupal::messenger()->addMessage($response['error']);
     }
 
     return new JsonResponse($response);
