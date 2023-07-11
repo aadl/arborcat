@@ -221,8 +221,8 @@ class DefaultController extends ControllerBase {
     }
     else {
       return [
-        '#title' => t('List could not available'),
-        '#markup' => t('The list requested could not be retrieved')
+        '#title' => t('List not found'),
+        '#markup' => t('The requested list could not be found')
       ];
 
     }
