@@ -34,7 +34,7 @@ class DefaultController extends ControllerBase {
   public function bibrecord_page($bnum) {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
 
-    // set the api get record request to use either the api record "full" or "harvest" call depending whether 
+    // set the api get record request to use either the api record "full" or "harvest" call depending whether
     // the api being called is the development/testing version of the api located on pinkeye
     $use_harvest_option = \Drupal::config('arborcat.settings')->get('api_use_harvest_option_for_bib');
     $get_record_selector = ($use_harvest_option == true) ? 'harvest' : 'full';
@@ -60,7 +60,7 @@ class DefaultController extends ControllerBase {
     } catch (\Exception $e) {
       $bib_record->_id = NULL;
     }
-    
+
     if (!$bib_record->_id) {
       $markup = "<p class=\"base-margin-top\">Sorry, the item you are looking for couldn't be found.</p>";
 
@@ -89,11 +89,11 @@ class DefaultController extends ControllerBase {
       if ($bib_record->mat_code == 'zb' || $bib_record->mat_code == 'zp') {
         $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/pdf");
         $bib_record->download_urls['pdf'] = $guzzle_result->download_url;
-      } 
+      }
       elseif ($bib_record->mat_code == 'z' || $bib_record->mat_code == 'za') {
         $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/album/mp3");
         $bib_record->download_urls['mp3'] = $guzzle_result->download_url;
-      } 
+      }
       elseif ($bib_record->mat_code == 'zm') {
         if (!(strncmp($bib_record->_id, "ib-", 3) === 0)) {
           $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/mp4");
@@ -250,7 +250,7 @@ class DefaultController extends ControllerBase {
     }
 
     $pager = $pager_manager->createPager($total, $per_page);
-    
+
     return [
       '#theme' => 'moderate_reviews',
       '#reviews' => $reviews,
@@ -608,7 +608,7 @@ class DefaultController extends ControllerBase {
     try {
       $json = json_decode($guzzle->get($guzzle_param)->getBody()->getContents());
       $return_object = $json;
-    } 
+    }
     catch (\Exception $e) {
     }
 

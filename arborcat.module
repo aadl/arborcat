@@ -313,7 +313,7 @@ function arborcat_get_scheduled_pickups($barcode) {
 }
 
 function arborcat_create_pickup_request_record($pickup_request_type, $custom_id, $patron_id, $branch, $time_slot, $pickup_location, $pickup_date, $contact_email, $contact_sms, $contact_phone, $locker_code) {
-  // create arborcat_patron_pickup_request records for each of the selected holds
+  // create or update arborcat_patron_pickup_request record - used for holds, seed shop orders, print requests
   $db = \Drupal::database();
 
   // First check if the record already exists for this custom_id
@@ -321,18 +321,20 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
   try {
     $query = $db->select('arborcat_patron_pickup_request', 'appr')
       ->fields('appr', ['id'])
-      ->condition('requestId', $custom_id, '=');
+      ->condition('requestId', $custom_id, '=')
+      ->condition('requestType', $pickup_request_type, '=');
     $results = $query->execute()->fetchCol();
   } catch (Exception $e) {
+      \Drupal::messenger()->addError('An error occurred Duplicate record!');
     return -1;
   }
-  // If a record exists containing the $custom_id, just return the id of the record, otherwise insert a new record with the custom_id and return the $id of the new record
+  // If a record exists containing the $custom_id, update the record and then return the id of the updated record, 
+  // otherwise insert a new record with the custom_id and return the $id of the new record
   if (count($results) > 0) {
-    return $results[0];
-  } else {
-    $txn = $db->startTransaction();
-    try {
-      $dbaction = $db->insert('arborcat_patron_pickup_request')->fields([
+    $record_id = $results[0];
+    $dbaction = $db->update('arborcat_patron_pickup_request')
+      ->condition('id', $record_id, '=')
+      ->fields([
         'requestType'   => $pickup_request_type,
         'requestId'     => $custom_id,
         'patronId'      => $patron_id,
@@ -343,18 +345,54 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
         'contactEmail'  => $contact_email,
         'contactSMS'    => $contact_sms,
         'contactPhone'  => $contact_phone,
-        'created'       => time(),
-        'locker_code'   => $locker_code
+        'locker_code'   => $locker_code,
+        'completed'     => ($pickup_request_type == 'GRAB_BAG' || $pickup_request_type == 'PRINT_JOB') ? 1 : 0
       ]);
-      $id = $dbaction->execute();
-
-      return $id;
-    } catch (Exception $e) {
-      \Drupal::messenger()->addError('An error occurred saving this pickup request. Please try again');
-      $txn->rollBack();
-
-      return -1;
+    
+    $transaction = $db->startTransaction();
+    try {
+      $dbaction->execute();
+      $return_val = $record_id;
+    } 
+    catch (Exception $e) {
+      \Drupal::messenger()->addError('An error occurred updating this pickup request. Exception Message: ' . $e->getMessage());
+      $transaction->rollback();
+      $return_val = -1;
     }
+    unset($transaction);
+
+    return $return_val;
+  } 
+  else {
+    $dbaction = $db->insert('arborcat_patron_pickup_request')->fields([
+      'requestType'   => $pickup_request_type,
+      'requestId'     => $custom_id,
+      'patronId'      => $patron_id,
+      'branch'        => (int) $branch,
+      'timeSlot'      => $time_slot,
+      'pickupLocation' => $pickup_location,
+      'pickupDate'    => $pickup_date,
+      'contactEmail'  => $contact_email,
+      'contactSMS'    => $contact_sms,
+      'contactPhone'  => $contact_phone,
+      'created'       => time(),
+      'locker_code'   => $locker_code,
+      'completed'     => ($pickup_request_type == 'GRAB_BAG' || $pickup_request_type == 'PRINT_JOB') ? 1 : 0
+    ]);
+    
+    $transaction = $db->startTransaction();
+    try {
+      $id = $dbaction->execute();
+      $return_val = $id;
+    } 
+    catch (Exception $e) {
+      \Drupal::messenger()->addError('An error occurred saving this pickup request. Exception Message: ' . $e->getMessage());
+      $transaction->rollback();
+      $return_val = -1;
+    }
+    unset($transaction);
+
+    return $return_val;
   }
 }
 
@@ -406,7 +444,7 @@ function arborcat_patron_id_from_barcode($barcode) {
 
 function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_request_id) {
   $result_message = '';
-  if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG' || $pickup_request_type == 'SEEDS') {
+  if ($pickup_request_type == 'PRINT_JOB' || $pickup_request_type == 'GRAB_BAG') {
     // Extract fields from the printJob request form
     $db = \Drupal::database();
     $query = $db->select('webform_submission_data', 'wsd');
@@ -428,13 +466,12 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
         $assoc_results[$key_name] = $entry->value;
       }
     }
-    
+
     if (count($assoc_results) > 0) {
       $bar_code = $assoc_results['barcode'];
       $patron_id = (strlen($bar_code) == 14) ? arborcat_patron_id_from_barcode($bar_code) : NULL;
       $branch_name_array = explode(" ", $assoc_results['delivery_method']);
-      $pickup_options = $assoc_results['pickup_options']; //No pickup created for seed library orders
-      if ($branch_name_array[0] == 'Mail' || $pickup_options == 'Mail') {  // Mail to Patron option - no pickup request should be created
+      if ($branch_name_array[0] == 'Mail') {  // Mail to Patron option - no pickup request should be created
         $result_message = 'SUCCESS';
       } else {
         $front_back = ($branch_name_array[1] == 'Back' || $branch_name_array[1] == 'Front') ? $branch_name_array[1] : NULL;
@@ -486,7 +523,7 @@ function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_req
 }
 
   /*
-  * get_location_id - INPUT PARAM: $location - a location string name, a 3 digit branch location id or a 4 digit location id 
+  * get_location_id - INPUT PARAM: $location - a location string name, a 3 digit branch location id or a 4 digit location id
   * see arborcat_pickup_location table for values
   */
 function get_location_id($location) {
@@ -505,7 +542,7 @@ function get_location_id($location) {
       }
     }
   }
-  else {  
+  else {
     $location_int = intval($location);
     if ($location_int < 1000) {
       $location_id = $location;
@@ -517,7 +554,7 @@ function get_location_id($location) {
     }
   }
 
-  return $location_id;    
+  return $location_id;
 }
 
 function arborcat_is_date_location_valid($location, $pickup_date) {
@@ -640,9 +677,9 @@ function arborcat_additional_accounts($user) {
       $api_key = $user->field_api_key[$k]->value;
       $patron_id = $user->field_patron_id[$k]->value;
       $barcode = $user->field_barcode[$k]->value;
-      $addl_account = [ 'delta' => $k, 
-                        'barcode' => $barcode, 
-                        'patron_id' => $patron_id, 
+      $addl_account = [ 'delta' => $k,
+                        'barcode' => $barcode,
+                        'patron_id' => $patron_id,
                         'api_key' => $api_key,
                         'subaccount' => json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents())
                       ];
