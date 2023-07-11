@@ -136,87 +136,95 @@ class DefaultController extends ControllerBase {
     $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid",
       [':lid' => $lid]);
     $list = $query->fetch();
-    if ($user->get('uid')->value == $list->uid || $list->public || $user->hasPermission('administer users')) {
+    if ($list != null) {
+      if ($user->get('uid')->value == $list->uid || $list->public || $user->hasPermission('administer users')) {
+        // Checkout History manual refresh
+        if ($list->title == 'Checkout History') {
+          $list_user = \Drupal\user\Entity\User::load($list->uid);
+          if ($list_user->get('profile_cohist')->value) {
+            arborcat_lists_update_user_history($list->uid);
+            // get the display name for the Checkout History list
 
-      // Checkout History manual refresh
-      if ($list->title == 'Checkout History') {
-        $list_user = \Drupal\user\Entity\User::load($list->uid);
-        if ($list_user->get('profile_cohist')->value) {
-          arborcat_lists_update_user_history($list->uid);
-          // get the display name for the Checkout History list
-
-          // get the patron's name for use when displaying the "Checkout History" list titles in the theme
-          $additional_accounts = arborcat_additional_accounts($list_user);
-          foreach ($additional_accounts as $evg_account) {
-            if ($evg_account['patron_id'] == $list->pnum) {
-              $patron_display_name = $evg_account['subaccount']->name;
-              break;
+            // get the patron's name for use when displaying the "Checkout History" list titles in the theme
+            $additional_accounts = arborcat_additional_accounts($list_user);
+            foreach ($additional_accounts as $evg_account) {
+              if ($evg_account['patron_id'] == $list->pnum) {
+                $patron_display_name = $evg_account['subaccount']->name;
+                break;
+              }
             }
           }
         }
-      }
 
-      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC",
-        [':lid' => $lid]);
+        $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC",
+          [':lid' => $lid]);
 
-      $term = (!empty($_GET['search']) ? $_GET['search'] : '*');
-      $sort = ($_GET['sort'] ?? 'list_order_desc');
-      $items = arborcat_lists_search_list_items($lid, $term, $sort);
-      // build the pager
-      $total = ($items != null) ? $items['hits']['total'] : 0;
-      $pager_manager = \Drupal::service('pager.manager');
-      $pager_params = \Drupal::service('pager.parameters');
-      $page = $pager_params->findPage();
-      $per_page = 20;
-      $offset = $per_page * $page;
-      $pager = $pager_manager->createPager($total, $per_page);
+        $term = (!empty($_GET['search']) ? $_GET['search'] : '*');
+        $sort = ($_GET['sort'] ?? 'list_order_desc');
+        $items = arborcat_lists_search_list_items($lid, $term, $sort);
+        // build the pager
+        $total = ($items != null) ? $items['hits']['total'] : 0;
+        $pager_manager = \Drupal::service('pager.manager');
+        $pager_params = \Drupal::service('pager.parameters');
+        $page = $pager_params->findPage();
+        $per_page = 20;
+        $offset = $per_page * $page;
+        $pager = $pager_manager->createPager($total, $per_page);
 
-      $list_items = [];
-      $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('access accountfix') ? true : false);
-      $list_items['title'] = $list->title;
-      $list_items['patron_display_name'] = $patron_display_name;
-      $list_items['id'] = $lid;
-      if ($items != null && count($items['hits']['hits'])) {
-        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-        $guzzle = \Drupal::httpClient();
+        $list_items = [];
+        $list_items['user_owns'] = ($user->get('uid')->value == $list->uid || $user->hasPermission('access accountfix') ? true : false);
+        $list_items['title'] = $list->title;
+        $list_items['patron_display_name'] = $patron_display_name;
+        $list_items['id'] = $lid;
+        if ($items != null && count($items['hits']['hits'])) {
+          $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+          $guzzle = \Drupal::httpClient();
 
-        foreach ($items['hits']['hits'] as $item) {
-          $bib_record = $item['_source'];
-          $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
-          $mat_name = json_decode($mat_types);
-          $bib_record['mat_name'] = $mat_name->{$bib_record['mat_code']};
-          $bib_record['_id'] = $item['_id'];
-          $list_items['items'][$item['_id']] = $bib_record;
-        }
-
-        if ($sort == 'list_order' || $sort == 'list_order_desc') {
-          $order = ($sort == 'list_order' ? SORT_ASC : SORT_DESC);
-          $sorting = [];
-          foreach ($list_items['items'] as $key => $row) {
-            $sorting[$key] = $row['list_order'];
+          foreach ($items['hits']['hits'] as $item) {
+            $bib_record = $item['_source'];
+            $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
+            $mat_name = json_decode($mat_types);
+            $bib_record['mat_name'] = $mat_name->{$bib_record['mat_code']};
+            $bib_record['_id'] = $item['_id'];
+            $list_items['items'][$item['_id']] = $bib_record;
           }
-          array_multisort($sorting, $order, $list_items['items']);
-        }
-      }
 
-      return [
-        [
-          '#title' => t($list->title),
-          '#theme' => 'user_list_view',
-          '#list_items' => $list_items,
-          '#total_results' => $total,
-          '#cache' => ['max-age' => 0],
-          '#pager' => [
-            '#type' => 'pager',
-            '#quantity' => 5
+          if ($sort == 'list_order' || $sort == 'list_order_desc') {
+            $order = ($sort == 'list_order' ? SORT_ASC : SORT_DESC);
+            $sorting = [];
+            foreach ($list_items['items'] as $key => $row) {
+              $sorting[$key] = $row['list_order'];
+            }
+            array_multisort($sorting, $order, $list_items['items']);
+          }
+        }
+
+        return [
+          [
+            '#title' => t($list->title),
+            '#theme' => 'user_list_view',
+            '#list_items' => $list_items,
+            '#total_results' => $total,
+            '#cache' => ['max-age' => 0],
+            '#pager' => [
+              '#type' => 'pager',
+              '#quantity' => 5
+            ]
           ]
-        ]
-      ];
-    } else {
+        ];
+      } else {
+        return [
+          '#title' => t('Access Denied'),
+          '#markup' => t('You do not have permission to view this list')
+        ];
+      }
+    }
+    else {
       return [
-        '#title' => t('Access Denied'),
-        '#markup' => t('You do not have permission to view this list')
+        '#title' => t('List not found'),
+        '#markup' => t('The requested list could not be found')
       ];
+
     }
   }
 

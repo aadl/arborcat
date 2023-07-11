@@ -145,7 +145,6 @@ class DefaultController extends ControllerBase {
 
     // grab user api key for account actions
     $user_api_key = $user->field_api_key->value;
-
     $lists = arborcat_lists_get_lists($user->get('uid')->value);
 
     // get community reviews
@@ -160,9 +159,6 @@ class DefaultController extends ControllerBase {
       $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
     }
 
-    // set up review form for users
-    $review_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserRecordReviewForm', $bib_record->id, $bib_record->title);
-
     // get commuity ratings
     $query = $db->query(
       "SELECT AVG(rating) as average, count(id) as total FROM arborcat_ratings WHERE bib=:bib and rating > 0",
@@ -170,12 +166,21 @@ class DefaultController extends ControllerBase {
     );
     $ratings = $query->fetch();
     $ratings->average = round($ratings->average, 1);
-    $user_rating = $db->query(
-      "SELECT rating FROM arborcat_ratings WHERE bib=:bib AND uid=:uid",
-      [':bib' => $bib_record->id, ':uid' => $user->id()]
-    )->fetch();
-    $ratings->user_rating = $user_rating->rating ?? '';
+    $ratings->user_rating = '';
+    
+    // retrieve user ratings and set up review form IF the user is authenticated
+    $review_form = null;
+    if ($user->isAuthenticated()) {
+      // set up review form for users
+      $review_form = \Drupal::formBuilder()->getForm('Drupal\arborcat\Form\UserRecordReviewForm', $bib_record->id, $bib_record->title);
 
+      $user_rating = $db->query(
+        "SELECT rating FROM arborcat_ratings WHERE bib=:bib AND uid=:uid",
+        [':bib' => $bib_record->id, ':uid' => $user->id()]
+      )->fetch();
+      $ratings->user_rating = $user_rating->rating ?? '';
+    }
+    
     // if summer game codes, convert to array so template can loop over
     if (isset($bib_record->gamecodes)) {
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
