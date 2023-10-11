@@ -426,6 +426,7 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
 
 function arborcat_lists_remove_checkout_history($uid, $pnum) {
     $db = \Drupal::database();
+    $response = ['success' => false];
     $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title like '%Checkout History' AND uid=:uid AND pnum=:pnum", 
                       [':uid' => $uid, ':pnum' => $pnum])->fetch();
     if ($checkout_list && $checkout_list->id) {
@@ -453,7 +454,7 @@ function arborcat_lists_remove_checkout_history($uid, $pnum) {
       \Drupal::messenger()->addMessage($response['error']);
     }
 
-    return new JsonResponse($response);
+    return $response;
 }
 
 function arborcat_lists_delete_list($list_id) {
