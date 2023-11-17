@@ -71,10 +71,12 @@ class ArborcatRenewCardForm extends FormBase {
             '#type' => 'value',
             '#value' => $patron,
           ];
-          $form['dob'] = [
+          $form['last_name'] = [
             '#prefix' => '<div class="barcode-form"><h2>Renewing Library Card ' . $field_barcode . '</h2>',
-            '#type' => 'date', // types 'date_text' and 'date_timezone' are also supported. See .inc file.
-            '#title' => 'Verify Card Holder Birthdate',
+            '#type' => 'textfield',
+            '#size' => 60,
+            '#maxlength' => 128,
+            '#title' => 'Verify Card Holder Last Name',
           ];
           $form['street'] = [
             '#type' => 'textfield',
@@ -115,8 +117,8 @@ class ArborcatRenewCardForm extends FormBase {
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $patron = $form_state->getValue('patron');
 
-    if ($form_state->getValue('dob') != $patron->evg_user->dob) {
-      $form_state->setErrorByName('dob', $this->t('Birthdate does not match record on file'));
+    if ($form_state->getValue('last_name') != $patron->evg_user->family_name) {
+      $form_state->setErrorByName('last_name', $this->t('Last name does not match record on file'));
     }
     if ($form_state->getValue('zip') != $patron->evg_user->addresses[0]->post_code) {
       $form_state->setErrorByName('zip', $this->t('Zip Code does not match record on file'));
