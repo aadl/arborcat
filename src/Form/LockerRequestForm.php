@@ -141,7 +141,7 @@ class LockerRequestForm extends FormBase{
 
 			$redis = new Client(\Drupal::config('events.settings')->get('events_redis_conn'));
 
-			$time = strftime(time());
+			$time = (string) time();
 			$redis_query = $time . "#" . $branch;
 			$redis->lPush('lockerRequests',$redis_query);
 
