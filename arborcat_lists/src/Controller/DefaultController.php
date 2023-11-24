@@ -1,4 +1,6 @@
-<?php /**
+<?php
+
+/**
  * @file
  * Contains \Drupal\arborcat_lists\Controller\DefaultController.
  */
@@ -14,9 +16,11 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 /**
  * Default controller for the arborcat_lists module.
  */
-class DefaultController extends ControllerBase {
+class DefaultController extends ControllerBase
+{
 
-  public function user_lists($uid = NULL) {
+  public function user_lists($uid = NULL)
+  {
     $current_uid = \Drupal::currentUser()->id();
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     if ($current_uid != $uid && !$user->hasPermission('administer users')) {
@@ -51,13 +55,14 @@ class DefaultController extends ControllerBase {
     ];
   }
 
-  public function user_checkout_history() {
+  public function user_checkout_history()
+  {
     $user = \Drupal::currentUser();
     if (!$user->isAuthenticated()) {
       \Drupal::messenger()->addMessage("Sign in to see your checkout history.");
       return new RedirectResponse("/user/login?destination=" . $_SERVER['REQUEST_URI']);
     }
-    
+
     $db = \Drupal::database();
     $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title='Checkout History' AND uid=:uid", [':uid' => $user->id()])->fetch();
     if ($checkout_list->id) {
@@ -68,7 +73,8 @@ class DefaultController extends ControllerBase {
     }
   }
 
-  public function view_public_lists() {
+  public function view_public_lists()
+  {
     $db = \Drupal::database();
 
     $pager_manager = \Drupal::service('pager.manager');
@@ -91,8 +97,10 @@ class DefaultController extends ControllerBase {
     }
 
     for ($i = 0; $i < count($lists); $i++) {
-      $query = $db->query("SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC LIMIT 1",
-        [':lid' => $lists[$i]->id]);
+      $query = $db->query(
+        "SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC LIMIT 1",
+        [':lid' => $lists[$i]->id]
+      );
       $res = $query->fetch();
       if (isset($res->bib)) {
         $lists[$i]->bib = $res->bib;
@@ -128,13 +136,16 @@ class DefaultController extends ControllerBase {
     ];
   }
 
-  public function view_user_list($lid = NULL) {
+  public function view_user_list($lid = NULL)
+  {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
     $patron_display_name = '';
     // grab list uid
-    $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid",
-      [':lid' => $lid]);
+    $query = $connection->query(
+      "SELECT * FROM arborcat_user_lists WHERE id=:lid",
+      [':lid' => $lid]
+    );
     $list = $query->fetch();
     if ($list != null) {
       if ($user->get('uid')->value == $list->uid || $list->public || $user->hasPermission('administer users')) {
@@ -156,14 +167,16 @@ class DefaultController extends ControllerBase {
           }
         }
 
-        $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC",
-          [':lid' => $lid]);
+        $query = $connection->query(
+          "SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC",
+          [':lid' => $lid]
+        );
 
         $term = (!empty($_GET['search']) ? $_GET['search'] : '*');
         $sort = ($_GET['sort'] ?? 'list_order_desc');
         $items = arborcat_lists_search_list_items($lid, $term, $sort);
         // build the pager
-        $total = ($items != null) ? $items['hits']['total'] : 0;
+        $total = ($items != null) ? $items['hits']['total']['value'] : 0;
         $pager_manager = \Drupal::service('pager.manager');
         $pager_params = \Drupal::service('pager.parameters');
         $page = $pager_params->findPage();
@@ -218,22 +231,23 @@ class DefaultController extends ControllerBase {
           '#markup' => t('You do not have permission to view this list')
         ];
       }
-    }
-    else {
+    } else {
       return [
         '#title' => t('List not found'),
         '#markup' => t('The requested list could not be found')
       ];
-
     }
   }
 
-  public function delete_list($lid) {
+  public function delete_list($lid)
+  {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
     // grab list uid
-    $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE id=:lid",
-      [':lid' => $lid]);
+    $query = $connection->query(
+      "SELECT * FROM arborcat_user_lists WHERE id=:lid",
+      [':lid' => $lid]
+    );
     $result = $query->fetch();
 
     if ($user->get('uid')->value == $result->uid || $user->hasRole('administrator')) {
@@ -251,13 +265,16 @@ class DefaultController extends ControllerBase {
     return new JsonResponse($response);
   }
 
-  public function add_list_item($lid, $bib) {
+  public function add_list_item($lid, $bib)
+  {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
 
     if ($lid == 'wishlist') {
-      $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid AND title = 'Wishlist'",
-        [':uid' => $user->get('uid')->value]);
+      $query = $connection->query(
+        "SELECT * FROM arborcat_user_lists WHERE uid=:uid AND title = 'Wishlist'",
+        [':uid' => $user->get('uid')->value]
+      );
       $result = $query->fetch();
       if (!$result->id) {
         // Create new wishlist
@@ -271,22 +288,24 @@ class DefaultController extends ControllerBase {
           ])
           ->execute();
         $result->uid = $user->get('uid')->value;
-      }
-      else {
+      } else {
         $lid = $result->id;
       }
-    }
-    else {
+    } else {
       // grab list uid
-      $query = $connection->query("SELECT uid FROM arborcat_user_lists WHERE id=:lid",
-        [':lid' => $lid]);
+      $query = $connection->query(
+        "SELECT uid FROM arborcat_user_lists WHERE id=:lid",
+        [':lid' => $lid]
+      );
       $result = $query->fetch();
     }
 
     if ($user->get('uid')->value == $result->uid || $user->hasRole('administrator')) {
       // check if bib is already in the list
-      $query = $connection->query("SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid AND bib=:bib",
-        [':lid' => $lid, ':bib' => $bib]);
+      $query = $connection->query(
+        "SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid AND bib=:bib",
+        [':lid' => $lid, ':bib' => $bib]
+      );
       if (count($query->fetchAll())) {
         $response['error'] = 'Item is already on this list';
 
@@ -294,8 +313,10 @@ class DefaultController extends ControllerBase {
       }
 
       // get total items in list for list_order column insert
-      $query = $connection->query("SELECT item_id FROM arborcat_user_list_items WHERE list_id=:lid",
-        [':lid' => $lid]);
+      $query = $connection->query(
+        "SELECT item_id FROM arborcat_user_list_items WHERE list_id=:lid",
+        [':lid' => $lid]
+      );
       $count = count($query->fetchAll());
 
       $connection->insert('arborcat_user_list_items')
@@ -315,18 +336,23 @@ class DefaultController extends ControllerBase {
     return new JsonResponse($response);
   }
 
-  public function delete_list_item($lid, $bib) {
+  public function delete_list_item($lid, $bib)
+  {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
 
     // grab list uid
-    $query = $connection->query("SELECT uid FROM arborcat_user_lists WHERE id=:lid",
-      [':lid' => $lid]);
+    $query = $connection->query(
+      "SELECT uid FROM arborcat_user_lists WHERE id=:lid",
+      [':lid' => $lid]
+    );
     $result = $query->fetch();
 
     if ($user->get('uid')->value == $result->uid || $user->hasRole('staff')) {
-      $query = $connection->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid AND bib=:bib",
-        [':lid' => $lid, ':bib' => $bib]);
+      $query = $connection->query(
+        "SELECT * FROM arborcat_user_list_items WHERE list_id=:lid AND bib=:bib",
+        [':lid' => $lid, ':bib' => $bib]
+      );
       $row = $query->fetch();
       $connection->delete('arborcat_user_list_items')
         ->condition('item_id', $row->item_id)
@@ -345,7 +371,8 @@ class DefaultController extends ControllerBase {
     return new JsonResponse($response);
   }
 
-  public function download_user_list($lid) {
+  public function download_user_list($lid)
+  {
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $db = \Drupal::database();
     $query = $db->query("SELECT * FROM arborcat_user_lists WHERE id=:lid", [':lid' => $lid]);
@@ -363,8 +390,10 @@ class DefaultController extends ControllerBase {
       $rows = [];
       $header = ['Title', 'Author', 'Format', 'Website Link', 'Date Added to List'];
       $rows[] = implode(',', $header);
-      $query = $db->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order",
-            [':lid' => $lid]);
+      $query = $db->query(
+        "SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order",
+        [':lid' => $lid]
+      );
       $items = $query->fetchAll();
       foreach ($items as $item) {
         $bnum = $item->bib;
@@ -390,7 +419,7 @@ class DefaultController extends ControllerBase {
       $list = implode("\n", $rows);
       $response = new Response($list);
       $response->headers->set('Content-Type', 'text/csv');
-      $response->headers->set('Content-Disposition','attachment; filename="' . str_replace(' ', '-', $l_title) . '.csv"');
+      $response->headers->set('Content-Disposition', 'attachment; filename="' . str_replace(' ', '-', $l_title) . '.csv"');
 
       return $response;
     } else {
@@ -399,7 +428,8 @@ class DefaultController extends ControllerBase {
     }
   }
 
-  public function fix_checkout_history() {
+  public function fix_checkout_history()
+  {
     $result = arborcat_fix_checkout_history();
     return new JsonResponse($result);
   }
