@@ -162,8 +162,8 @@ class DefaultController extends ControllerBase {
         $term = (!empty($_GET['search']) ? $_GET['search'] : '*');
         $sort = ($_GET['sort'] ?? 'list_order_desc');
         $items = arborcat_lists_search_list_items($lid, $term, $sort);
-        // build the pager
-        $total = ($items != null) ? $items['hits']['total'] : 0;
+       // build the pager
+        $total = ($items != null) ? $items['hits']['total']['value'] : 0;
         $pager_manager = \Drupal::service('pager.manager');
         $pager_params = \Drupal::service('pager.parameters');
         $page = $pager_params->findPage();
