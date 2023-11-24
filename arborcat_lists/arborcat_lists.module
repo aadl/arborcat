@@ -3,7 +3,8 @@
 use Elasticsearch\ClientBuilder;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
-function arborcat_lists_theme($existing, $type, $theme, $path) {
+function arborcat_lists_theme($existing, $type, $theme, $path)
+{
   return [
     'user_lists' => [
       'variables' => [
@@ -23,15 +24,19 @@ function arborcat_lists_theme($existing, $type, $theme, $path) {
   ];
 }
 
-function arborcat_lists_user_update($user) {
-  if ($user->get('profile_cohist')->value &&
-      !$user->original->get('profile_cohist')->value) {
+function arborcat_lists_user_update($user)
+{
+  if (
+    $user->get('profile_cohist')->value &&
+    !$user->original->get('profile_cohist')->value
+  ) {
     \Drupal::messenger()->addMessage('Enabling Checkout History');
     arborcat_lists_update_user_history($user->get('uid')->value);
   }
 }
 
-function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL) {
+function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL)
+{
   $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
   $connection = \Drupal::database();
 
@@ -48,8 +53,10 @@ function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL) {
   $query = $connection->query("SELECT * FROM arborcat_user_lists WHERE uid=:uid $public $limit", [':uid' => $uid]);
   $lists = $query->fetchAll();
   for ($i = 0; $i < count($lists); $i++) {
-    $query = $connection->query("SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC LIMIT 1",
-      [':lid' => $lists[$i]->id]);
+    $query = $connection->query(
+      "SELECT bib FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order DESC LIMIT 1",
+      [':lid' => $lists[$i]->id]
+    );
     $res = $query->fetch();
     if (isset($res->bib)) {
       $lists[$i]->bib = $res->bib;
@@ -66,11 +73,14 @@ function arborcat_lists_get_lists($uid, $offset = NULL, $per_page = NULL) {
   return $lists;
 }
 
-function arborcat_lists_add_list_item($list_id, $bib, $timestamp = NULL) {
+function arborcat_lists_add_list_item($list_id, $bib, $timestamp = NULL)
+{
   // Check if item is already on list
   $db = \Drupal::database();
-  $existing = $db->query('SELECT * from arborcat_user_list_items WHERE list_id = :lid and bib = :bib',
-                         [':lid' => $list_id, ':bib' => $bib])->fetch();
+  $existing = $db->query(
+    'SELECT * from arborcat_user_list_items WHERE list_id = :lid and bib = :bib',
+    [':lid' => $list_id, ':bib' => $bib]
+  )->fetch();
   if ($existing) {
     // if timestamp passed in, update the timestamp on the existing tag
     if ($timestamp) {
@@ -79,12 +89,10 @@ function arborcat_lists_add_list_item($list_id, $bib, $timestamp = NULL) {
         ->condition('item_id', $existing->item_id)
         ->execute();
       return TRUE;
-    }
-    else {
+    } else {
       return FALSE;
     }
-  }
-  else {
+  } else {
     // New entry
     $fields = [
       'list_id' => $list_id,
@@ -92,8 +100,10 @@ function arborcat_lists_add_list_item($list_id, $bib, $timestamp = NULL) {
       'timestamp' => ($timestamp ? $timestamp : time()),
     ];
 
-    $row = $db->query('SELECT MAX(list_order) as max FROM arborcat_user_list_items WHERE list_id = :lid',
-                      [':lid' => $list_id])->fetch();
+    $row = $db->query(
+      'SELECT MAX(list_order) as max FROM arborcat_user_list_items WHERE list_id = :lid',
+      [':lid' => $list_id]
+    )->fetch();
     $fields['list_order'] = $row->max + 1;
 
     $db->insert('arborcat_user_list_items')
@@ -103,7 +113,8 @@ function arborcat_lists_add_list_item($list_id, $bib, $timestamp = NULL) {
   }
 }
 
-function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
+function arborcat_lists_update_user_history($uid, $seed_only = FALSE)
+{
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
   $guzzle = \Drupal::httpClient();  // Get user's checkouts
   $account = \Drupal\user\Entity\User::load($uid);
@@ -116,14 +127,13 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
     $api_key = $evg_account['api_key'];
     try {
       $json = $guzzle->get("$api_url/patron/$api_key/checkouts")->getBody()->getContents();
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       \Drupal::messenger()->addError('Error retrieving checkouts');
       return [
         'error' => 'Error retrieving checkouts',
         'message' => $e->getMessage()
       ];
-    }  
+    }
     $checkouts = json_decode($json);
     $co_bnums = array();
     if (isset($checkouts->out)) {
@@ -141,8 +151,10 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
       // Find user's checkout history list
       $pnum = ($evg_account['delta'] == 0) ? 0 : $evg_account['patron_id'];
       $db = \Drupal::database();
-      $ch_list = $db->query("SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' AND pnum = :pnum LIMIT 1", 
-                        [':uid' => $uid, 'pnum' => $pnum])->fetch();
+      $ch_list = $db->query(
+        "SELECT id FROM {arborcat_user_lists} WHERE uid = :uid AND title = 'Checkout History' AND pnum = :pnum LIMIT 1",
+        [':uid' => $uid, 'pnum' => $pnum]
+      )->fetch();
       if ($ch_list != null && property_exists($ch_list, 'id')) {
         $list_id = $ch_list->id;
 
@@ -159,8 +171,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
             $bnums_to_add[] = $co_bnum;
           }
         }
-      }
-      else {
+      } else {
         // Create a new Checkout History list
         $description_text = ($evg_account['delta'] > 0) ? $evg_account['subaccount']->name . "'s Checkout History" : "My Checkout History";
         $list_id = $db->insert('arborcat_user_lists')
@@ -176,8 +187,7 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
           $user_data = \Drupal::service('user.data');
           if ($sg_active_pid = $user_data->get('summergame', $uid, 'sg_active_pid')) {
             $player = summergame_player_load($sg_active_pid);
-          }
-          else {
+          } else {
             $player = summergame_player_load(['uid' => $uid]);
           }
         }
@@ -189,8 +199,13 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
         arborcat_lists_add_list_item($list_id, $bnum, $timestamp);
         if ($player) {
           $metadata = array('bnum' => $bnum);
-          $points = summergame_player_points($player['pid'], 10, 'Checkout History',
-                                             'Item added from Checkout History', $metadata);
+          $points = summergame_player_points(
+            $player['pid'],
+            10,
+            'Checkout History',
+            'Item added from Checkout History',
+            $metadata
+          );
           $player_name = $player['nickname'] ? $player['nickname'] : $player['name'];
           \Drupal::messenger()->addMessage("Player $player_name earned $points Summer Game points for a new checkout.");
         }
@@ -210,7 +225,8 @@ function arborcat_lists_update_user_history($uid, $seed_only = FALSE) {
   }
 }
 
-function _arborcat_lists_batch_update_user_history($offset = 0, $limit = 0) {
+function _arborcat_lists_batch_update_user_history($offset = 0, $limit = 0)
+{
   // Select checkout history users
   $query = \Drupal::entityQuery('user')->condition('profile_cohist', 1)->exists('field_api_key');
   if ($offset || $limit) {
@@ -228,8 +244,7 @@ function _arborcat_lists_batch_update_user_history($offset = 0, $limit = 0) {
     $result = arborcat_lists_update_user_history($uid);
     if (isset($result['error'])) {
       $message .= ' ERROR:' . $result['error'];
-    }
-    else {
+    } else {
       $message .= ' SUCCESS';
     }
     $message .= "\n";
@@ -243,7 +258,8 @@ function _arborcat_lists_batch_update_user_history($offset = 0, $limit = 0) {
   Import checkouts from old Sopac History entries
   Can be removed once migration is complete
 */
-function _arborcat_lists_import_sopac_history($uid) {
+function _arborcat_lists_import_sopac_history($uid)
+{
   $db = \Drupal::database();
 
   $query = $db->query('SELECT * FROM {sopac_history} WHERE uid = ' . $uid . ' ORDER BY codate ASC');
@@ -257,8 +273,7 @@ function _arborcat_lists_import_sopac_history($uid) {
     if ($ch_list->id) {
       $list_id = $ch_list->id;
       echo " Existing List: $list_id";
-    }
-    else {
+    } else {
       // Create a new Checkout History list
       $list_id = $db->insert('arborcat_user_lists')
         ->fields(['uid' => $uid, 'title' => 'Checkout History', 'description' => 'My Checkout History'])
@@ -281,7 +296,8 @@ function _arborcat_lists_import_sopac_history($uid) {
 /*
   Worker function for Sopac History import
 */
-function _arborcat_lists_sopac_history_worker($start = 0, $length = 0) {
+function _arborcat_lists_sopac_history_worker($start = 0, $length = 0)
+{
   // Select all current users with checkout history enabled
   $query = \Drupal::entityQuery('user')->condition('profile_cohist', 1);
   if ($start || $length) {
@@ -294,7 +310,8 @@ function _arborcat_lists_sopac_history_worker($start = 0, $length = 0) {
   }
 }
 
-function arborcat_lists_search_lists($term) {
+function arborcat_lists_search_lists($term)
+{
   $offset = ($_GET['page'] ?? 0) * 20;
 
   $db = \Drupal::database();
@@ -303,8 +320,8 @@ function arborcat_lists_search_lists($term) {
     ->fields('lists', ['title', 'description', 'public', 'id', 'uid'])
     ->condition('public', '1');
   $cond_group = $query->orConditionGroup()
-      ->condition('title', "%" . $db->escapeLike($term) . "%", 'LIKE')
-      ->condition('description', "%" . $db->escapeLike($term) . "%", 'LIKE');
+    ->condition('title', "%" . $db->escapeLike($term) . "%", 'LIKE')
+    ->condition('description', "%" . $db->escapeLike($term) . "%", 'LIKE');
   $query->condition($cond_group);
 
   $lists['total'] = $query->execute()->fetchAll();
@@ -313,7 +330,8 @@ function arborcat_lists_search_lists($term) {
   return $lists;
 }
 
-function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_order_desc') {
+function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_order_desc')
+{
   $db = \Drupal::database();
   $offset = ($_GET['page'] ?? 0) * 20;
   if (($sort == 'list_order' || $sort == 'list_order_desc') && $term == '*') {
@@ -323,20 +341,17 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
     $limit = '';
   }
   $order = ($sort == 'list_order_desc' ? 'DESC' : 'ASC');
-  $query = $db->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order $order$limit",
-      [':lid' => $lid]);
+  $query = $db->query(
+    "SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order $order$limit",
+    [':lid' => $lid]
+  );
   $items = $query->fetchAll();
   if (!count($items)) {
     return NULL;
   }
 
   $hosts = [
-    [
-      'host' => \Drupal::config('arborelastic.settings')->get('arborelastic_host'),
-      'port' => \Drupal::config('arborelastic.settings')->get('arborelastic_port'),
-      'user' => \Drupal::config('arborelastic.settings')->get('arborelastic_user'),
-      'pass' => \Drupal::config('arborelastic.settings')->get('arborelastic_pass'),
-    ]
+    \Drupal::config('arborelastic.settings')->get('arborelastic_host') . ':' .  \Drupal::config('arborelastic.settings')->get('arborelastic_port')
   ];
 
   $es_client = ClientBuilder::create()->setHosts($hosts)->build();
@@ -347,7 +362,7 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
         [
           'query_string' => [
             'query' => "*$term*",
-            'fields' => ['_all'],
+            'fields' => ['title', 'callnum', 'callnums', 'author', 'artist'],
             'default_operator' => 'and'
           ]
         ]
@@ -380,8 +395,7 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
 
   try {
     $results = $es_client->search($params);
-  }
-  catch (\Exception $e) {
+  } catch (\Exception $e) {
     $result = [
       'error' => 'Elasticsearch Query Failed',
       'message' => $e->getMessage(),
@@ -397,8 +411,10 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
     }
   }
   // get totals for records due to ones that don't exist anymore
-  $query = $db->query("SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order",
-    [':lid' => $lid]);
+  $query = $db->query(
+    "SELECT * FROM arborcat_user_list_items WHERE list_id=:lid ORDER BY list_order",
+    [':lid' => $lid]
+  );
   $items = $query->fetchAll();
   $es_query['bool']['filter']['terms']['_id'] = [];
   foreach ($items as $item) {
@@ -410,54 +426,53 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
 
   try {
     $totals = $es_client->search($params);
-  }
-  catch (\Exception $e) {
+  } catch (\Exception $e) {
     $result = [
       'error' => 'Elasticsearch Query Failed',
       'message' => $e->getMessage(),
     ];
   }
 
-  $results['hits']['total'] = $totals['hits']['total'];
+  $results['hits']['total']['value'] = $totals['hits']['total']['value'];
 
   return $results;
-
 }
 
-function arborcat_lists_remove_checkout_history($uid, $pnum) {
-    $db = \Drupal::database();
-    $response = ['success' => false];
-    $checkout_list = $db->query("SELECT * FROM arborcat_user_lists WHERE title like '%Checkout History' AND uid=:uid AND pnum=:pnum", 
-                      [':uid' => $uid, ':pnum' => $pnum])->fetch();
-    if ($checkout_list && $checkout_list->id) {
+function arborcat_lists_remove_checkout_history($uid, $pnum)
+{
+  $db = \Drupal::database();
+  $response = ['success' => false];
+  $checkout_list = $db->query(
+    "SELECT * FROM arborcat_user_lists WHERE title like '%Checkout History' AND uid=:uid AND pnum=:pnum",
+    [':uid' => $uid, ':pnum' => $pnum]
+  )->fetch();
+  if ($checkout_list && $checkout_list->id) {
 
-      $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
 
-      if ($user->get('uid')->value == $checkout_list->uid || $user->hasRole('administrator')) {
-        arborcat_lists_delete_list($checkout_list->id);
-        $response['success'] = true;
-      } 
-      else {
-        $response['success'] = false;
-        $response['error'] = "You don't have permission to delete this list";
-      }
-    } 
-    else {
-      $response['error'] = "No list found for $uid, $pnum";
+    if ($user->get('uid')->value == $checkout_list->uid || $user->hasRole('administrator')) {
+      arborcat_lists_delete_list($checkout_list->id);
+      $response['success'] = true;
+    } else {
       $response['success'] = false;
+      $response['error'] = "You don't have permission to delete this list";
     }
+  } else {
+    $response['error'] = "No list found for $uid, $pnum";
+    $response['success'] = false;
+  }
 
-    if ($response['success'] == true ) {
-      $response['message'] = "Deleted checkout history list for $pnum";
-    }
-    else {
-      \Drupal::messenger()->addMessage($response['error']);
-    }
+  if ($response['success'] == true) {
+    $response['message'] = "Deleted checkout history list for $pnum";
+  } else {
+    \Drupal::messenger()->addMessage($response['error']);
+  }
 
-    return $response;
+  return $response;
 }
 
-function arborcat_lists_delete_list($list_id) {
+function arborcat_lists_delete_list($list_id)
+{
   $connection = \Drupal::database();
   $connection->delete('arborcat_user_list_items')
     ->condition('list_id', $list_id)
@@ -467,7 +482,8 @@ function arborcat_lists_delete_list($list_id) {
     ->execute();
 }
 
-function arborcat_fix_checkout_history() {
+function arborcat_fix_checkout_history()
+{
   $response = [];
   $db = \Drupal::database();
   // Retrieve all the "problem" COH records (pnum = patron_id)
@@ -502,19 +518,19 @@ function arborcat_fix_checkout_history() {
   $processed_successfully_count = 0;
 
   // ==================================== MAIN LOOP ==================================
-  foreach($problem_checkout_lists as $problem_co_list) {
+  foreach ($problem_checkout_lists as $problem_co_list) {
 
 
     $match_list_ids = [];
     // build up an array of matching "correct" list ids that match uid with problem list uid
-    foreach($checkout_lists_pnum_0 as $co_list_pnum_0) {
+    foreach ($checkout_lists_pnum_0 as $co_list_pnum_0) {
       if ($problem_co_list->uid == $co_list_pnum_0->uid) {
         $match_list_ids[] = $co_list_pnum_0->id;
         //$match_stuff[] = $co_list_pnum_0->title;
         //$match_stuff[] = $co_list_pnum_0->description;
       }
     }
-    
+
     if (count($match_list_ids) > 0) {
       $match_count += 1;
       if (count($match_list_ids) == 1) {
@@ -522,31 +538,29 @@ function arborcat_fix_checkout_history() {
         // get the problem list items for the problem list
         $db = \Drupal::database();
         $query = $db->select('arborcat_user_list_items', 'auli')
-                    ->fields('auli', ['bib'])
-                    ->condition('list_id', $problem_co_list->id);
+          ->fields('auli', ['bib'])
+          ->condition('list_id', $problem_co_list->id);
         $problem_list_items = $query->execute()->fetchAll();
         $num_problem_list_items += count($problem_list_items);
 
         // Loop through each of the items in the problem list and try addiing them to the "correct" list
         // Checking for more than one "correct" Checkout History list before adding the items.
-        foreach($problem_list_items as $problem_item){
+        foreach ($problem_list_items as $problem_item) {
           // process the 1 to 1 matching Checkout Histories
           $result = arborcat_lists_add_list_item($target_cohist_list_id, $problem_item->bib);
           $processed_successfully_count += 1;
 
           arborcat_lists_delete_list($problem_co_list->id);
         }
-      }
-      else {
+      } else {
         $multiple_matches_count += 1;
         $multiple_matches[] = ['uid: ' . $problem_co_list->uid, $match_list_ids];
       }
-    }
-    else {
+    } else {
       $no_match_count += 1;
       //$logline = "#$count |-| " . $problem_co_list->id;
       $no_matches[] = $problem_co_list->id;
-    }  
+    }
 
     $count += 1;
   }
