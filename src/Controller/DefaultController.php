@@ -516,7 +516,7 @@ class DefaultController extends ControllerBase {
 
   public function cancel_pickup_request($patron_barcode, $encrypted_request_id, $hold_shelf_expire_date) {
     $patron_id = arborcat_patron_id_from_barcode($patron_barcode);
-    $cancel_record = $this->find_record_to_cancel($patron_id, $encrypted_request_id);
+    $cancel_record = (array) $this->find_record_to_cancel($patron_id, $encrypted_request_id);
     if (count($cancel_record) > 0) {
       $db = \Drupal::database();
       $guzzle = \Drupal::httpClient();
@@ -529,15 +529,15 @@ class DefaultController extends ControllerBase {
       $today->setTime(23, 50, 00);
       $tomorrow = clone($today);
       $tomorrow->modify('+1 day');
-      $pickup_time = new DateTime($cancel_record->pickupDate);
+      $pickup_time = new DateTime($cancel_record['pickupDate']);
       $pickup_time->setTime(23, 59, 59);
 
       if ($pickup_time >= $tomorrow) {
         $user = \Drupal::currentUser();
-        if ($patron_id == $cancel_record->patronId || $user->hasRole('staff') || $user->hasRole('administrator')) {
+        if ($patron_id == $cancel_record['patronId'] || $user->hasRole('staff') || $user->hasRole('administrator')) {
           // go ahead and cancel the record
           $num_deleted = $db->delete('arborcat_patron_pickup_request')
-                            ->condition('id', $cancel_record->id, '=')
+                            ->condition('id', $cancel_record['id'], '=')
                             ->execute();
           if (1 == $num_deleted) {
             // Check if the expire time > tomorrow, if not set it to tomorrow
@@ -546,7 +546,7 @@ class DefaultController extends ControllerBase {
               $hold_shelf_expire_date = date_format($tomorrow, 'Y-m-d');
             }
             // Now update the hold_request expire_time in Evergreen
-            $url = "$api_url/patron/$self_check_api_key-$patron_barcode/update_hold/" . $cancel_record->requestId . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
+            $url = "$api_url/patron/$self_check_api_key-$patron_barcode/update_hold/" . $cancel_record['requestId'] . "?shelf_expire_time=$hold_shelf_expire_date 23:59:59";
             $updated_hold = $guzzle->get($url)->getBody()->getContents();
             $response['success'] = 'Pickup Request Canceled';
           } else {
