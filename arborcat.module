@@ -84,7 +84,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
   $messenger = \Drupal::messenger();
 
   if ($fines->total > 25) {
-    $messenger->addError("We're sorry, but your account balance is over $25. You won't be able to renew or request items.");
+    $messenger->addError("We're sorry, but your account balance is over $25. You won't be able to renew items and requests won't be fulfilled.");
     $patron_clean = FALSE;
   }
   if (strtotime($patron->expires) < time()) {
