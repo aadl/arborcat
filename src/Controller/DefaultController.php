@@ -45,19 +45,21 @@ class DefaultController extends ControllerBase {
 
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
+    $bib_record = (object)[]; 
     try {
-      $json = json_decode($guzzle->get($get_url)->getBody()->getContents());
+      $response_object = json_decode($guzzle->get($get_url)->getBody()->getContents());
       if ($get_record_selector == 'harvest') {
-        $bib_record = $json->bib;
-        $bib_record->_id = $json->_id;
+        $bib_record = $response_object->bib;
+        $bib_record->_id = $response_object->_id;
       }
       else {
-        $bib_record = $json;
+        $bib_record = $response_object;
       }
       // Copy from Elasticsearch record id to same format as CouchDB _id
       //$bib_record->_id = $bib_record->id;
       $bib_record->id = $bib_record->_id;
-    } catch (\Exception $e) {
+    } 
+    catch (\Exception $e) {
       $bib_record->_id = NULL;
     }
 
