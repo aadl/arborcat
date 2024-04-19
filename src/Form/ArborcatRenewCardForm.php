@@ -117,7 +117,7 @@ class ArborcatRenewCardForm extends FormBase {
   public function validateForm(array &$form, FormStateInterface $form_state) {
     $patron = $form_state->getValue('patron');
 
-    if ($form_state->getValue('last_name') != $patron->evg_user->family_name) {
+    if (strtolower($form_state->getValue('last_name')) != strtolower($patron->evg_user->family_name)) {
       $form_state->setErrorByName('last_name', $this->t('Last name does not match record on file'));
     }
     if ($form_state->getValue('zip') != $patron->evg_user->addresses[0]->post_code) {
