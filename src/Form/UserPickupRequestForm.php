@@ -16,9 +16,6 @@ class UserPickupRequestForm extends FormBase {
   }
 
   public function buildForm(array $form, FormStateInterface $form_state, string $patron_id = NULL, string $request_location = NULL, string $mode = NULL) {
-    $messenger = \Drupal::messenger();
-    $message = \Drupal\Core\Render\Markup::create('<strong style="font-size:1.3em;">Pickup Appointments are no longer needed unless you want to use a locker! For lobby pickup, just come in and check out your items!</strong>');
-    $messenger->addStatus($message);
     $guzzle = \Drupal::httpClient();
     $api_key = \Drupal::config('arborcat.settings')->get('api_key');
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
