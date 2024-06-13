@@ -167,7 +167,7 @@ class DefaultController extends ControllerBase {
     $ratings = $query->fetch();
     $ratings->average = round($ratings->average, 1);
     $ratings->user_rating = '';
-    
+
     // retrieve user ratings and set up review form IF the user is authenticated
     $review_form = null;
     if ($user->isAuthenticated()) {
@@ -180,7 +180,7 @@ class DefaultController extends ControllerBase {
       )->fetch();
       $ratings->user_rating = $user_rating->rating ?? '';
     }
-    
+
     // if summer game codes, convert to array so template can loop over
     if (isset($bib_record->gamecodes)) {
       if (\Drupal::moduleHandler()->moduleExists('summergame')) {
@@ -193,10 +193,13 @@ class DefaultController extends ControllerBase {
           foreach ($bib_record->gamecodes as $gameterm => $gameterm_gamecodes) {
             foreach ($gameterm_gamecodes as $gamecode) {
               $badges = $db->query(
-                'SELECT d.nid, d.title FROM node__field_badge_formula f, node_field_data d ' .
+                'SELECT d.nid, d.title, g.field_badge_game_term_value ' .
+                'FROM node__field_badge_formula f, node_field_data d, node__field_badge_game_term g ' .
                 'WHERE f.entity_id = d.nid ' .
-                'AND f.field_badge_formula_value REGEXP :gamecode',
-                [':gamecode' => '[[:<:]]' . $gamecode . '[[:>:]]']
+                'AND d.nid = g.entity_id ' .
+                'AND f.field_badge_formula_value REGEXP :gamecode ' .
+                'AND g.field_badge_game_term_value = :gameterm',
+                [':gamecode' => '[[:<:]]' . $gamecode . '[[:>:]]', ':gameterm' => $gameterm]
               )->fetchAll();
               if (count($badges)) {
                 foreach ($badges as $badge) {
