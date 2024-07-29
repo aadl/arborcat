@@ -328,7 +328,7 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
       \Drupal::messenger()->addError('An error occurred Duplicate record!');
     return -1;
   }
-  // If a record exists containing the $custom_id, update the record and then return the id of the updated record, 
+  // If a record exists containing the $custom_id, update the record and then return the id of the updated record,
   // otherwise insert a new record with the custom_id and return the $id of the new record
   if (count($results) > 0) {
     $record_id = $results[0];
@@ -348,12 +348,12 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
         'locker_code'   => $locker_code,
         'completed'     => ($pickup_request_type == 'GRAB_BAG' || $pickup_request_type == 'PRINT_JOB') ? 1 : 0
       ]);
-    
+
     $transaction = $db->startTransaction();
     try {
       $dbaction->execute();
       $return_val = $record_id;
-    } 
+    }
     catch (Exception $e) {
       \Drupal::messenger()->addError('An error occurred updating this pickup request. Exception Message: ' . $e->getMessage());
       $transaction->rollback();
@@ -362,7 +362,7 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
     unset($transaction);
 
     return $return_val;
-  } 
+  }
   else {
     $dbaction = $db->insert('arborcat_patron_pickup_request')->fields([
       'requestType'   => $pickup_request_type,
@@ -379,12 +379,12 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
       'locker_code'   => $locker_code,
       'completed'     => ($pickup_request_type == 'GRAB_BAG' || $pickup_request_type == 'PRINT_JOB') ? 1 : 0
     ]);
-    
+
     $transaction = $db->startTransaction();
     try {
       $id = $dbaction->execute();
       $return_val = $id;
-    } 
+    }
     catch (Exception $e) {
       \Drupal::messenger()->addError('An error occurred saving this pickup request. Exception Message: ' . $e->getMessage());
       $transaction->rollback();
@@ -440,6 +440,54 @@ function arborcat_patron_id_from_barcode($barcode) {
   }
 
   return $return_val;
+}
+
+function arborcat_check_active_barcode($pnum) {
+  // Find primary barcode for given pnum
+  $barcode = 0;
+  $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+  $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+  $guzzle = \Drupal::httpClient();
+  $request_url = "$api_url/patron?apikey=$api_key&pnum=$pnum";
+
+  try {
+    $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
+  } catch (Exception $e) {
+    // Note no error message is not set here - check in calling methods for a valid return and
+    // an error message is displayed to the user there.
+    return 0;
+  }
+  if ($json) {
+    $barcode = $json->card;
+  }
+
+  if ($barcode) {
+    // Find all user accounts with existing pnum
+    $uids = \Drupal::entityQuery('user')->condition('field_patron_id', $pnum)->accessCheck(FALSE)->execute();
+
+    foreach ($uids as $uid) {
+      // Check the barcode for the corresponding pnum for each user
+      $account = \Drupal\user\Entity\User::load($uid);
+      $patron_ids = $account->get('field_patron_id')->getValue();
+      $barcodes = $account->get('field_barcode')->getValue();
+
+      foreach ($patron_ids as $i => $field_patron_id) {
+        if ($field_patron_id['value'] == $pnum) {
+          // Found the right pnum, check the barcode
+          if ($barcodes[$i]['value'] != $barcode) {
+            // Mismatch, update barcode for user account and display message
+            $barcodes[$i]['value'] = $barcode;
+            $account->set('field_barcode', $barcodes);
+            $account->save();
+            \Drupal::messenger()->addMessage("Updated library card with new barcode: $barcode");
+          }
+          break;
+        }
+      }
+    }
+  }
+
+  return $barcode;
 }
 
 function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_request_id) {
