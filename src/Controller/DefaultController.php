@@ -405,6 +405,11 @@ class DefaultController extends ControllerBase {
     return new JsonResponse('Request could not be processed');
   }
 
+  public function barcode_update($pnum) {
+    $response = arborcat_check_active_barcode($pnum);
+    return new JsonResponse($response ? 'Success' : 'Error');
+  }
+
   // -----------------------------------------------------------
   // ---------------- Pickup Request-related methods -----------
   // -----------------------------------------------------------

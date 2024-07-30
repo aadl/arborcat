@@ -54,6 +54,13 @@ arborcat.barcode_form:
     _form: '\Drupal\arborcat\Form\ArborcatBarcodeForm'
   requirements:
     _permission: 'access arborcat'
+arborcat.barcode_update:
+  path: /barcodeupdate/{pnum}
+  defaults:
+    _title: 'Barcode Update'
+    _controller: '\Drupal\arborcat\Controller\DefaultController::barcode_update'
+  requirements:
+    _permission: 'access arborcat'
 arborcat.renew_card_form:
   path: /user/{uid}/edit/renewcard/{subaccount}
   defaults:

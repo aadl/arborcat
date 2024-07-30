@@ -450,6 +450,9 @@ function arborcat_check_active_barcode($pnum) {
   $guzzle = \Drupal::httpClient();
   $request_url = "$api_url/patron?apikey=$api_key&pnum=$pnum";
 
+  // Set up status message
+  $message = "\nBarcode Update for Patron ID: $pnum\n\n";
+
   try {
     $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
   } catch (Exception $e) {
@@ -465,26 +468,51 @@ function arborcat_check_active_barcode($pnum) {
     // Find all user accounts with existing pnum
     $uids = \Drupal::entityQuery('user')->condition('field_patron_id', $pnum)->accessCheck(FALSE)->execute();
 
-    foreach ($uids as $uid) {
-      // Check the barcode for the corresponding pnum for each user
-      $account = \Drupal\user\Entity\User::load($uid);
-      $patron_ids = $account->get('field_patron_id')->getValue();
-      $barcodes = $account->get('field_barcode')->getValue();
+    if (count($uids)) {
+      foreach ($uids as $uid) {
+        // Check the barcode for the corresponding pnum for each user
+        $account = \Drupal\user\Entity\User::load($uid);
+        $patron_ids = $account->get('field_patron_id')->getValue();
+        $barcodes = $account->get('field_barcode')->getValue();
 
-      foreach ($patron_ids as $i => $field_patron_id) {
-        if ($field_patron_id['value'] == $pnum) {
-          // Found the right pnum, check the barcode
-          if ($barcodes[$i]['value'] != $barcode) {
-            // Mismatch, update barcode for user account and display message
-            $barcodes[$i]['value'] = $barcode;
-            $account->set('field_barcode', $barcodes);
-            $account->save();
-            \Drupal::messenger()->addMessage("Updated library card with new barcode: $barcode");
+        foreach ($patron_ids as $i => $field_patron_id) {
+          if ($field_patron_id['value'] == $pnum) {
+            // Found the right pnum, check the barcode
+            if ($barcodes[$i]['value'] != $barcode) {
+              // Mismatch, update barcode for user account and display message
+              $old_barcode = $barcodes[$i]['value'];
+              $barcodes[$i]['value'] = $barcode;
+              $account->set('field_barcode', $barcodes);
+              $account->save();
+              $message .= "User Updated: ID = $uid, offset = $i, old = $old_barcode, new = $barcode\n";
+              \Drupal::messenger()->addMessage("Updated library card with new barcode: $barcode");
+            }
+            break;
           }
-          break;
         }
       }
     }
+    else {
+      // No drupal users with that barcode
+      $message .= "No Drupal User found with that Patron ID.\n" .
+                  "Primary Barcode: $barcode\n";
+      foreach ($json->evg_user->cards as $card) {
+        if ($card->barcode != $barcode) {
+          $message .= "Additional Barcode: $card->barcode\n";
+        }
+      }
+    }
+  }
+
+  // mail log message if email address is defined
+  $email = trim(\Drupal::config('arborcat.settings')->get('cardupdate_email'));
+  if ($email) {
+    $headers = "From: $email" . "\r\n" .
+             "Reply-To: $email" . "\r\n" .
+             "X-Mailer: PHP/" . phpversion() .
+             "Content-Type: text/html; charset=\"us-ascii\"";
+
+    mail($email, "Card Update Log for Patron: $pnum", $message);
   }
 
   return $barcode;
