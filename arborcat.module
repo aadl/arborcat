@@ -451,7 +451,7 @@ function arborcat_check_active_barcode($pnum) {
   $request_url = "$api_url/patron?apikey=$api_key&pnum=$pnum";
 
   // Set up status message
-  $message = "\nBarcode Update for Patron ID: $pnum\n\n";
+  $message = "\nBarcode Update for Evergreen Patron ID: $pnum\n\n";
 
   try {
     $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
