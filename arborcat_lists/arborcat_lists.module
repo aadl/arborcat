@@ -362,7 +362,7 @@ function arborcat_lists_search_list_items($lid = 0, $term = '', $sort = 'list_or
         [
           'query_string' => [
             'query' => "*$term*",
-            'fields' => ['title', 'callnum', 'callnums', 'author', 'artist'],
+            'fields' => ['title', 'callnum', 'callnums', 'author', 'artist', 'addl_author', 'notes', 'subjects'],
             'default_operator' => 'and'
           ]
         ]
