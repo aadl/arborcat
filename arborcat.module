@@ -447,6 +447,7 @@ function arborcat_check_active_barcode($pnum) {
   $barcode = 0;
   $api_key = \Drupal::config('arborcat.settings')->get('api_key');
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+  $overdrive_update_url = \Drupal::config('arborcat.settings')->get('overdrive_update_url');
   $guzzle = \Drupal::httpClient();
   $request_url = "$api_url/patron?apikey=$api_key&pnum=$pnum";
 
@@ -486,6 +487,14 @@ function arborcat_check_active_barcode($pnum) {
               $account->save();
               $message .= "User Updated: ID = $uid, offset = $i, old = $old_barcode, new = $barcode\n";
               \Drupal::messenger()->addMessage("Updated library card with new barcode: $barcode");
+
+              // Attempt to update in Overdrive
+              $message .= "Overdrive Update Script:\n";
+              $update_url = "$overdrive_update_url?old=$old_barcode&new=$barcode";
+              $response = json_decode($guzzle->get($update_url)->getBody()->getContents());
+              foreach ($response as $field => $value) {
+                $message .= "$field: $value\n";
+              }
             }
             break;
           }

@@ -175,6 +175,15 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 100,
     ];
 
+    $form['overdrive_update_url'] = [
+      '#type' => 'textfield',
+      '#title' => t("Overdrive Update URL"),
+      '#description' => t("Address of the Overdrive update script (e.g. http://host/overdrive/merge)"),
+      '#default_value' => $arborcat_settings->get('overdrive_update_url'),
+      '#size' => 50,
+      '#maxlength' => 100,
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 }
