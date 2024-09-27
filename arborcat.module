@@ -447,7 +447,6 @@ function arborcat_check_active_barcode($pnum) {
   $barcode = 0;
   $api_key = \Drupal::config('arborcat.settings')->get('api_key');
   $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-  $overdrive_update_url = \Drupal::config('arborcat.settings')->get('overdrive_update_url');
   $guzzle = \Drupal::httpClient();
   $request_url = "$api_url/patron?apikey=$api_key&pnum=$pnum";
 
@@ -489,12 +488,7 @@ function arborcat_check_active_barcode($pnum) {
                 \Drupal::messenger()->addMessage("Updated library card with new barcode: $barcode");
 
                 // Attempt to update in Overdrive
-                $message .= "Overdrive Update Script:\n";
-                $update_url = "$overdrive_update_url?old=$drupal_barcode&new=$barcode";
-                $response = json_decode($guzzle->get($update_url)->getBody()->getContents());
-                foreach ($response as $field => $value) {
-                  $message .= "  $field: $value\n";
-                }
+                $message .= arborcat_update_overdrive($drupal_barcode, $barcode);
               }
               else {
                 $message .= "no update needed for barcode $drupal_barcode\n";
@@ -508,10 +502,23 @@ function arborcat_check_active_barcode($pnum) {
         // No drupal users with that barcode
         $message .= "No Drupal User found with that Patron ID.\n" .
                     "Primary Barcode: $barcode\n";
+        $additional_barcodes = [];
         foreach ($json->evg_user->cards as $card) {
           if ($card->barcode != $barcode) {
-            $message .= "Additional Barcode: $card->barcode\n";
+            $additional_barcodes[] = $card->barcode;
           }
+        }
+        if (count($additional_barcodes) == 0) {
+          $message .= "No additional barcodes in Evergreen.\n";
+        }
+        elseif (count($additional_barcodes) == 1) {
+          $old_barcode = reset($additional_barcodes);
+          $message .= "ONE additional barcode found in Evergreen: $old_barcode\n";
+          $message .= arborcat_update_overdrive($old_barcode, $barcode);
+        }
+        else {
+          $message .= "MULTIPLE additional barcodes found in Evergreen:\n";
+          $message .= implode("\n", $additional_barcodes);
         }
       }
     }
@@ -529,6 +536,20 @@ function arborcat_check_active_barcode($pnum) {
   }
 
   return $barcode;
+}
+
+function arborcat_update_overdrive($old_barcode = '', $new_barcode = '') {
+  $overdrive_update_url = \Drupal::config('arborcat.settings')->get('overdrive_update_url');
+  $guzzle = \Drupal::httpClient();
+  $message = "Overdrive Update Script:\n";
+
+  $update_url = "$overdrive_update_url?old=$old_barcode&new=$new_barcode";
+  $response = json_decode($guzzle->get($update_url)->getBody()->getContents());
+  foreach ($response as $field => $value) {
+    $message .= "  $field: $value\n";
+  }
+
+  return $message;
 }
 
 function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_request_id) {
