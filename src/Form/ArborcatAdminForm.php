@@ -149,7 +149,7 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 128,
       '#description' => 'URL Address of Geocoding Service for address lookup (e.g. https://nominatim.openstreetmap.org/search)',
     ];
-    
+
     $form['geocode_key'] = [
       '#type' => 'textfield',
       '#title' => 'Home Code Geocode API Key',
@@ -158,12 +158,30 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 128,
       '#description' => 'API Key to access Geocoding Service for address lookup',
     ];
-    
+
     $form['api_use_harvest_option_for_bib'] = [
       '#type' => 'checkbox',
       '#title' => t('Use Harvest option when requesting bib records using the API'),
       '#default_value' => $arborcat_settings->get('api_use_harvest_option_for_bib'),
       '#description' => t('Make bib record api call using  "harvest" option when requesting bib records using the API'),
+    ];
+
+    $form['cardupdate_email'] = [
+      '#type' => 'textfield',
+      '#title' => t("Card Update Address"),
+      '#description' => t("Email address to send log of card updates"),
+      '#default_value' => $arborcat_settings->get('cardupdate_email'),
+      '#size' => 50,
+      '#maxlength' => 100,
+    ];
+
+    $form['overdrive_update_url'] = [
+      '#type' => 'textfield',
+      '#title' => t("Overdrive Update URL"),
+      '#description' => t("Address of the Overdrive update script (e.g. http://host/overdrive/merge)"),
+      '#default_value' => $arborcat_settings->get('overdrive_update_url'),
+      '#size' => 50,
+      '#maxlength' => 100,
     ];
 
     return parent::buildForm($form, $form_state);
