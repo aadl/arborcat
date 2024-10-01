@@ -452,6 +452,7 @@ function arborcat_check_active_barcode($pnum) {
 
   // Set up status message
   $message = "\nBarcode Update for Evergreen Patron ID: $pnum\n\n";
+  $email_subject = "Card Update Log for Patron: $pnum";
 
   try {
     $json = json_decode($guzzle->get($request_url)->getBody()->getContents());
@@ -519,6 +520,7 @@ function arborcat_check_active_barcode($pnum) {
         else {
           $message .= "MULTIPLE additional barcodes found in Evergreen:\n";
           $message .= implode("\n", $additional_barcodes);
+          $email_subject .= " [MULTIPLE BARCODES]";
         }
       }
     }
@@ -532,7 +534,7 @@ function arborcat_check_active_barcode($pnum) {
              "X-Mailer: PHP/" . phpversion() .
              "Content-Type: text/html; charset=\"us-ascii\"";
 
-    mail($email, "Card Update Log for Patron: $pnum", $message, $headers);
+    mail($email, $email_subject, $message, $headers);
   }
 
   return $barcode;
