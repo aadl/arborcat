@@ -489,7 +489,11 @@ function arborcat_check_active_barcode($pnum) {
                 \Drupal::messenger()->addMessage("Updated library card with new barcode: $barcode");
 
                 // Attempt to update in Overdrive
-                $message .= arborcat_update_overdrive($drupal_barcode, $barcode);
+                $response = arborcat_update_overdrive($drupal_barcode, $barcode);
+                if ($response['status'] == 'error') {
+                  $email_subject .= " [OVERDRIVE UPDATE ERROR]";
+                }
+                $message .= $response['message'];
               }
               else {
                 $message .= "no update needed for barcode $drupal_barcode\n";
@@ -515,7 +519,11 @@ function arborcat_check_active_barcode($pnum) {
         elseif (count($additional_barcodes) == 1) {
           $old_barcode = reset($additional_barcodes);
           $message .= "ONE additional barcode found in Evergreen: $old_barcode\n";
-          $message .= arborcat_update_overdrive($old_barcode, $barcode);
+          $response = arborcat_update_overdrive($old_barcode, $barcode);
+          if ($response['status'] == 'error') {
+            $email_subject .= " [OVERDRIVE UPDATE ERROR]";
+          }
+          $message .= $response['message'];
         }
         else {
           $message .= "MULTIPLE additional barcodes found in Evergreen:\n";
@@ -543,15 +551,28 @@ function arborcat_check_active_barcode($pnum) {
 function arborcat_update_overdrive($old_barcode = '', $new_barcode = '') {
   $overdrive_update_url = \Drupal::config('arborcat.settings')->get('overdrive_update_url');
   $guzzle = \Drupal::httpClient();
-  $message = "Overdrive Update Script:\n";
+
+  $result = [
+    'status' => 'success',
+    'message' => "Overdrive Update Script:\n",
+  ];
 
   $update_url = "$overdrive_update_url?old=$old_barcode&new=$new_barcode";
-  $response = json_decode($guzzle->get($update_url)->getBody()->getContents());
-  foreach ($response as $field => $value) {
-    $message .= "  $field: $value\n";
+
+  try {
+    $response = json_decode($guzzle->get($update_url)->getBody()->getContents());
+  } catch (Exception $e) {
+    $result['status'] = 'error';
+    $result['message'] .= 'EXCEPTION: ' . $e->getMessage();
   }
 
-  return $message;
+  if (isset($response)) {
+    foreach ($response as $field => $value) {
+      $result['message'] .= "  $field: $value\n";
+    }
+  }
+
+  return $result;
 }
 
 function arborcat_custom_pickup_request($pickup_request_type, $custom_pickup_request_id) {
