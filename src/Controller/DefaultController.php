@@ -396,7 +396,22 @@ class DefaultController extends ControllerBase {
     if ($user->hasRole('staff') || $user->hasRole('administrator')) {
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
+      $selfcheck_key = \Drupal::config('arborcat.settings')->get('selfcheck_key');
+      $selfcheck_key .= '-' .  $barcode;
       $guzzle = \Drupal::httpClient();
+      $patron = json_decode($guzzle->get("$api_url/patron/$selfcheck_key/get")->getBody()->getContents());
+      // return new JsonResponse($patron);
+      foreach ($patron->evg_user->stat_cat_entries as $stat_cat) {
+        if (($stat_cat->stat_cat == 4 && $stat_cat->stat_cat_entry == 'True') && $loc != 102) {
+          $response = [
+            'status' => 'ERROR',
+            'errors' => [
+              'Homebound patrons can only have items requested for Downtown'
+            ]
+          ];
+          return new JsonResponse(json_encode($response));
+        }
+      }
       $hold = $guzzle->get("$api_url/patron/$barcode|$api_key/place_hold/$bnum/$loc/$type")->getBody()->getContents();
 
       return new JsonResponse($hold);
