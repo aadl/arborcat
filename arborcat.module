@@ -487,13 +487,6 @@ function arborcat_check_active_barcode($pnum) {
                 $account->save();
                 $message .= "UPDATED barcode: old = $drupal_barcode, new = $barcode\n";
                 \Drupal::messenger()->addMessage("Updated library card with new barcode: $barcode");
-
-                // Attempt to update in Overdrive
-                $response = arborcat_update_overdrive($drupal_barcode, $barcode);
-                if ($response['status'] == 'error') {
-                  $email_subject .= " [OVERDRIVE UPDATE ERROR]";
-                }
-                $message .= $response['message'];
               }
               else {
                 $message .= "no update needed for barcode $drupal_barcode\n";
@@ -503,33 +496,32 @@ function arborcat_check_active_barcode($pnum) {
           }
         }
       }
+
+      // Check for additional barcodes in Evergreen
+      $additional_barcodes = [];
+      foreach ($json->evg_user->cards as $card) {
+        if ($card->barcode != $barcode) {
+          $additional_barcodes[$card->id] = $card->barcode;
+        }
+      }
+
+      if (count($additional_barcodes) > 0) {
+        ksort($additional_barcodes); // No strict dates on barcodes, but assume lower IDs are older
+        $additional_barcodes[] = $barcode; // Place current barcode at the end of the update list
+
+        // Attempt to update Overdrive barcodes, one at a time, oldest to newest
+        while ($old_barcode = current($additional_barcodes)) {
+          if ($new_barcode = next($additional_barcodes)) {
+            $response = arborcat_update_overdrive($old_barcode, $new_barcode);
+            if ($response['status'] == 'error') {
+              $email_subject .= " [OVERDRIVE UPDATE ERROR]";
+            }
+            $message .= "\n" . $response['message'];
+          }
+        }
+      }
       else {
-        // No drupal users with that barcode
-        $message .= "No Drupal User found with that Patron ID.\n" .
-                    "Primary Barcode: $barcode\n";
-        $additional_barcodes = [];
-        foreach ($json->evg_user->cards as $card) {
-          if ($card->barcode != $barcode) {
-            $additional_barcodes[] = $card->barcode;
-          }
-        }
-        if (count($additional_barcodes) == 0) {
-          $message .= "No additional barcodes in Evergreen.\n";
-        }
-        elseif (count($additional_barcodes) == 1) {
-          $old_barcode = reset($additional_barcodes);
-          $message .= "ONE additional barcode found in Evergreen: $old_barcode\n";
-          $response = arborcat_update_overdrive($old_barcode, $barcode);
-          if ($response['status'] == 'error') {
-            $email_subject .= " [OVERDRIVE UPDATE ERROR]";
-          }
-          $message .= $response['message'];
-        }
-        else {
-          $message .= "MULTIPLE additional barcodes found in Evergreen:\n";
-          $message .= implode("\n", $additional_barcodes);
-          $email_subject .= " [MULTIPLE BARCODES]";
-        }
+        $message .= "No additional barcodes in Evergreen.\n";
       }
     }
   }
@@ -554,7 +546,7 @@ function arborcat_update_overdrive($old_barcode = '', $new_barcode = '') {
 
   $result = [
     'status' => 'success',
-    'message' => "Overdrive Update Script:\n",
+    'message' => "Overdrive Update Script $old_barcode to $new_barcode:\n",
   ];
 
   $update_url = "$overdrive_update_url?old=$old_barcode&new=$new_barcode";
