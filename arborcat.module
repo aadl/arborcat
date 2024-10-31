@@ -462,11 +462,11 @@ function arborcat_check_active_barcode($pnum) {
   if ($json) {
     $barcode = $json->card;
 
+    // Find all user accounts with existing pnum
+    $uids = \Drupal::entityQuery('user')->condition('field_patron_id', $pnum)->accessCheck(FALSE)->execute();
+
     if ($barcode) {
       $message .= "Evergreen Active Barcode: $barcode\n";
-
-      // Find all user accounts with existing pnum
-      $uids = \Drupal::entityQuery('user')->condition('field_patron_id', $pnum)->accessCheck(FALSE)->execute();
 
       if (count($uids)) {
         foreach ($uids as $uid) {
@@ -522,6 +522,39 @@ function arborcat_check_active_barcode($pnum) {
       }
       else {
         $message .= "No additional barcodes in Evergreen.\n";
+      }
+    }
+    else {
+      // No barcode in Evergreen, check if purged
+      $message .= "No barcode in Evergreen";
+      if (strpos($json->evg_user->usrname, "$pnum-PURGED") === 0) {
+        $message .= ', user record PURGED: ' . $json->evg_user->usrname;
+      }
+      $message .= "\n";
+
+      // Check if drupal users
+      if (count($uids)) {
+        foreach ($uids as $uid) {
+          // Remove patron field data from user record
+          $account = \Drupal\user\Entity\User::load($uid);
+          $api_keys = $account->get('field_api_key')->getValue();
+          $barcodes = $account->get('field_barcode')->getValue();
+          $patron_ids = $account->get('field_patron_id')->getValue();
+
+          foreach ($patron_ids as $i => $field_patron_id) {
+            if ($field_patron_id['value'] == $pnum) {
+              $message .= "\nDrupal User found: ID = $uid, offset = $i, api_key, barcode, patron_id fields removed\n";
+              unset($api_keys[$i]);
+              unset($barcodes[$i]);
+              unset($patron_ids[$i]);
+            }
+          }
+
+          $account->set('field_api_key', $api_keys);
+          $account->set('field_barcode', $barcodes);
+          $account->set('field_patron_id', $patron_ids);
+          $account->save();
+        }
       }
     }
   }
