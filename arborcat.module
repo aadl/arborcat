@@ -531,7 +531,7 @@ function arborcat_check_active_barcode($pnum) {
         $message .= ', user record PURGED: ' . $json->evg_user->usrname;
       }
       $message .= "\n";
-
+/*
       // Check if drupal users
       if (count($uids)) {
         foreach ($uids as $uid) {
@@ -556,6 +556,7 @@ function arborcat_check_active_barcode($pnum) {
           $account->save();
         }
       }
+ */
     }
   }
 
