@@ -1,6 +1,6 @@
 <?php
 
-use Drupal\Core\Datetime\DrupalDateTime;
+use Predis\Client;
 
 /**
  * Display help and module information
@@ -575,6 +575,10 @@ function arborcat_check_active_barcode($pnum) {
 }
 
 function arborcat_update_overdrive($old_barcode = '', $new_barcode = '') {
+  // Redis update
+  $redis = new Client(\Drupal::config('events.settings')->get('events_redis_conn'));
+  $redis->rpush('overdrive_updates', $old_barcode . ',' . $new_barcode);
+
   $overdrive_update_url = \Drupal::config('arborcat.settings')->get('overdrive_update_url');
   $guzzle = \Drupal::httpClient();
 
