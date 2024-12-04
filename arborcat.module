@@ -577,30 +577,12 @@ function arborcat_check_active_barcode($pnum) {
 function arborcat_update_overdrive($old_barcode = '', $new_barcode = '') {
   // Redis update
   $redis = new Client(\Drupal::config('events.settings')->get('events_redis_conn'));
-  $redis->rpush('overdrive_updates', $old_barcode . ',' . $new_barcode);
-
-  $overdrive_update_url = \Drupal::config('arborcat.settings')->get('overdrive_update_url');
-  $guzzle = \Drupal::httpClient();
+  $queue_count = $redis->rpush('overdrive_updates', $old_barcode . ',' . $new_barcode);
 
   $result = [
     'status' => 'success',
-    'message' => "Overdrive Update Script $old_barcode to $new_barcode:\n",
+    'message' => "Overdrive Update $old_barcode to $new_barcode: $queue_count in queue\n",
   ];
-
-  $update_url = "$overdrive_update_url?old=$old_barcode&new=$new_barcode";
-
-  try {
-    $response = json_decode($guzzle->get($update_url)->getBody()->getContents());
-  } catch (Exception $e) {
-    $result['status'] = 'error';
-    $result['message'] .= 'EXCEPTION: ' . $e->getMessage();
-  }
-
-  if (isset($response)) {
-    foreach ($response as $field => $value) {
-      $result['message'] .= "  $field: $value\n";
-    }
-  }
 
   return $result;
 }
