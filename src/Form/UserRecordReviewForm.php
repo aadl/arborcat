@@ -122,7 +122,67 @@ class UserRecordReviewForm extends FormBase {
           }
         }
       }
+
+      try {
+
+        //send some notifications
+        // <matcode>:<email>,<email>,<email>|<matcode>:<email>,<email>,<email>
+
+        $raw_emails_mat_codes = \Drupal::config('arborcat.settings')->get('review_notifications_by_mat_code');
+        $raw_emails_mat_codes_stripped = preg_replace('/\s+/', '', $raw_emails_mat_codes);
+        $sections = explode("|", $raw_emails_mat_codes_stripped);
+        $data = json_decode("{}");
+        if (count($sections) > 0) {
+          foreach($sections as $section){
+            $arr = explode(":", $section);
+            if (isset($arr[0]) && isset($arr[1])) {
+              $emails = explode(",", $arr[1]);
+              $data->{$arr[0]} = $emails;
+            }
+          }
+        }
+
+        //need to get the matt name from the bib somehow?
+        // $bib_record->mat_code
+        $api_url = \Drupal::config('arborcat.settings')->get('api_url');
+        $bib_id = $form_state->getValue('bib');
+
+        // set the api get record request to use either the api record "full" or "harvest" call depending whether
+        // the api being called is the development/testing version of the api located on pinkeye
+        $use_harvest_option = \Drupal::config('arborcat.settings')->get('api_use_harvest_option_for_bib');
+        $get_record_selector = ($use_harvest_option == true) ? 'harvest' : 'full';
+        $get_url = "$api_url/record/$bib_id/$get_record_selector";
+
+        $guzzle = \Drupal::httpClient();
+        try {
+          $json = json_decode($guzzle->get($get_url)->getBody()->getContents());
+          if ($get_record_selector == 'harvest') {
+            $bib_record = $json->bib;
+          }
+          else {
+            $bib_record = $json;
+          }
+        } catch (\Exception $e) {
+          $bib_record->_id = NULL;
+        }
+
+        if (isset($data->{$bib_record->mat_code})) {
+          //send the emails
+          foreach($data->{$bib_record->mat_code} as $email_address){
+             $headers = "From: notifications@aadl.org" . "\r\n" .
+             "Reply-To: notifications@aadl.org" . "\r\n" .
+             "X-Mailer: PHP/" . phpversion() .
+             "Content-Type: text/html; charset=\"us-ascii\"";
+
+             mail($email_address, "Review Submitted Notification", "A review was submitted for mat_code: $bib_record->mat_code on BIB record $bib_id", $headers);
+          }
+        }
+      } catch (\Exception $e) {
+
+      }
+
+
+
     }
   }
-
 }

@@ -184,6 +184,13 @@ class ArborcatAdminForm extends ConfigFormBase {
       '#maxlength' => 100,
     ];
 
+    $form['review_notifications_by_mat_code'] = [
+      '#type' => 'textarea',
+      '#title' => t("Review Notification By Mat Code"),
+      '#description' => t("Emails addresses per mat code to send notifications to when a review is submitted on an item of that mat code.  Format:  <matcode>:<email>,<email>,<email>|<matcode>:<email>,<email>,<email>"),
+      '#default_value' => $arborcat_settings->get('review_notifications_by_mat_code')
+    ];
+
     return parent::buildForm($form, $form_state);
   }
 }
