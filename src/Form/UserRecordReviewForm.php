@@ -174,7 +174,7 @@ class UserRecordReviewForm extends FormBase {
              "X-Mailer: PHP/" . phpversion() .
              "Content-Type: text/html; charset=\"us-ascii\"";
 
-             mail($email_address, "Review Submitted Notification", "A review was submitted for mat_code: $bib_record->mat_code on BIB record $bib_id", $headers);
+             mail($email_address, "Review Submitted Notification", "A review was submitted for mat_code: $bib_record->mat_code on BIB record https://aadl.org/catalog/record/$bib_id", $headers);
           }
         }
       } catch (\Exception $e) {
