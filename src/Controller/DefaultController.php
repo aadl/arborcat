@@ -95,7 +95,15 @@ class DefaultController extends ControllerBase {
         $bib_record->download_urls['mp3'] = $guzzle_result->download_url;
       }
       elseif ($bib_record->mat_code == 'zm') {
-        if (!(strncmp($bib_record->_id, "ib-", 3) === 0)) {
+        $licenses = ['ds-', 'ib-'];
+        $licensed = false;
+        foreach ($licenses as $prefix) {
+          if (str_starts_with($bib_record->_id, $prefix)) {
+            $licensed = true;
+            break;
+          }
+        }
+        if (!$licensed) {
           $guzzle_result = $this->try_guzzle_get("$api_url/download/$bib_record->_id/mp4");
           $bib_record->download_urls['mp4'] = $guzzle_result->download_url;
         }
