@@ -129,16 +129,14 @@ class DefaultController extends ControllerBase {
         }
       }
     }
-
     if (isset($bib_record->tracks)) {
-      foreach ($bib_record->tracks as $k => $track) {
-        $download_url = $guzzle->get("$api_url/download/$bib_record->_id/track/$k")->getBody()->getContents();
-        $bib_record->tracks->{$k}->download_url = json_decode($download_url)->download_url;
+      $tracklist = json_decode($guzzle->get("$api_url/download/$bib_record->_id/tracklist")->getBody()->getContents());
+      foreach ($tracklist as $k => $track) {
+        $bib_record->tracks->{$k}->download_url = $track->download_url;
       }
       $bib_record->tracks = (array) $bib_record->tracks;
       ksort($bib_record->tracks);
     }
-
     if (isset($bib_record->syndetics)) {
       $bib_record->syndetics = (array) $bib_record->syndetics;
     }
