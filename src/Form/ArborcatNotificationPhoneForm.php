@@ -53,7 +53,7 @@ class ArborcatNotificationPhoneForm extends FormBase {
         $api_keys = $account->get('field_api_key')->getValue();
 
         $form['phones'] = [
-          '#prefix' => '<h2>Update Catalog Notification Phone Number</h2>',
+          '#prefix' => '<h2>Update Notification Phone Number</h2>',
         ];
 
         // Check for existing barcodes and list with option to remove
