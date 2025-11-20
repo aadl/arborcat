@@ -1,2 +1,2 @@
 # arborcat
-Drupal 8 module providing catalog interface for Evergreen
+Drupal (10/11 compatible) module providing catalog interface for Evergreen
