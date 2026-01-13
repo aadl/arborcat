@@ -35,7 +35,8 @@ function arborcat_theme($existing, $type, $theme, $path) {
         'lists' => NULL,
         'reviews' => NULL,
         'review_form' => NULL,
-        'ratings' => NULL
+        'ratings' => NULL,
+        'has_barcode' => NULL
       ]
     ],
     'moderate_reviews' => [

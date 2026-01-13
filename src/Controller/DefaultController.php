@@ -42,6 +42,12 @@ class DefaultController extends ControllerBase {
 
     // grab user for later processing
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $barcodes = $user ->get('field_barcode')->getValue();
+    $has_barcode = false;
+    if (count($barcodes) > 0){
+      $has_barcode = true;
+
+    }
 
     // Get Bib Record from API
     $guzzle = \Drupal::httpClient();
@@ -235,6 +241,7 @@ class DefaultController extends ControllerBase {
       '#reviews' => $reviews,
       '#review_form' => $review_form,
       '#ratings' => $ratings,
+      '#has_barcode' => $has_barcode,
       '#cache' => [ 'max-age' => 0 ]
     ];
   }
