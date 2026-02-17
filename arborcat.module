@@ -390,6 +390,12 @@ function arborcat_create_pickup_request_record($pickup_request_type, $custom_id,
       \Drupal::messenger()->addError('An error occurred saving this pickup request. Exception Message: ' . $e->getMessage());
       $transaction->rollback();
       $return_val = -1;
+
+      $arguments = [
+        '@exception' => $e->getMessage()
+      ];
+      \Drupal::logger('arborcat')->warning("Encountered an error saving pickup request to DB @exception", $arguments);
+
     }
     unset($transaction);
 
