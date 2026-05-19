@@ -291,8 +291,8 @@ class UserPickupRequestForm extends FormBase {
           // Get the locations
           $locations = json_decode($guzzle->get("$api_url/locations")->getBody()->getContents());
 
-          $oversize_locker_item_message = 'You selected a tool or art print that is too large to fit in the selected ' . $locations->{$branch} . ' locker for pickup.<br>';
-          $oversize_locker_item_message .= 'Please un-check the tool/art print item(s) OR change the pickup method to the '. $locations->{$branch} . ' lobby.';
+          $oversize_locker_item_message = 'You selected a tool, book club to go, or art print that is too large to fit in the selected ' . $locations->{$branch} . ' locker for pickup.<br>';
+          $oversize_locker_item_message .= 'Please un-check the tool/book club to go/art print item(s) OR change the pickup method to the '. $locations->{$branch} . ' lobby.';
           $form_state->setErrorByName('lockeritems', t($oversize_locker_item_message));
         }
       }
