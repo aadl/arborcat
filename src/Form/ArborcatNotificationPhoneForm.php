@@ -10,13 +10,13 @@ namespace Drupal\arborcat\Form;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
-class ArborcatNotificationForm extends FormBase {
+class ArborcatNotificationPhoneForm extends FormBase {
 
   /**
    * {@inheritdoc}
    */
   public function getFormId() {
-    return 'arborcat_notification_form';
+    return 'arborcat_notification_phone_form';
   }
 
   /**
@@ -41,6 +41,7 @@ class ArborcatNotificationForm extends FormBase {
         $field_barcodes[$sub_delta] = $barcode;
       }
 
+
       if (count($field_barcodes)) {
         $form['account'] = [
           '#type' => 'value',
@@ -51,8 +52,8 @@ class ArborcatNotificationForm extends FormBase {
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
         $api_keys = $account->get('field_api_key')->getValue();
 
-        $form['emails'] = [
-          '#prefix' => '<h2>Update Notification Email</h2>',
+        $form['phones'] = [
+          '#prefix' => '<h2>Update Notification Phone Number</h2>',
         ];
 
         // Check for existing barcodes and list with option to remove
@@ -71,20 +72,23 @@ class ArborcatNotificationForm extends FormBase {
             \Drupal::messenger()->addError('Error retrieving patron data for ' . $field_barcode);
           }
 
+          /*var_dump($patron);
+          exit();*/
+
           if ($patron) {
-            $form['emails']['email_' . $delta] = [
-              '#type' => 'email',
-              '#title' => "$patron->name Notification Email",
-              '#default_value' => $patron->email, // User's current email
+            $form['phone_' . $delta] = [
+              '#type' => 'textfield',
+              '#title' => "$patron->name Notification Phone Number",
+              '#default_value' => $patron->evg_user->evening_phone, // User's current email
               '#size' => 32,
               '#maxlength' => 32,
-              '#description' => t('Email for Library Card') . ' #' . $patron->card,
+              '#description' => t('Phone Number for Library Card') . ' #' . $patron->card,
             ];
           }
         }
-        $form['actions']['update_emails'] = [
+        $form['actions']['update_phones'] = [
           '#type' => 'submit',
-          '#value' => $this->t('Update Email'),
+          '#value' => $this->t('Update Phone'),
           '#button_type' => 'primary',
         ];
         $form['actions']['cancel'] = [
@@ -116,18 +120,18 @@ class ArborcatNotificationForm extends FormBase {
     $api_keys = $account->get('field_api_key')->getValue();
 
     foreach ($api_keys as $delta => $field) {
-      // Check if email value has been changed
-      if ($form['emails']['email_' . $delta]['#default_value'] != $values['email_' . $delta]) {
-        // Update mail with api key
+      // Check if phone value has been changed
+      if ($form['phone_' . $delta]['#default_value'] != $values['phone_' . $delta]) {
+        // Update phone with api key
         $api_key = $field['value'];
         $guzzle = \Drupal::httpClient();
         $api_url = \Drupal::config('arborcat.settings')->get('api_url');
-        $query = ['email' => $values['email_' . $delta]];
+        $query = ['evening_phone' => $values['phone_' . $delta]];
 
         $response = $guzzle->request('GET', "$api_url/patron/$api_key/set", ['query' => $query]);
 
-        \Drupal::messenger()->addMessage('Set ' . $values['email_' . $delta] .
-                           ' as notification email for Library Card #' . $barcodes[$delta]['value']);
+        \Drupal::messenger()->addMessage('Set ' . $values['phone_' . $delta] .
+                           ' as notification phone for Library Card #' . $barcodes[$delta]['value']);
       }
     }
 
