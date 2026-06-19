@@ -378,6 +378,14 @@ class UserPickupRequestForm extends FormBase {
           $cancel_time = $date_time_now->format('Y-m-d H:i:s');
           $guzzle->get("$api_url/patron/$self_check_api_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?cancel_time=$cancel_time&cancel_cause=6")->getBody()->getContents();
         } else {
+          if ($hold['holdId'] == "" || $hold['holdId'] == false || is_null($hold['holdId'])) {
+            $arguments = [
+              '@hold_id' => $hold['holdId'],
+              '@barcode' =>$patron_barcode,
+              '@holds' => json_encode($holds)
+            ];
+            \Drupal::logger('arborcat')->warning("The hold ID is empty @hold_id. For patron barcode @barcode. For holds: @holds", $arguments);
+          }
           // set the expire date for each selected hold
           $updated_hold = $guzzle->get("$api_url/patron/$self_check_api_key-$patron_barcode/update_hold/" . $hold['holdId'] . "?shelf_expire_time=$pickup_date 23:59:59")->getBody()->getContents();
           // create arborcat_patron_pickup_request records for each of the selected holds
@@ -426,6 +434,7 @@ class UserPickupRequestForm extends FormBase {
         return $form_state->setRedirectUrl($url);
       } else {
         $messenger->addMessage("There was an error processing your pickup requests. Please try submitting the form again");
+        \Drupal::logger('arborcat')->warning("There was an error processing your pickup requests.");
       }
     }
   }
