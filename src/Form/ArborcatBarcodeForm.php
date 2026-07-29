@@ -9,6 +9,7 @@ namespace Drupal\arborcat\Form;
 
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 
 class ArborcatBarcodeForm extends FormBase {
 
@@ -24,6 +25,41 @@ class ArborcatBarcodeForm extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state, $uid = NULL) {
     $form = [];
+
+
+    //We're going to first confirm that the user wants to remove their library card from their account so that its not easy to funble
+    if ($form_state->get('trigger_confirmation')) {
+      $form['#title'] = $this->t('Are you absolutely sure?');
+      
+      $form['description'] = [
+        '#markup' => '<h1>Please Confirm</h1><p>Are you sure you want to remove <b>'.$form_state->getValue('barcode').'</b> from your account?<br>This action will remove reading history associated with this card.</p>',
+      ];
+
+      $form['triggering_delta'] = [
+        '#type'=>'hidden',
+        '#default_value'=>$form_state->getValue('triggering_delta')
+      ];
+
+      $form['account'] = [
+        '#type'=>'value',
+        '#value'=>$form_state->getValue('account')
+      ];
+
+      $form['actions'] = ['#type' => 'actions'];
+      $form['actions']['submit'] = [
+        '#type' => 'submit',
+        '#value' => $this->t('Yes, Confirm'),
+        // Explicitly routing to the final execution handler
+        '#submit' => ['::removeBarcodeSubmit'],
+      ];
+      $form['actions']['cancel'] = [
+        '#type' => 'link',
+        '#title' => $this->t('Cancel'),
+        '#url' => Url::fromRoute('<current>'),
+      ];
+
+      return $form;
+    }
 
     // Check access to Account
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
@@ -121,8 +157,11 @@ class ArborcatBarcodeForm extends FormBase {
               '#prefix' => "<p>$field_barcode, $patron->name</p>",
               '#suffix' => ($delta == 0 ? '<hr>' : ''),
               '#type' => 'submit',
+              '#attributes' => [
+                  'data-barcode' => $field_barcode,
+                ],
               '#value' => "Remove $field_barcode from account",
-              '#submit' => [[$this, 'removeBarcodeSubmit']],
+              '#submit' => [[$this, 'triggerConfirmationSubmit']],// we rebuild the form in confirmation mode and force the user to confirm they want to remove their card
             ];
             if ($delta > 0) {
               $form['existing_barcodes']['make_primary_barcode_' . $delta] = [
@@ -226,10 +265,29 @@ class ArborcatBarcodeForm extends FormBase {
     return;
   }
 
-  public function removeBarcodeSubmit(array &$form, FormStateInterface $form_state) {
+
+  /**
+   * Submit handler that flags the form to rebuild with the confirmation step.
+   */
+  public function triggerConfirmationSubmit(array &$form, FormStateInterface $form_state) {
+    // Retain input data so it isn't lost during rebuild
     $te = $form_state->getTriggeringElement();
     $delta = str_replace('edit-remove-barcode-', '', $te['#id']);
-
+    $barcode = $te['#attributes']['data-barcode'];
+    $form_state->setValue('triggering_delta', $delta);
+    $form_state->setValue('barcode', $barcode);
+    $form_state->setValue('account', $form_state->getValue('account'));
+    //we'll use this flag when building the form to show the confirmation screen
+    $form_state->set('trigger_confirmation', TRUE);
+    
+    // Force Form API to re-run buildForm() instead of performing a redirect
+    $form_state->setRebuild(TRUE); 
+  }
+  
+  //will get called only from the confirmation screen triggered by trigger_confirmation being set during form build
+  public function removeBarcodeSubmit(array &$form, FormStateInterface $form_state) {
+    
+    $delta = $form_state->getValue('triggering_delta');
     $account = $form_state->getValue('account');
     $account_uid = $account->get('uid')->value;
     $field_patron_ids = $account->get('field_patron_id')->getValue();
