@@ -69,12 +69,15 @@ class DefaultController extends ControllerBase {
     }
 
     if (!$bib_record) {
-      $markup = "<p class=\"base-margin-top\">Sorry, the item you are looking for couldn't be found.</p>";
-
-      return [
-        '#title' => 'Record Not Found',
+      $markup = "Sorry, the item you are looking for couldn't be found";
+      $render_array = [
+        '#title' => 'Item Not Found',
         '#markup' => $markup
       ];
+      $html = \Drupal::service('bare_html_page_renderer')->renderBarePage($render_array, $this->t('Item Not Found'), 'page');
+     $html->setStatusCode(404);
+
+    return $html;
     }
 
     $mat_types = $guzzle->get("$api_url/mat-names")->getBody()->getContents();
