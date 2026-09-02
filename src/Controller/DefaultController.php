@@ -60,14 +60,15 @@ class DefaultController extends ControllerBase {
       else {
         $bib_record = $json;
       }
+
       // Copy from Elasticsearch record id to same format as CouchDB _id
       //$bib_record->_id = $bib_record->id;
       $bib_record->id = $bib_record->_id;
     } catch (\Exception $e) {
-      $bib_record->_id = NULL;
+      $bib_record = null;
     }
 
-    if (!$bib_record->_id) {
+    if (!$bib_record) {
       $markup = "<p class=\"base-margin-top\">Sorry, the item you are looking for couldn't be found.</p>";
 
       return [
@@ -179,7 +180,7 @@ class DefaultController extends ControllerBase {
       [':bib' => $bib_record->id]
     );
     $ratings = $query->fetch();
-    $ratings->average = round($ratings->average, 1);
+    $ratings->average = round($ratings->average ?? 0, 1);
     $ratings->user_rating = '';
 
     // retrieve user ratings and set up review form IF the user is authenticated
