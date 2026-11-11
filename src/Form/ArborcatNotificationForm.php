@@ -33,6 +33,13 @@ class ArborcatNotificationForm extends FormBase {
       // Get Library Cards associated with this account
       $account = \Drupal\user\Entity\User::load($uid);
       $field_barcodes = $account->get('field_barcode')->getValue();
+      
+      $sub_delta = $_GET['subaccount'] ?? 0;
+      if(isset($_GET['subaccount'])){
+        $barcode = $field_barcodes[$sub_delta];
+        $field_barcodes = [];
+        $field_barcodes[$sub_delta] = $barcode;
+      }
 
       if (count($field_barcodes)) {
         $form['account'] = [
@@ -45,7 +52,7 @@ class ArborcatNotificationForm extends FormBase {
         $api_keys = $account->get('field_api_key')->getValue();
 
         $form['emails'] = [
-          '#prefix' => '<h2>Update Catalog Notification Email</h2>',
+          '#prefix' => '<h2>Update Notification Email</h2>',
         ];
 
         // Check for existing barcodes and list with option to remove
