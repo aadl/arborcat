@@ -1,6 +1,8 @@
 <?php
 namespace Drupal\arborcat\Form;
 
+use Drupal\user\Entity\User;
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Mail\MailManagerInterface;
@@ -21,7 +23,7 @@ class UserPickupRequestForm extends FormBase {
     $api_url = \Drupal::config('arborcat.settings')->get('api_url');
     $patron_info = json_decode((string) $guzzle->get("$api_url/patron?apikey=$api_key&pnum=$patron_id")->getBody()->getContents(), TRUE);
     $uid = $patron_info['evg_user']['card']['id'];
-    $account = \Drupal\user\Entity\User::load($uid);
+    $account = User::load($uid);
     $patron_barcode = $patron_info['evg_user']['card']['barcode'];
     $eligible_holds = arborcat_load_patron_eligible_holds($patron_barcode, $request_location);
 
@@ -416,11 +418,11 @@ class UserPickupRequestForm extends FormBase {
 
         // redirect to the user's account page (if user is logged in) or to the front page
         if ($current_user_id > 0) {
-            $user = \Drupal\user\Entity\User::load($current_user_id);
-            $url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
+            $user = User::load($current_user_id);
+            $url = Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
         }
         else {
-            $url = \Drupal\Core\Url::fromRoute('<front>', [], ['absolute' => TRUE]);
+            $url = Url::fromRoute('<front>', [], ['absolute' => TRUE]);
         }
 
         return $form_state->setRedirectUrl($url);

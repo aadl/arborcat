@@ -7,6 +7,7 @@
 
 namespace Drupal\arborcat_lists\Form;
 
+use Drupal\user\Entity\User;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
@@ -24,7 +25,7 @@ class UserListCreateForm extends FormBase {
         [':id' => $lid]);
       $res = $query->fetchAll()[0];
       $uid = \Drupal::currentUser()->id();
-      $user = \Drupal\user\Entity\User::load($uid);
+      $user = User::load($uid);
       if ($res->uid != $uid && !$user->hasPermission('administer users')) {
         \Drupal::messenger()->addError("You cannot edit another user's list");
         return $this->redirect('arborcat_lists.user_lists', ['uid' => $uid]);
@@ -74,7 +75,7 @@ class UserListCreateForm extends FormBase {
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
     if ($form_state->getValue('id')) {
       $connection->update('arborcat_user_lists')

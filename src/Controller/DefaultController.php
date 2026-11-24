@@ -5,6 +5,8 @@
 
 namespace Drupal\arborcat\Controller;
 
+use Drupal\user\Entity\User;
+use Drupal\Core\Render\Markup;
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Drupal\Core\Datetime\DrupalDateTime;
@@ -41,7 +43,7 @@ class DefaultController extends ControllerBase {
     $get_url = "$api_url/record/$bnum/$get_record_selector";
 
     // grab user for later processing
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     $barcodes = $user ->get('field_barcode')->getValue();
     $has_barcode = false;
     if (count($barcodes) > 0){
@@ -173,7 +175,7 @@ class DefaultController extends ControllerBase {
     );
     $reviews = $query->fetchAll();
     foreach ($reviews as $k => $review) {
-      $review_user = \Drupal\user\Entity\User::load($review->uid);
+      $review_user = User::load($review->uid);
       $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
     }
 
@@ -272,7 +274,7 @@ class DefaultController extends ControllerBase {
     $total = $db->query("SELECT COUNT(*) as total FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0")->fetch()->total;
     $reviews = $db->query("SELECT * FROM arborcat_reviews WHERE staff_reviewed=0 AND deleted=0 ORDER BY id DESC $limit")->fetchAll();
     foreach ($reviews as $k => $review) {
-      $review_user = \Drupal\user\Entity\User::load($review->uid);
+      $review_user = User::load($review->uid);
       $reviews[$k]->username = (isset($review_user) ? $review_user->get('name')->value : 'unknown');
     }
 
@@ -290,7 +292,7 @@ class DefaultController extends ControllerBase {
   }
 
   public function approve_review($rid) {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     $db = \Drupal::database();
 
     // grab review uid
@@ -317,7 +319,7 @@ class DefaultController extends ControllerBase {
   }
 
   public function delete_review($rid) {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     $db = \Drupal::database();
 
     // grab review uid
@@ -364,7 +366,7 @@ class DefaultController extends ControllerBase {
   }
 
   public function rate_record($bib, $rating) {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     if ($user->isAuthenticated()) {
       $db = \Drupal::database();
       // check if user has already rated this item and update if so
@@ -411,7 +413,7 @@ class DefaultController extends ControllerBase {
   }
 
   public function request_for_patron($barcode, $bnum, $loc, $type) {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     if ($user->hasRole('staff') || $user->hasRole('administrator')) {
       $api_url = \Drupal::config('arborcat.settings')->get('api_url');
       $api_key = \Drupal::config('arborcat.settings')->get('api_key');
@@ -479,7 +481,7 @@ class DefaultController extends ControllerBase {
         $blocks[$key] = implode(', ', $block);
         $blocks_msg .= "$key: " . implode(', ', $block) . '<br>';
       }
-      $messenger->addWarning(\Drupal\Core\Render\Markup::create("<b>Appointment Blocks</b><br>$blocks_msg"));
+      $messenger->addWarning(Markup::create("<b>Appointment Blocks</b><br>$blocks_msg"));
     }
 
     if (isset($barcode)) {

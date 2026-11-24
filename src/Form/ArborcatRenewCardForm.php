@@ -7,6 +7,8 @@
 
 namespace Drupal\arborcat\Form;
 
+use Drupal\user\Entity\User;
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -26,11 +28,11 @@ class ArborcatRenewCardForm extends FormBase {
     $form = [];
 
     // Check access to Account
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     if ($user->get('uid')->value == $uid ||
         $user->hasPermission('administer users')) {
 
-      $account = \Drupal\user\Entity\User::load($uid);
+      $account = User::load($uid);
       $field_barcodes = $account->get('field_barcode')->getValue();
 
       if (count($field_barcodes)) {
@@ -99,7 +101,7 @@ class ArborcatRenewCardForm extends FormBase {
             '#suffix' => '</div>',
             '#type' => 'link',
             '#title' => $this->t('Cancel'),
-            '#url' => \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user' => $uid]),
+            '#url' => Url::fromRoute('entity.user.canonical', ['user' => $uid]),
           ];
         }
       }

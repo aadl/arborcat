@@ -1,6 +1,7 @@
 <?php
 namespace Drupal\arborcat\Plugin\Block;
 
+use Drupal\Core\Render\Markup;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Session\AccountInterface;
@@ -89,9 +90,9 @@ class HoldsBlock extends BlockBase {
           if (!$locker_loc) {
             $locker_loc = true;
             if ($hold->pickup == 'Malletts Creek Branch') {
-              $message = \Drupal\Core\Render\Markup::create('Need a locker? For now, just <a href="/contactus/renewal">contact us</a>!');
+              $message = Markup::create('Need a locker? For now, just <a href="/contactus/renewal">contact us</a>!');
             } elseif ($hold->pickup == 'Pittsfield Branch') {
-              $message = \Drupal\Core\Render\Markup::create('Pittsfield lockers are now available! Need a locker? Just <a href="/contactus/renewal">contact us</a>!');
+              $message = Markup::create('Pittsfield lockers are now available! Need a locker? Just <a href="/contactus/renewal">contact us</a>!');
             }
             \Drupal::messenger()->addStatus($message);
           }

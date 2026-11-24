@@ -45,7 +45,7 @@ class ArborcatAdminForm extends ConfigFormBase {
     return ['arborcat.settings'];
   }
 
-  public function buildForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  public function buildForm(array $form, FormStateInterface $form_state) {
     $form = [];
     $arborcat_settings = \Drupal::config('arborcat.settings');
 

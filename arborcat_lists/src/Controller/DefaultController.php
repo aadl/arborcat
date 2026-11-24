@@ -7,6 +7,8 @@
 
 namespace Drupal\arborcat_lists\Controller;
 
+use Drupal\user\Entity\User;
+use Drupal\Core\Url;
 use Drupal\Core\Controller\ControllerBase;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Request;
@@ -22,11 +24,11 @@ class DefaultController extends ControllerBase
   public function user_lists($uid = NULL)
   {
     $current_uid = \Drupal::currentUser()->id();
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     if ($current_uid != $uid && !$user->hasPermission('administer users')) {
       \Drupal::messenger()->addWarning('You are not authorized to view these lists');
 
-      return new RedirectResponse(\Drupal\Core\Url::fromRoute('user.page'));
+      return new RedirectResponse(Url::fromRoute('user.page'));
     }
 
     $lists = arborcat_lists_get_lists($uid);
@@ -108,7 +110,7 @@ class DefaultController extends ControllerBase
         unset($lists[$i]);
         continue;
       }
-      $user = \Drupal\user\Entity\User::load($lists[$i]->uid);
+      $user = User::load($lists[$i]->uid);
       $lists[$i]->username = (isset($user) ? $user->get('name')->value : 'unknown');
       if (isset($user)) {
         if ($user->hasPermission('access accountfix')) {
@@ -138,7 +140,7 @@ class DefaultController extends ControllerBase
 
   public function view_user_list($lid = NULL)
   {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
     $patron_display_name = '';
     // grab list uid
@@ -151,7 +153,7 @@ class DefaultController extends ControllerBase
       if ($user->get('uid')->value == $list->uid || $list->public || $user->hasPermission('administer users')) {
         // Checkout History manual refresh
         if ($list->title == 'Checkout History') {
-          $list_user = \Drupal\user\Entity\User::load($list->uid);
+          $list_user = User::load($list->uid);
           if ($list_user->get('profile_cohist')->value) {
             arborcat_lists_update_user_history($list->uid);
             // get the display name for the Checkout History list
@@ -241,7 +243,7 @@ class DefaultController extends ControllerBase
 
   public function delete_list($lid)
   {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
     // grab list uid
     $query = $connection->query(
@@ -267,7 +269,7 @@ class DefaultController extends ControllerBase
 
   public function add_list_item($lid, $bib)
   {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
 
     if ($lid == 'wishlist') {
@@ -338,7 +340,7 @@ class DefaultController extends ControllerBase
 
   public function delete_list_item($lid, $bib)
   {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
 
     // grab list uid
@@ -373,7 +375,7 @@ class DefaultController extends ControllerBase
 
   public function download_user_list($lid)
   {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     $db = \Drupal::database();
     $query = $db->query("SELECT * FROM arborcat_user_lists WHERE id=:lid", [':lid' => $lid]);
     $list = $query->fetch();
@@ -424,7 +426,7 @@ class DefaultController extends ControllerBase
       return $response;
     } else {
       \Drupal::messenger()->addWarning('You do not have permission to download this list');
-      return new RedirectResponse(\Drupal\Core\Url::fromRoute('user.page'));
+      return new RedirectResponse(Url::fromRoute('user.page'));
     }
   }
 
