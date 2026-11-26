@@ -1,5 +1,7 @@
 <?php
 namespace Drupal\arborcat\Form;
+use Drupal\user\Entity\User;
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Mail\MailManagerInterface;
@@ -22,7 +24,7 @@ class LockerRequestForm extends FormBase{
 		}
 		$guzzle = \Drupal::httpClient();
     $uid = \Drupal::currentUser()->id();
-		$account = \Drupal\user\Entity\User::load($uid);
+		$account = User::load($uid);
 		$api_key = $account->get('field_api_key')->value;
 		$api_url = \Drupal::config('arborcat.settings')->get('api_url');
 		$patron_info = json_decode($guzzle->get("$api_url/patron/$api_key/get")->getBody()->getContents(),true);
@@ -193,9 +195,9 @@ class LockerRequestForm extends FormBase{
 		else{
 			$messenger->addError(t("There are no lockers are currently available."));
 		}
-		$user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+		$user = User::load(\Drupal::currentUser()->id());
 		$uid = $user->id();
-		$url = \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
+		$url = Url::fromRoute('entity.user.canonical', ['user'=>$user->id()]);
 
 		return $form_state->setRedirectUrl($url);
 	}

@@ -7,6 +7,7 @@
 
 namespace Drupal\arborcat\Form;
 
+use Drupal\user\Entity\User;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
@@ -71,7 +72,7 @@ class UserRecordReviewForm extends FormBase {
   }
 
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     $connection = \Drupal::database();
 
     // check to make sure user review is unique from their other reviews

@@ -7,6 +7,8 @@
 
 namespace Drupal\arborcat\Form;
 
+use Drupal\user\Entity\User;
+use Drupal\Core\Url;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 
@@ -26,11 +28,11 @@ class ArborcatBarcodeForm extends FormBase {
     $form = [];
 
     // Check access to Account
-    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $user = User::load(\Drupal::currentUser()->id());
     if ($user->get('uid')->value == $uid ||
         $user->hasPermission('administer users')) {
 
-      $account = \Drupal\user\Entity\User::load($uid);
+      $account = User::load($uid);
       $form['account'] = [
         '#type' => 'value',
         '#value' => $account,
@@ -79,7 +81,7 @@ class ArborcatBarcodeForm extends FormBase {
         '#suffix' => '</div>',
         '#type' => 'link',
         '#title' => $this->t('Cancel'),
-        '#url' => \Drupal\Core\Url::fromRoute('entity.user.canonical', ['user' => $uid]),
+        '#url' => Url::fromRoute('entity.user.canonical', ['user' => $uid]),
       ];
 
       // Add Barcode Buttons if account has existing barcodes
@@ -205,7 +207,7 @@ class ArborcatBarcodeForm extends FormBase {
 
     $uid = $account->get('uid')->value;
 
-    $user = \Drupal\user\Entity\User::load($uid);
+    $user = User::load($uid);
     $additional_accounts = arborcat_additional_accounts($user);
     $last_account = end($additional_accounts);
 

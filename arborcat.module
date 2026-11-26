@@ -1,5 +1,7 @@
 <?php
 
+use Drupal\Core\Render\Markup;
+use Drupal\user\Entity\User;
 use Predis\Client;
 
 /**
@@ -89,7 +91,7 @@ function arborcat_patron_fines_expired($fines, $patron) {
     $patron_clean = FALSE;
   }
   if (strtotime($patron->expires) < time()) {
-    $message = \Drupal\Core\Render\Markup::create("We're sorry, but your card has expired! Details on how to <a href=\"https://aadl.org/lcards\">renew online here</a>.");
+    $message = Markup::create("We're sorry, but your card has expired! Details on how to <a href=\"https://aadl.org/lcards\">renew online here</a>.");
     $messenger->addError($message);
     $patron_clean = FALSE;
   }
@@ -472,7 +474,7 @@ function arborcat_check_active_barcode($pnum) {
       if (count($uids)) {
         foreach ($uids as $uid) {
           // Check the barcode for the corresponding pnum for each user
-          $account = \Drupal\user\Entity\User::load($uid);
+          $account = User::load($uid);
           $patron_ids = $account->get('field_patron_id')->getValue();
           $barcodes = $account->get('field_barcode')->getValue();
 
